@@ -1,19 +1,17 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import { View } from 'react-native'
 import { Redirect, Tabs, useRouter } from 'expo-router'
 import { CalendarCheck, GraduationCap, Home, IndianRupee, Menu } from 'lucide-react-native'
-import * as Notifications from 'expo-notifications'
 import { useSession } from '@/stores/session'
 import { Alert, Button, COLORS, Loading } from '@/components/ui'
 import { ChildHeader } from '@/components/child-header'
-import { registerForPush, routeForPush } from '@/lib/push'
+import { registerForPush, useNotificationTap } from '@/lib/push'
 
 // Signed-in shell: loads the parent's account, gates on login and first-login
 // password change, and hides tabs for features the school has switched off.
 export default function TabsLayout() {
   const { me, loading, error, unauthorized, load, has } = useSession()
   const router = useRouter()
-  const lastHandledId = useRef<string | null>(null)
 
   useEffect(() => { void load() }, [load])
 
@@ -23,20 +21,7 @@ export default function TabsLayout() {
     }
   }, [me?.id])
 
-  const response = Notifications.useLastNotificationResponse()
-  useEffect(() => {
-    if (!response) return
-    const id = response.notification.request.identifier
-    if (id !== lastHandledId.current) {
-      lastHandledId.current = id
-      const data = response.notification.request.content.data as Record<string, unknown> | undefined
-      const url = data?.url
-      // Clear it so a later remount of the tabs (e.g. sign out and back in)
-      // does not reopen an old notification.
-      Notifications.clearLastNotificationResponse()
-      router.push(routeForPush(url))
-    }
-  }, [response, router])
+  useNotificationTap(useCallback(href => router.push(href), [router]))
 
   if (unauthorized) return <Redirect href="/login" />
   if (me && !me.password_changed) return <Redirect href="/change-password" />

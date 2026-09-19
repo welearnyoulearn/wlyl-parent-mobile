@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
 import { Stack } from 'expo-router'
 import { BellOff } from 'lucide-react-native'
-import * as Notifications from 'expo-notifications'
+import { onNotificationReceived } from '@/lib/push'
 import { useSession } from '@/stores/session'
 import { api, longDay, type Notification } from '@/lib/api'
 import { Screen, Panel, Empty, Alert, Loading, Row } from '@/components/ui'
@@ -22,9 +22,8 @@ export default function NotificationsScreen() {
     }
 
     load()
-    const sub = Notifications.addNotificationReceivedListener(() => load())
-
-    return () => sub.remove()
+    // Real time: a push that arrives while this screen is open shows up at once.
+    return onNotificationReceived(load)
   }, [me])
 
   async function open(n: Notification) {
