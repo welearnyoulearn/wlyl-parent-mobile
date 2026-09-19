@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { api } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 
-type Result<T> = { path: string; data: T | null; error: string | null }
+type Result<T> = { path: string; data: T | null; error: string | null; status: number | null }
 
 // One fetch per screen: data, loading/refreshing flags, error text, and a
 // refresh() for pull-to-refresh. Pass null to wait (e.g. until a child is picked).
@@ -16,11 +16,12 @@ export function useApi<T>(path: string | null) {
     if (!path) return
     let live = true
     api<T>(path)
-      .then(data => { if (live) setResult({ path, data, error: null }) })
+      .then(data => { if (live) setResult({ path, data, error: null, status: null }) })
       .catch((e: unknown) => {
         if (!live) return
         const error = e instanceof Error ? e.message : 'Something went wrong'
-        setResult(prev => ({ path, data: prev?.path === path ? prev.data : null, error }))
+        const status = e instanceof ApiError ? e.status : null
+        setResult(prev => ({ path, data: prev?.path === path ? prev.data : null, error, status }))
       })
       .finally(() => { if (live) setRefreshing(false) })
     return () => { live = false }
@@ -30,6 +31,8 @@ export function useApi<T>(path: string | null) {
   return {
     data: current?.data ?? null,
     error: current?.error ?? null,
+    // HTTP status of the failure; 404 means the server doesn't have this feature yet.
+    status: current?.status ?? null,
     loading: path !== null && current === null,
     refreshing,
     refresh: () => { setRefreshing(true); setTick(t => t + 1) },

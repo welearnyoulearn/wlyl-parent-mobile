@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { View } from 'react-native'
 import { Redirect, Tabs } from 'expo-router'
-import { CalendarCheck, GraduationCap, Home, IndianRupee } from 'lucide-react-native'
+import { CalendarCheck, GraduationCap, Home, IndianRupee, Menu } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { Alert, Button, COLORS, Loading } from '@/components/ui'
 import { ChildHeader } from '@/components/child-header'
@@ -35,6 +35,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="attendance" options={{ title: 'Attendance', tabBarButtonTestID: 'tab-attendance', ...hide('attendance'), tabBarIcon: ({ color }) => <CalendarCheck size={22} color={color} /> }} />
       <Tabs.Screen name="fees" options={{ title: 'Fees', tabBarButtonTestID: 'tab-fees', ...hide('fee-management'), tabBarIcon: ({ color }) => <IndianRupee size={22} color={color} /> }} />
       <Tabs.Screen name="exams" options={{ title: 'Exams', tabBarButtonTestID: 'tab-exams', ...hide('exam-marks'), tabBarIcon: ({ color }) => <GraduationCap size={22} color={color} /> }} />
+      <Tabs.Screen name="more" options={{ title: 'More', tabBarButtonTestID: 'tab-more', tabBarIcon: ({ color }) => <Menu size={22} color={color} /> }} />
     </Tabs>
   )
 }

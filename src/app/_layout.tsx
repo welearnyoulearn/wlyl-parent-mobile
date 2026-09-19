@@ -12,9 +12,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="exam/[id]" options={{ headerShown: true, title: 'Mark sheet', headerTintColor: COLORS.primary }} />
+      {/* Pages opened from More (timetable, calendar, ...) get a header with a back
+          button; each sets its own title. Tabs and sign-in screens have none. */}
+      <Stack screenOptions={{ headerTintColor: COLORS.primary, headerTitleStyle: { fontWeight: '600' } }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="change-password" options={{ headerShown: false }} />
+        <Stack.Screen name="exam/[id]" options={{ title: 'Mark sheet' }} />
       </Stack>
     </SafeAreaProvider>
   )
