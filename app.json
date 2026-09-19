@@ -1,14 +1,15 @@
 {
   "expo": {
-    "name": "wlyl-parent-mobile",
+    "name": "WLYL Parent",
     "slug": "wlyl-parent-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "wlylparentmobile",
+    "scheme": "wlylparent",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.welearnyoulearn.parent"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.welearnyoulearn.parent"
     },
     "web": {
       "output": "static",
@@ -31,6 +33,13 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0d7d76",
+          "defaultChannel": "default"
         }
       ]
     ],

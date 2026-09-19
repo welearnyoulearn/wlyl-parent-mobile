@@ -2,6 +2,11 @@
 
 ## Active
 
+### [#8] Push notifications need an EAS project, Firebase and a development build
+- **Severity:** Medium
+- **Detail:** Registration is built but skipped until `extra.eas.projectId` exists; Android also needs `google-services.json` and an FCM V1 key in EAS. Expo Go on Android cannot receive push. See README → Push notifications.
+- **Status:** Waiting on account setup.
+
 ### [#7] Screens that need the #129 backend are not in the app yet
 - **Severity:** Medium
 - **Detail:** Homework, leave, transport, rewards, activity, push notifications, child photo, exam remarks and profile edit need routes that are only on the platform's unpushed `feature/129-parent-app-backend` branch.

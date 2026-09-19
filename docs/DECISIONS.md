@@ -13,3 +13,7 @@
 **Decision:** Use Uniwind, not NativeWind.
 **Why:** Uniwind targets Tailwind v4 (same as the web app) and React Native 0.81+. NativeWind 4 still needs Tailwind v3.
 **Gotcha:** `className` only works on core React Native components. Wrap third-party components with `withUniwind`, as `ui.tsx` does for `SafeAreaView`.
+
+## 2026-09-19 — Expo Push for real-time notifications (#8)
+**Decision:** Use Expo's push service (FCM on Android, APNs on iOS) and send from the platform the moment a parent notification is created, through the existing `pushToParent()` hook.
+**Why:** One API for both platforms, no socket server to run, and it reaches parents even when the app is closed. The platform's in-app notification list stays the source of truth; push is the real-time nudge.

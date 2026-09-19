@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
 import { Stack } from 'expo-router'
 import { BellOff } from 'lucide-react-native'
+import * as Notifications from 'expo-notifications'
 import { useSession } from '@/stores/session'
 import { api, longDay, type Notification } from '@/lib/api'
 import { Screen, Panel, Empty, Alert, Loading, Row } from '@/components/ui'
@@ -13,9 +14,17 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     if (!me) return
-    api<Notification[]>('/api/notifications')
-      .then(setItems)
-      .catch((e) => setError(e.message))
+
+    function load() {
+      api<Notification[]>('/api/notifications')
+        .then(setItems)
+        .catch((e) => setError(e.message))
+    }
+
+    load()
+    const sub = Notifications.addNotificationReceivedListener(() => load())
+
+    return () => sub.remove()
   }, [me])
 
   async function open(n: Notification) {
