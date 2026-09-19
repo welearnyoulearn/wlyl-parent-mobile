@@ -2,6 +2,11 @@
 
 ## Active
 
+### [#9] Reader shows the whole book at page width only
+- **Severity:** Low
+- **Detail:** Pages render at about 2x screen sharpness; heavy pinch-zoom looks soft. There is no text search or "resume where I left off" yet.
+- **Status:** Add when parents ask for it.
+
 ### [#8] Push notifications need an EAS project, Firebase and a development build
 - **Severity:** Medium
 - **Detail:** Registration is built but skipped until `extra.eas.projectId` exists; Android also needs `google-services.json` and an FCM V1 key in EAS. Expo Go on Android cannot receive push. See README → Push notifications.

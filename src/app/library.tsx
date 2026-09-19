@@ -1,14 +1,20 @@
-import { Linking, Text, View } from 'react-native'
-import { Stack } from 'expo-router'
-import { BookOpen, ExternalLink, Library } from 'lucide-react-native'
+import { useCallback, useState } from 'react'
+import { Text, View } from 'react-native'
+import { Stack, useFocusEffect, useRouter } from 'expo-router'
+import { BookOpen, ChevronRight, Library } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
-import { type LibraryItem, day, API_ORIGIN } from '@/lib/api'
+import { type LibraryItem, day } from '@/lib/api'
+import { isDownloaded } from '@/lib/books'
 import { useApi } from '@/lib/use-api'
-import { Screen, Loading, Alert, Empty, Panel, Section, Row, Divider } from '@/components/ui'
+import { Screen, Loading, Alert, Empty, Panel, Section, Row, Divider, Chip } from '@/components/ui'
 
 export default function LibraryScreen() {
   const { student, has } = useSession()
   const enabled = has('library')
+  const router = useRouter()
+  // Re-read which books are on the phone whenever the list comes back into view.
+  const [, setFocusTick] = useState(0)
+  useFocusEffect(useCallback(() => setFocusTick(t => t + 1), []))
 
   const { data: items, error, loading, refreshing, refresh, status } = useApi<LibraryItem[]>(
     student && enabled ? `/api/school/library?school_id=${student.school_id}&student_id=${student.id}` : null
@@ -64,10 +70,8 @@ export default function LibraryScreen() {
 
   const entries = Object.entries(grouped)
 
-  const openItem = (url: string) => {
-    const fullUrl = url.startsWith('/') ? `${API_ORIGIN}${url}` : url
-    Linking.openURL(fullUrl).catch(() => {})
-  }
+  const openItem = (m: LibraryItem) =>
+    router.push({ pathname: '/book/[id]', params: { id: String(m.material_id), title: m.title, url: m.file_url } })
 
   return (
     <>
@@ -83,7 +87,7 @@ export default function LibraryScreen() {
                   {list.map((m, i) => (
                     <View key={m.material_id}>
                       {i > 0 && <Divider />}
-                      <Row onPress={() => openItem(m.file_url)} testID={`library-item-${m.material_id}`}>
+                      <Row onPress={() => openItem(m)} testID={`library-item-${m.material_id}`}>
                         <View className="h-9 w-9 items-center justify-center rounded-xl bg-teal-50">
                           <BookOpen size={16} color="#0f766e" />
                         </View>
@@ -93,7 +97,8 @@ export default function LibraryScreen() {
                             {m.material_type === 'textbook' ? 'Textbook' : 'Handbook'} · added {day(m.created_at)}
                           </Text>
                         </View>
-                        <ExternalLink size={16} color="#9ca3af" />
+                        {isDownloaded(m.material_id) && <Chip tone="green">Downloaded</Chip>}
+                        <ChevronRight size={16} color="#9ca3af" />
                       </Row>
                     </View>
                   ))}

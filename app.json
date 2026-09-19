@@ -41,7 +41,8 @@
           "color": "#0d7d76",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

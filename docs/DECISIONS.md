@@ -17,3 +17,7 @@
 ## 2026-09-19 — Expo Push for real-time notifications (#8)
 **Decision:** Use Expo's push service (FCM on Android, APNs on iOS) and send from the platform the moment a parent notification is created, through the existing `pushToParent()` hook.
 **Why:** One API for both platforms, no socket server to run, and it reaches parents even when the app is closed. The platform's in-app notification list stays the source of truth; push is the real-time nudge.
+
+## 2026-09-19 — Bundled PDF.js in a WebView for the in-app reader (#9)
+**Decision:** Download each book into the app's documents folder, then open it with PDF.js 3.11.174 inlined into one HTML asset (`assets/pdf-viewer.html`, built by `scripts/build-pdf-viewer.mjs`) inside `react-native-webview`.
+**Why:** Android's WebView can't show PDFs, and native PDF libraries don't run in Expo Go. A bundled reader works offline on Android and iOS in both Expo Go and store builds. The 3.x line is the last with a classic build that loads from `file://`; its CVE-2024-4367 is closed with `isEvalSupported: false`, and the WebView may only load `file://` pages.

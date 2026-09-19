@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { api, ApiError, type Child, type Me } from '@/lib/api'
+import { clearBooks } from '@/lib/books'
 import { unregisterPush } from '@/lib/push'
 
 export type Student = Child & { class_id: number }
@@ -63,6 +64,7 @@ export const useSession = create<SessionState>()(
 
       async logout() {
         await unregisterPush()
+        try { clearBooks() } catch { /* a leftover book must never block sign-out */ }
         await api('/api/parent/auth/logout', { method: 'POST', body: '{}' }).catch(() => null)
         set({ me: null, children: [], student: null, childId: null, unauthorized: true })
       },

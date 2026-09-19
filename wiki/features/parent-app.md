@@ -11,3 +11,4 @@
 | Fees | Summary, dues, payments, waivers | `GET /api/parent/fees` |
 | Exams | Upcoming exams, released results | child-summary, `GET /api/students/{id}/exams` |
 | Mark sheet | Per-subject marks, parent sign-off | `GET /api/students/{id}/exams`, `POST /api/exams/{id}/acknowledge` |
+| Library → Book (#9) | Download a textbook, read it offline in the app, page slider, rotate to landscape, remove download | `GET /api/school/library`, the book's `file_url` (`/api/materials/file` → R2) |
