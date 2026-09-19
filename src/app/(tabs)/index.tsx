@@ -4,6 +4,7 @@ import { AlertTriangle, CalendarDays, ChevronRight, Megaphone, PartyPopper } fro
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { day, longDay, hhmm, inr, num, EXAM_TYPE, type Announcement, type CalendarEvent, type Fees, type Summary, type Timetable } from '@/lib/api'
+import { QuickLinks } from '@/components/quick-links'
 import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring } from '@/components/ui'
 
 function nowHHMM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
@@ -109,6 +110,8 @@ export default function HomePage() {
           </Pressable>
         )}
       </View>
+
+      <QuickLinks />
 
       {has('timetable') && (
         <Section title="Today's classes">

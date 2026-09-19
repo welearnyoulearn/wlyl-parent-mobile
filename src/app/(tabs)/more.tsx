@@ -1,11 +1,8 @@
 import { Text, View } from 'react-native'
 import { router, type Href } from 'expo-router'
 import Constants from 'expo-constants'
-import {
-  NotebookPen, CalendarX2, Bus, Trophy, Activity,
-  Clock, CalendarDays, BookOpenCheck, Library,
-  Bell, User, LogOut, ChevronRight, type LucideIcon
-} from 'lucide-react-native'
+import { Bell, User, LogOut, ChevronRight, type LucideIcon } from 'lucide-react-native'
+import { CHILD_LINKS, SCHOOL_LINKS } from '@/components/quick-links'
 
 import { useSession } from '@/stores/session'
 import { Screen, Section, Panel, Row, Divider } from '@/components/ui'
@@ -55,20 +52,8 @@ export default function MoreScreen() {
     router.replace('/login')
   }
 
-  const childItems: MenuItem[] = [
-    { id: 'homework', label: 'Homework', icon: NotebookPen, route: '/homework', feature: 'homework' },
-    { id: 'leave', label: 'Leave', icon: CalendarX2, route: '/leave', feature: 'attendance' },
-    { id: 'transport', label: 'Bus', icon: Bus, route: '/transport', feature: 'transport' },
-    { id: 'rewards', label: 'Rewards', icon: Trophy, route: '/rewards' },
-    { id: 'activity', label: 'Activity', icon: Activity, route: '/activity' },
-  ]
-
-  const schoolItems: MenuItem[] = [
-    { id: 'timetable', label: 'Timetable', icon: Clock, route: '/timetable' },
-    { id: 'calendar', label: 'Calendar', icon: CalendarDays, route: '/calendar' },
-    { id: 'syllabus', label: 'Syllabus', icon: BookOpenCheck, route: '/syllabus', feature: 'curriculum' },
-    { id: 'library', label: 'Library', icon: Library, route: '/library', feature: 'library' },
-  ]
+  const childItems: MenuItem[] = CHILD_LINKS
+  const schoolItems: MenuItem[] = SCHOOL_LINKS
 
   const accountItems: MenuItem[] = [
     { id: 'notifications', label: 'Notifications', icon: Bell, route: '/notifications' },
