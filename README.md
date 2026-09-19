@@ -1,56 +1,44 @@
-# Welcome to your Expo app 👋
+# WLYL Parent (mobile)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Native parent app for the WLYL school platform, built with Expo (React Native).
+It is the store version of the web parent app in `wlyl-parent-app`, and shares its API types.
 
-## Get started
+Tracking issue: [welearnyoulearn/wlyl-parent-app#7](https://github.com/welearnyoulearn/wlyl-parent-app/issues/7)
 
-1. Install dependencies
+## Screens
 
-   ```bash
-   npm install
-   ```
+Login, first-login password change, Home, Attendance, Fees, Exams and the per-exam mark sheet.
+Parents with more than one child switch between them in the header.
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Run it
 
 ```bash
-npm run reset-project
+pnpm install
+pnpm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- **On your phone:** install **Expo Go** from the Play Store or App Store, then scan the QR code in the terminal. Phone and computer must be on the same Wi-Fi.
+- **Android emulator:** press `a` in the terminal. If the app can't reach Metro, run `adb reverse tcp:8081 tcp:8081` and open `exp://127.0.0.1:8081` in Expo Go.
 
-### Other setup steps
+The web target (`w`) renders the screens but can't sign in: the platform API does not send CORS headers.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Backend
 
-## Learn more
+The app calls the platform API directly. The base URL comes from `EXPO_PUBLIC_API_ORIGIN` and defaults to dev:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+EXPO_PUBLIC_API_ORIGIN=https://wlyl-dev.vercel.app
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Put it in `.env.local` to point at another backend, for example `https://welearnyoulearn.com` for production.
 
-## Join the community
+## Stack
 
-Join our community of developers creating universal apps.
+Expo SDK 57, expo-router, TypeScript strict, Zustand, Uniwind (Tailwind v4 classes on React Native), lucide-react-native.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Checks
+
+```bash
+pnpm typecheck
+pnpm lint
+```
