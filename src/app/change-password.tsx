@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Text, View, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { Text, View, KeyboardAvoidingView, ScrollView, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import { api, ApiError } from '@/lib/api'
 import { useSession } from '@/stores/session'
-import { Button, Field, Alert } from '@/components/ui'
+import { Button, Field, Alert, SafeAreaView } from '@/components/ui'
 
 export default function ChangePasswordScreen() {
   const router = useRouter()
@@ -48,7 +47,9 @@ export default function ChangePasswordScreen() {
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // Android 15+ draws edge-to-edge and no longer resizes for the keyboard,
+        // so pad on both platforms or the password field sits under the keyboard.
+        behavior="padding"
         className="flex-1"
       >
         <ScrollView contentContainerClassName="flex-grow justify-center p-6 gap-6" keyboardShouldPersistTaps="handled">

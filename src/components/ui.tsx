@@ -1,11 +1,18 @@
 import { useState, type ReactNode } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, TextInput, View, type TextInputProps } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
+import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context'
+import { withUniwind } from 'uniwind'
 import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native'
 import { initials } from '@/lib/api'
 
 // Shared building blocks, ported from wlyl-parent-app/components/app/bits.tsx.
 // Every screen is built from these so the app looks consistent.
+
+// Uniwind only maps className on React Native's core components; third-party
+// ones must be wrapped, or classes like flex-1 are silently dropped on native
+// (the login screen rendered zero-height on Android).
+export const SafeAreaView = withUniwind(RNSafeAreaView)
 
 export const COLORS = { primary: '#0d7d76', muted: '#e5e7eb', green: '#10b981', amber: '#f59e0b', red: '#dc2626' }
 
