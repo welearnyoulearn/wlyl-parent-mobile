@@ -16,6 +16,7 @@ export const CHILD_LINKS: AppLink[] = [
   { id: 'transport', label: 'Bus', icon: Bus, route: '/transport', feature: 'transport' },
   { id: 'rewards', label: 'Rewards', icon: Trophy, route: '/rewards' },
   { id: 'activity', label: 'Activity', icon: Activity, route: '/activity' },
+  { id: 'pay-online', label: 'Pay fees', icon: CreditCard, route: '/fees', feature: 'online-payments' },
 ]
 
 export const SCHOOL_LINKS: AppLink[] = [
@@ -27,7 +28,6 @@ export const SCHOOL_LINKS: AppLink[] = [
 
 // Not built in the app yet. Shown disabled so everyone can see what's left (#10).
 const COMING_SOON: { id: string; label: string; icon: LucideIcon }[] = [
-  { id: 'pay-online', label: 'Pay online', icon: CreditCard },
   { id: 'receipts', label: 'Receipts', icon: ReceiptText },
   { id: 'report-card', label: 'Report card', icon: FileText },
   { id: 'photos', label: 'Photos', icon: Images },

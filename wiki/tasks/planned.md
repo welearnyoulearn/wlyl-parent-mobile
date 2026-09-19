@@ -7,7 +7,6 @@
 - App name, icon and package id; EAS build and Play Store / App Store submission
 
 ## Shown as "Soon" on Home (#10)
-- Pay fees online
 - Fee receipts
 - Report card
 - Child photos

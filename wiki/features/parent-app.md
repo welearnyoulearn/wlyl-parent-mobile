@@ -8,7 +8,7 @@
 | Change password | Required on first login | `POST /api/parent/auth/change-password` |
 | Home | Attendance, fees due, today's classes, results, exams, announcements, events | child-summary, fees, timetable, announcements, school-calendar |
 | Attendance | Ring, month heat map, monthly %, absences | `GET /api/parent/attendance` |
-| Fees | Summary, dues, payments, waivers | `GET /api/parent/fees` |
+| Fees | Summary, dues, payments, waivers; Pay by UPI (#11) | `GET /api/parent/fees`, `GET /api/fees/upi-qr/info`, `POST /api/parent/fees` |
 | Exams | Upcoming exams, released results | child-summary, `GET /api/students/{id}/exams` |
 | Mark sheet | Per-subject marks, parent sign-off | `GET /api/students/{id}/exams`, `POST /api/exams/{id}/acknowledge` |
 | Home → Quick links (#10) | Icon grid to every screen; "Off" = school switched it off, "Soon" = not built yet | school feature flags from the session |

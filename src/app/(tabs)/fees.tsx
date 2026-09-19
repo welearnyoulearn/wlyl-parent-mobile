@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Text, View, Pressable } from 'react-native'
 import { CheckCircle2, Receipt } from 'lucide-react-native'
+import { PaySheet } from '@/components/pay-sheet'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { day, inr, num, PAY_MODE, type Fees, type FeeRow } from '@/lib/api'
-import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty } from '@/components/ui'
+import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Button } from '@/components/ui'
 
 const STATUS: Record<string, { tone: 'green' | 'red' | 'amber' | 'muted' | 'blue'; label: string }> = {
   paid: { tone: 'green', label: 'Paid' },
@@ -21,11 +22,12 @@ const today = () => new Date().toISOString().slice(0, 10)
 const shownStatus = (r: FeeRow) => (num(r.balance) > 0 && r.due_date && r.due_date.slice(0, 10) < today() && r.status !== 'waived') ? 'overdue' : r.status
 
 export default function FeesScreen() {
-  const { student, year } = useSession()
+  const { student, year, has } = useSession()
   const path = student ? `/api/parent/fees?school_id=${student.school_id}&student_id=${student.id}${year ? `&academic_year=${year}` : ''}` : null
   const { data, error, loading, refreshing, refresh } = useApi<Fees>(path)
 
   const [tab, setTab] = useState<'dues' | 'payments' | 'all'>('dues')
+  const [paying, setPaying] = useState(false)
 
   if (error) {
     return (
@@ -46,9 +48,11 @@ export default function FeesScreen() {
   const paidPct = s.total_due > 0 ? Math.round(((s.total_paid + s.total_waived) / s.total_due) * 100) : 100
   const dues = data.ledger.filter(r => r.status !== 'paid' && r.status !== 'waived')
   const overdue = dues.filter(r => shownStatus(r) === 'overdue').length
+  const canPay = has('online-payments') && s.total_outstanding > 0
 
   return (
     <Screen refreshing={refreshing} onRefresh={refresh} testID="fees-screen">
+      {paying && <PaySheet rows={data.ledger} student={student} onClose={() => setPaying(false)} onPaid={refresh} />}
       <Panel className={`p-4 ${s.total_outstanding > 0 ? 'bg-amber-50/50' : ''}`}>
         <View className="flex-row items-start justify-between">
           <View>
@@ -61,7 +65,8 @@ export default function FeesScreen() {
           <View className="h-full rounded-full bg-emerald-500" style={{ width: `${paidPct}%` }} />
         </View>
         <Text className="mt-1.5 text-[11px] text-muted-foreground">Paid {inr(s.total_paid)}{s.total_waived > 0 ? ` + ${inr(s.total_waived)} concession` : ''} of {inr(s.total_due)}</Text>
-        {s.total_outstanding > 0 && <Text className="mt-3 text-xs text-muted-foreground">Online payment is coming to the app soon. You can pay at the school office.</Text>}
+        {canPay && <View className="mt-3"><Button label={`Pay ${inr(s.total_outstanding)} by UPI`} onPress={() => setPaying(true)} testID="pay-now-btn" /></View>}
+        {!has('online-payments') && s.total_outstanding > 0 && <Text className="mt-3 text-xs text-muted-foreground">Pay at the school office. Receipts will show here.</Text>}
       </Panel>
 
       <View className="flex-row rounded-xl bg-muted p-1">
@@ -152,9 +157,9 @@ function Ledger({ rows }: { rows: FeeRow[] }) {
               </View>
               <Chip tone={STATUS[shownStatus(r)]?.tone ?? 'muted'}>{STATUS[shownStatus(r)]?.label ?? r.status}</Chip>
             </View>
-            <View className="mt-2 flex-row items-baseline justify-between">
-              <Text className="text-xs text-muted-foreground">{inr(r.amount_paid)} paid{num(r.waiver_amount) > 0 ? ` · ${inr(r.waiver_amount)} concession` : ''} of {inr(r.amount_due)}</Text>
-              {num(r.balance) > 0 && <Text className="text-xs font-semibold text-amber-700">{inr(r.balance)} to pay</Text>}
+            <View className="mt-2 flex-row items-center justify-between gap-2">
+              <Text className="flex-1 text-xs text-muted-foreground">{inr(r.amount_paid)} paid{num(r.waiver_amount) > 0 ? ` · ${inr(r.waiver_amount)} concession` : ''} of {inr(r.amount_due)}</Text>
+              {num(r.balance) > 0 && <Text textBreakStrategy="simple" className="shrink-0 text-xs font-semibold text-amber-700">{inr(r.balance)} to pay</Text>}
             </View>
           </View>
         </View>

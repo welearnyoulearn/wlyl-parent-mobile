@@ -1,5 +1,8 @@
 # Completed
 
+### 2026-09-19 — UPI fee payment in the mobile app (#11)
+**Summary:** Pay by UPI is back on the Fees tab. Opens the phone's UPI app with the school's UPI ID and amount, then records the UTR for verification. Checked on the emulator up to the UTR step; nothing submitted to the shared dev database.
+
 ### 2026-09-19 — Quick Links back on Home (#10)
 **Summary:** Icon grid on Home for every screen, with disabled "Off" and "Soon" tiles. Verified on the Android emulator.
 
