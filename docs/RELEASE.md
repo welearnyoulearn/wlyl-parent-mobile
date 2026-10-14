@@ -48,10 +48,9 @@ redirect would drop the `wlyl-parent` login cookie that auth relies on.
 
 ## Blockers to clear before the first submission
 
-- **Privacy policy URL** — live at https://wlyl.varchas.store/privacy/ (deletion: https://wlyl.varchas.store/delete-account/; source in `site/`). Play requires a public one for an app that signs
-  users in and shows children's school data. None exists on
-  `welearnyoulearn.com` yet (`/privacy` and `/privacy-policy` return 404).
-  Publish one on the platform and paste the URL into Play Console.
+- **Privacy policy URL** — done: https://wlyl.varchas.store/privacy/ and the
+  deletion page https://wlyl.varchas.store/delete-account/ (source in `site/`,
+  deploy with `npx wrangler deploy` from that folder on Node 22+).
 - **Reviewer login** — demo parent on WLYL Demo School (dev platform), saved in the gitignored `.play-review-credentials`, for
   the *App access* section.
 - **Store assets** — 512×512 icon (`assets/images/icon.png` is the source),
