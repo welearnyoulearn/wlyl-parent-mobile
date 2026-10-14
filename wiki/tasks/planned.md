@@ -4,7 +4,7 @@
 - UPI fee payment
 - Native push notifications through Expo (FCM/APNs)
 - Bearer-token auth on the platform for mobile
-- App name, icon and package id; EAS build and Play Store / App Store submission
+- App Store (iOS) build and submission — the Play Store path is in progress (#13)
 
 ## Shown as "Soon" on Home (#10)
 - Fee receipts

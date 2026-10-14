@@ -30,7 +30,7 @@ The app calls the platform API directly. The base URL comes from `EXPO_PUBLIC_AP
 EXPO_PUBLIC_API_ORIGIN=https://wlyl-dev.vercel.app
 ```
 
-Put it in `.env.local` to point at another backend, for example `https://welearnyoulearn.com` for production.
+Put it in `.env.local` to point at another backend, for example `https://www.welearnyoulearn.com` for production (the **www** host — the apex redirects, which drops the login cookie). EAS builds ignore `.env.local` and take the value from the profile in `eas.json`; see `.env.example`.
 
 ## Push notifications
 
@@ -53,6 +53,10 @@ Expo Go cannot receive push on Android (since SDK 53), so push needs a developme
    ```
 
 Without these, the app works normally and skips push registration.
+
+## Release
+
+Store builds run on EAS: `preview` (APK for testers, dev platform) and `production` (App Bundle, production platform). One-time account setup, blockers, build/submit commands and the smoke test are in [docs/RELEASE.md](docs/RELEASE.md).
 
 ## Stack
 
