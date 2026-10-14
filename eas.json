@@ -17,7 +17,7 @@
     "production": {
       "autoIncrement": true,
       "android": { "buildType": "app-bundle" },
-      "env": { "EXPO_PUBLIC_API_ORIGIN": "https://www.welearnyoulearn.com" }
+      "env": { "EXPO_PUBLIC_API_ORIGIN": "https://wlyl-dev.vercel.app" }
     }
   },
   "submit": {

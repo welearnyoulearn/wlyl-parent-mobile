@@ -9,7 +9,7 @@ Android only for now. Builds run on EAS (Expo's cloud); nothing here changes how
 |---|---|---|
 | `expo start` / Expo Go, `development` profile | `https://wlyl-dev.vercel.app` (code default) | dev client APK |
 | `preview` profile — testers | `https://wlyl-dev.vercel.app` (set in `eas.json`) | APK, internal distribution |
-| `production` profile — store | `https://www.welearnyoulearn.com` (set in `eas.json`) | App Bundle (`.aab`) |
+| `production` profile — store | `https://wlyl-dev.vercel.app` (set in `eas.json`; the live platform does not run the API this app needs yet) | App Bundle (`.aab`) |
 
 Production uses the **www** host on purpose: the apex answers 307 → www, and a
 redirect would drop the `wlyl-parent` login cookie that auth relies on.
@@ -52,7 +52,7 @@ redirect would drop the `wlyl-parent` login cookie that auth relies on.
   users in and shows children's school data. None exists on
   `welearnyoulearn.com` yet (`/privacy` and `/privacy-policy` return 404).
   Publish one on the platform and paste the URL into Play Console.
-- **Reviewer login** — a real parent account on `www.welearnyoulearn.com` for
+- **Reviewer login** — demo parent on WLYL Demo School (dev platform), saved in the gitignored `.play-review-credentials`, for
   the *App access* section.
 - **Store assets** — 512×512 icon (`assets/images/icon.png` is the source),
   1024×500 feature graphic, at least two phone screenshots taken on a

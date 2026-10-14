@@ -44,3 +44,6 @@ example
 
 # Google Play submit credentials (eas submit) — never commit
 google-play-service-account.json
+
+# Google Play reviewer demo login — never commit
+.play-review-credentials
