@@ -8,6 +8,8 @@
 // ponytail: cookie auth, move to a bearer token on the platform if the native
 // cookie jar ever proves unreliable (see welearnyoulearn/wlyl-parent-app#7).
 export const API_ORIGIN = process.env.EXPO_PUBLIC_API_ORIGIN ?? 'https://wlyl-dev.vercel.app'
+// Google Play requires the privacy policy to be reachable inside the app (source: site/).
+export const PRIVACY_URL = 'https://wlyl.varchas.store/privacy/'
 
 export type Child = { id: number; name: string; grade: string; section: string; roll_number: string; school_id: number; has_photo?: boolean }
 export type Me = {

@@ -1,9 +1,10 @@
-import { Text, View } from 'react-native'
+import { Linking, Text, View } from 'react-native'
 import { router, type Href } from 'expo-router'
 import Constants from 'expo-constants'
-import { Bell, User, LogOut, ChevronRight, type LucideIcon } from 'lucide-react-native'
+import { Bell, User, Shield, LogOut, ChevronRight, type LucideIcon } from 'lucide-react-native'
 import { CHILD_LINKS, SCHOOL_LINKS } from '@/components/quick-links'
 
+import { PRIVACY_URL } from '@/lib/api'
 import { useSession } from '@/stores/session'
 import { Screen, Section, Panel, Row, Divider } from '@/components/ui'
 
@@ -58,6 +59,7 @@ export default function MoreScreen() {
   const accountItems: MenuItem[] = [
     { id: 'notifications', label: 'Notifications', icon: Bell, route: '/notifications' },
     { id: 'profile', label: 'Profile', icon: User, route: '/profile' },
+    { id: 'privacy', label: 'Privacy policy', icon: Shield, onPress: () => Linking.openURL(PRIVACY_URL) },
   ]
 
   return (

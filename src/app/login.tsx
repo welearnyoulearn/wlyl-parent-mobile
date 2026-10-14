@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Text, View, KeyboardAvoidingView, ScrollView } from 'react-native'
+import { Text, View, KeyboardAvoidingView, ScrollView, Linking } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSession } from '@/stores/session'
-import { api, ApiError } from '@/lib/api'
+import { api, ApiError, PRIVACY_URL } from '@/lib/api'
 import { Button, Field, Alert, SafeAreaView } from '@/components/ui'
 
 type LoginResponse = { success: boolean; passwordChanged: boolean; name: string | null; schoolName: string | null }
@@ -77,6 +77,14 @@ export default function LoginScreen() {
               loading={busy}
               disabled={busy || !identifier || !password}
             />
+            <Text
+              accessibilityRole="link"
+              testID="login-privacy-link"
+              onPress={() => Linking.openURL(PRIVACY_URL)}
+              className="py-2 text-center text-sm text-primary underline"
+            >
+              Privacy policy
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
