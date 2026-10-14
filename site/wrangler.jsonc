@@ -1,0 +1,12 @@
+// Static pages for the Play listing: launch page, privacy policy, account deletion.
+// Deploy: npx wrangler deploy (from this folder, Node 22+).
+{
+  "name": "wlyl-parent-site",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./public" },
+  "routes": [
+    { "pattern": "wlyl.varchas.store", "custom_domain": true },
+    // beats estore's *.varchas.store/* wildcard, which would serve this as a shop
+    { "pattern": "wlyl.varchas.store/*", "zone_name": "varchas.store" }
+  ]
+}

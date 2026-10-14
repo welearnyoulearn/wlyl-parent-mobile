@@ -48,7 +48,7 @@ redirect would drop the `wlyl-parent` login cookie that auth relies on.
 
 ## Blockers to clear before the first submission
 
-- **Privacy policy URL** — Play requires a public one for an app that signs
+- **Privacy policy URL** — live at https://wlyl.varchas.store/privacy/ (deletion: https://wlyl.varchas.store/delete-account/; source in `site/`). Play requires a public one for an app that signs
   users in and shows children's school data. None exists on
   `welearnyoulearn.com` yet (`/privacy` and `/privacy-policy` return 404).
   Publish one on the platform and paste the URL into Play Console.
