@@ -1,6 +1,24 @@
 # Play Store release status
 
-Last checked: 15 October 2026 (Asia/Kolkata).
+Last checked: 16 October 2026 (Asia/Kolkata).
+
+## Crash-fix update — 1.0.1 (6)
+
+- User supplied a dashboard screenshot showing `Request failed (404)` and reported that the app also closes.
+- Play Console was verified to have **5 (1.0.0)** active before this update. That release already handles the missing timetable route.
+- Confirmed the live dev calendar returns an object with `events`, and attendance returns `month`, `yearToDate` and `trend`; the mobile screens still expected older arrays/fields.
+- Screen render regression tests reproduce exceptions in the prior code and pass with commit `6bb322e`. TypeScript, lint and Android bundle export also pass.
+- The demo parent authenticates successfully. The credentials supplied separately by the user did not authenticate through the **parent** login endpoint; no account changes were made.
+- No physical Android device has been detected by ADB yet. USB crash-log capture and real-device smoke testing remain pending.
+- Build ID: `cc8a5cc3-a630-47f0-aeb9-23cecba95bd0` (1.0.1, version code 6).
+- Build URL: https://expo.dev/accounts/thindaam/projects/wlyl-parent-mobile/builds/cc8a5cc3-a630-47f0-aeb9-23cecba95bd0
+- Status: published and confirmed **Active / Available to internal testers**, 16 October at 17:51 IST.
+- Release URL: https://play.google.com/console/u/0/developers/6447683415189331565/app/4974602149007088670/tracks/4701325226419928085?tab=releases
+- Tester link remains https://play.google.com/apps/internaltest/4701325226419928085 . Update to **1.0.1 (6)** before retesting.
+- Signed local bundle: `store/wlyl-parent-1.0.1-6.aab` (gitignored), SHA-256 `7ff2cdb0f18eaa303863d30fcffcd8a43a10702e6f07cff5385074f7711988d3`.
+- Bundle integrity, package, version and dev API address verified. Play reports no lost device support; only the existing optional deobfuscation-file warning.
+
+## Initial release — historical record
 
 - App: WLYL Parent (`com.welearnyoulearn.parent`).
 - Developer: Varchas Studios, account `6447683415189331565`.
