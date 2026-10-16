@@ -3,7 +3,7 @@ import { Href, useRouter } from 'expo-router'
 import { AlertTriangle, CalendarDays, ChevronRight, Megaphone, PartyPopper } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
-import { day, longDay, hhmm, inr, num, EXAM_TYPE, type Announcement, type CalendarEvent, type Fees, type Summary, type Timetable } from '@/lib/api'
+import { day, longDay, hhmm, inr, num, EXAM_TYPE, type Announcement, type SchoolCalendar, type Fees, type Summary, type Timetable } from '@/lib/api'
 import { QuickLinks } from '@/components/quick-links'
 import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring } from '@/components/ui'
 
@@ -24,7 +24,7 @@ export default function HomePage() {
   const { data: newsObj, error: er4, refreshing: r4, refresh: ref4 } = useApi<Announcement[] | { data: Announcement[] }>(
     student ? `/api/announcements?school_id=${student.school_id}&audience=parents` : null
   )
-  const { data: eventsObj, error: er5, refreshing: r5, refresh: ref5 } = useApi<CalendarEvent[]>(
+  const { data: eventsObj, error: er5, refreshing: r5, refresh: ref5 } = useApi<SchoolCalendar>(
     student ? `/api/school-calendar?school_id=${student.school_id}&year=${new Date().getFullYear()}` : null
   )
 
@@ -45,7 +45,7 @@ export default function HomePage() {
   const news = newsRaw.slice(0, 3)
 
   const todayIso = new Date().toISOString().slice(0, 10)
-  const events = (eventsObj ?? [])
+  const events = (eventsObj?.events ?? [])
     .filter(e => (e.end_date ?? e.event_date) >= todayIso)
     .sort((a, b) => a.event_date.localeCompare(b.event_date))
     .slice(0, 3)

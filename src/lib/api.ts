@@ -42,11 +42,14 @@ export type Period = {
 }
 export type Timetable = { periods: Period[]; week_periods: Period[]; day: string }
 
-export type AttendanceDay = { date: string; morning: string | null; afternoon: string | null; present: boolean }
-export type AttendanceMonth = { month: string; present: number; absent: number; late: number; total: number; pct: number }
+export type AttendanceDay = { date: string; morning: string | null; afternoon: string | null; status: string; title?: string }
+export type AttendanceSummary = { present: number; absent: number; late: number; marked: number; attended: number; pct: number | null }
 export type Attendance = {
-  days: AttendanceDay[]; monthly: AttendanceMonth[]
-  summary: { totalDays: number; presentDays: number; absentDays: number; lateDays: number; pct: number | null }
+  today: string
+  month: { month: string; days: AttendanceDay[]; summary: AttendanceSummary; daysMarked: number; absentDays: number; halfDays: number }
+  yearToDate: { from: string; summary: AttendanceSummary }
+  trend: { month: string; summary: AttendanceSummary }[]
+  upcomingHolidays: { title: string; event_date: string; end_date: string | null }[]
 }
 
 // NUMERIC columns arrive as strings from pg; use num() before doing maths.
@@ -71,6 +74,7 @@ export type Announcement = {
   priority: 'urgent' | 'high' | 'normal' | string; created_by_name: string | null; created_at: string
 }
 export type CalendarEvent = { id: number; title: string; event_date: string; end_date: string | null; event_type: string; description: string | null }
+export type SchoolCalendar = { events: CalendarEvent[]; weeklyOff: number[]; today: string; canEdit: boolean }
 // /api/exams/calendar — class exams for the current calendar year; exam_date can be null for an undated exam.
 export type CalendarExam = { id: number; exam_name: string; exam_type: string; exam_date: string | null; status: string; subjects: string[]; total_subjects: number }
 
@@ -128,6 +132,8 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   })
   const data: unknown = await res.json().catch(() => ({}))
   if (!res.ok) {
+    // Keep the failing route in Android logs without query strings or login data.
+    console.warn(`WLYL API: ${init?.method ?? 'GET'} ${path.split('?')[0]} failed (${res.status})`)
     const msg = (data as { error?: string }).error ?? `Request failed (${res.status})`
     throw new ApiError(res.status, msg)
   }

@@ -10,13 +10,17 @@ const TONE: Record<string, { chip: Tone; dot: string; label: string }> = {
   present: { chip: 'green', dot: 'bg-emerald-500', label: 'Present' },
   absent: { chip: 'red', dot: 'bg-rose-500', label: 'Absent' },
   late: { chip: 'amber', dot: 'bg-amber-400', label: 'Late' },
-  leave: { chip: 'blue', dot: 'bg-sky-400', label: 'Leave' },
+  half: { chip: 'amber', dot: 'bg-orange-400', label: 'Half day' },
+  holiday: { chip: 'blue', dot: 'bg-sky-200', label: 'Holiday' },
+  weekly_off: { chip: 'muted', dot: 'bg-transparent', label: 'Weekly off' },
+  future: { chip: 'muted', dot: 'bg-transparent', label: 'Upcoming' },
+  before_joining: { chip: 'muted', dot: 'bg-transparent', label: 'Before joining' },
 }
 
 export default function AttendanceScreen() {
   const { student } = useSession()
   const { data, error, loading, refreshing, refresh } = useApi<Attendance>(
-    student ? `/api/parent/attendance?school_id=${student.school_id}&student_id=${student.id}&months=3` : null
+    student ? `/api/parent/attendance?school_id=${student.school_id}&student_id=${student.id}` : null
   )
 
   const monthName = (m: string) => {
@@ -27,11 +31,11 @@ export default function AttendanceScreen() {
 
   const { cells, byDate } = useMemo(() => {
     if (!data) return { cells: [], byDate: new Map<string, string>() }
-    const bd = new Map(data.days.map(d => [d.date, d.morning as string]))
-    const end = new Date()
-    end.setHours(0, 0, 0, 0)
-    const start = new Date(end)
-    start.setDate(end.getDate() - end.getDay() - 7 * 7 + 1)
+    const bd = new Map(data.month.days.map(d => [d.date, d.status]))
+    const [year, month] = data.month.month.split('-').map(Number)
+    const end = new Date(year, month, 0)
+    const start = new Date(year, month - 1, 1)
+    start.setDate(start.getDate() - (start.getDay() + 6) % 7)
 
     const cs: (Date | null)[] = []
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -67,8 +71,8 @@ export default function AttendanceScreen() {
 
   if (!data) return null
 
-  const s = data.summary
-  const absences = [...data.days].reverse().filter(d => d.morning && d.morning !== 'present')
+  const s = data.month.summary
+  const absences = [...data.month.days].reverse().filter(d => ['absent', 'late', 'half'].includes(d.status))
 
   return (
     <Screen refreshing={refreshing} onRefresh={refresh} testID="attendance-screen">
@@ -79,30 +83,30 @@ export default function AttendanceScreen() {
           </Text>
         </Ring>
         <View className="flex-1">
-          <Text className="text-sm font-semibold text-foreground">Last 3 months</Text>
-          <Text className="text-xs text-muted-foreground">{s.totalDays} school days</Text>
+          <Text className="text-sm font-semibold text-foreground">{monthName(data.month.month)}</Text>
+          <Text className="text-xs text-muted-foreground">{s.marked} marked sessions</Text>
           <View className="mt-2 flex-row gap-2">
             <View className="flex-1 items-center rounded-xl bg-emerald-50 py-1.5">
-              <Text className="text-base font-bold text-emerald-700">{s.presentDays}</Text>
+              <Text className="text-base font-bold text-emerald-700">{s.present}</Text>
               <Text className="text-[10px] text-emerald-700/80">Present</Text>
             </View>
             <View className="flex-1 items-center rounded-xl bg-rose-50 py-1.5">
-              <Text className="text-base font-bold text-rose-700">{s.absentDays}</Text>
+              <Text className="text-base font-bold text-rose-700">{s.absent}</Text>
               <Text className="text-[10px] text-rose-700/80">Absent</Text>
             </View>
             <View className="flex-1 items-center rounded-xl bg-amber-50 py-1.5">
-              <Text className="text-base font-bold text-amber-700">{s.lateDays}</Text>
+              <Text className="text-base font-bold text-amber-700">{s.late}</Text>
               <Text className="text-[10px] text-amber-700/80">Late</Text>
             </View>
           </View>
         </View>
       </Panel>
 
-      {data.days.length === 0 ? (
+      {s.marked === 0 ? (
         <Empty icon={CalendarCheck} title="No attendance marked yet" hint="Your child's daily attendance will appear here." />
       ) : (
         <>
-          <Section title="Last 8 weeks">
+          <Section title="This month">
             <Panel className="p-4">
               <View className="gap-1.5">
                 <View className="flex-row justify-between">
@@ -128,7 +132,7 @@ export default function AttendanceScreen() {
                 ))}
               </View>
               <View className="mt-4 flex-row flex-wrap gap-4">
-                {(['present', 'absent', 'late'] as const).map(k => (
+                {(['present', 'absent', 'late', 'half', 'holiday'] as const).map(k => (
                   <View key={k} className="flex-row items-center gap-1.5">
                     <View className={`h-3 w-3 rounded-sm ${TONE[k].dot}`} />
                     <Text className="text-xs text-muted-foreground">{TONE[k].label}</Text>
@@ -140,16 +144,17 @@ export default function AttendanceScreen() {
 
           <Section title="By month">
             <Panel className="gap-4 p-4">
-              {data.monthly.map(m => {
-                const fill = m.pct >= 90 ? 'bg-emerald-500' : m.pct >= 75 ? 'bg-teal-500' : 'bg-amber-500'
+              {[...data.trend].reverse().map(({ month, summary: m }) => {
+                const pct = m.pct ?? 0
+                const fill = pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-teal-500' : 'bg-amber-500'
                 return (
-                  <View key={m.month} className="gap-1.5">
+                  <View key={month} className="gap-1.5">
                     <View className="flex-row items-end justify-between">
-                      <Text className="text-sm font-medium text-foreground">{monthName(m.month)}</Text>
-                      <Text className="text-xs text-muted-foreground">{m.present}/{m.total} days · {m.pct}%</Text>
+                      <Text className="text-sm font-medium text-foreground">{monthName(month)}</Text>
+                      <Text className="text-xs text-muted-foreground">{m.attended}/{m.marked} sessions · {m.pct === null ? '—' : `${m.pct}%`}</Text>
                     </View>
                     <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <View className={`h-full rounded-full ${fill}`} style={{ width: `${m.pct}%` }} />
+                      <View className={`h-full rounded-full ${fill}`} style={{ width: `${pct}%` }} />
                     </View>
                   </View>
                 )
@@ -159,7 +164,7 @@ export default function AttendanceScreen() {
 
           <Section title="Absences and late arrivals">
             {absences.length === 0 ? (
-              <Empty icon={CalendarCheck} title="Full attendance" hint="No absences in the last 3 months." />
+              <Empty icon={CalendarCheck} title="Full attendance" hint="No absences or late arrivals this month." />
             ) : (
               <Panel className="overflow-hidden">
                 {absences.map((d, index) => (
@@ -167,7 +172,7 @@ export default function AttendanceScreen() {
                     {index > 0 && <Divider />}
                     <Row testID={`absence-row-${d.date}`}>
                       <Text className="flex-1 text-sm text-foreground">{day(d.date)}</Text>
-                      <Chip tone={TONE[d.morning!]?.chip ?? 'muted'}>{TONE[d.morning!]?.label ?? d.morning}</Chip>
+                      <Chip tone={TONE[d.status]?.chip ?? 'muted'}>{TONE[d.status]?.label ?? d.status}</Chip>
                     </Row>
                   </View>
                 ))}

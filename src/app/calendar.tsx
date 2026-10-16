@@ -4,7 +4,7 @@ import { Stack } from 'expo-router'
 import { CalendarDays } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
-import { day, longDay, EXAM_TYPE, titleCase, type CalendarEvent, type CalendarExam } from '@/lib/api'
+import { day, longDay, EXAM_TYPE, titleCase, type SchoolCalendar, type CalendarExam } from '@/lib/api'
 import { Screen, Loading, Alert, Empty, Panel, Section, Divider } from '@/components/ui'
 
 type Kind = 'holiday' | 'exam' | 'event'
@@ -19,7 +19,7 @@ export default function CalendarScreen() {
   const { student } = useSession()
   const currentYear = new Date().getFullYear()
 
-  const eventsApi = useApi<CalendarEvent[]>(
+  const eventsApi = useApi<SchoolCalendar>(
     student ? `/api/school-calendar?school_id=${student.school_id}&year=${currentYear}` : null
   )
   const examsApi = useApi<CalendarExam[]>(
@@ -34,7 +34,7 @@ export default function CalendarScreen() {
 
   const items = useMemo(() => {
     if (!eventsApi.data || !examsApi.data) return null
-    const events = eventsApi.data.map((e): Item => ({
+    const events = eventsApi.data.events.map((e): Item => ({
       key: `event-${e.id}`,
       kind: e.event_type === 'holiday' || e.event_type === 'exam' ? e.event_type as Kind : 'event',
       label: EVENT_LABEL[e.event_type] ?? titleCase(e.event_type),

@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-10-16
+
+### Fixed
+- Home and Calendar crashed on the dev platform's `{ events, weeklyOff, today, canEdit }` calendar response. Both now read its events list.
+- Attendance crashed on the dev platform's month-based response. It now shows the current month, server-calculated session totals and trend, including half days and holidays.
+- Added screen render regression tests using the deployed response contracts; the shipped code fails these cases and the fixes pass.
+
+## [1.0.0]
+
 ### Fixed
 - UPI payment was missing from the mobile Fees tab (dropped when the web screen was ported). (#11)
 
