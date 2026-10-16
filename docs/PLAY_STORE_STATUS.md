@@ -42,3 +42,14 @@ Replacement build: version 1.0.0, version code 4.
 Play Console currently requires a closed testing release with at least 12
 testers opted in for at least 14 days before applying for production access.
 Internal testing does not complete this requirement.
+
+## Build 5 (16 October 2026)
+
+- Fixes: exam calendar sent `class_id` (platform now returns 403 for parents; it
+  needs `student_id`), and Home showed the dev platform's missing
+  `/api/parent/timetable` 404 as an error banner. Commit `96b2447`.
+- EAS ID `f1500043-4cf7-49f7-8f3e-90b6b8954f13`, version code 5,
+  SHA-256 `50b8f0509a21ad6648d4d7d04472c21f66c6183c453a473958e531119b0f669d`.
+- Published to internal testing 16 Oct 14:43; track Active, latest release 5 (1.0.0).
+- Still 404 on dev by design: homework, leave, transport, rewards, activity
+  (platform `feature/129-parent-app-backend` not merged); the app shows them as "Soon".
