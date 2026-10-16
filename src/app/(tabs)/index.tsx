@@ -17,7 +17,10 @@ export default function HomePage() {
 
   const { data: summary, error: er1, refreshing: r1, refresh: ref1 } = useApi<Summary>(q ? `/api/parent/child-summary?${q}` : null)
   const { data: feesData, error: er2, refreshing: r2, refresh: ref2 } = useApi<Fees>(q ? `/api/parent/fees?${q}${year ? `&academic_year=${year}` : ''}` : null)
-  const { data: today, error: er3, refreshing: r3, refresh: ref3 } = useApi<Timetable>(q ? `/api/parent/timetable?${q}` : null)
+  const { data: today, error: ttError, status: ttStatus, refreshing: r3, refresh: ref3 } = useApi<Timetable>(q && has('timetable') ? `/api/parent/timetable?${q}` : null)
+  // 404/405: this platform has no timetable route — hide the card instead of erroring.
+  const noTimetable = ttStatus === 404 || ttStatus === 405
+  const er3 = noTimetable ? null : ttError
   const { data: newsObj, error: er4, refreshing: r4, refresh: ref4 } = useApi<Announcement[] | { data: Announcement[] }>(
     student ? `/api/announcements?school_id=${student.school_id}&audience=parents` : null
   )
@@ -113,7 +116,7 @@ export default function HomePage() {
 
       <QuickLinks />
 
-      {has('timetable') && (
+      {has('timetable') && !noTimetable && (
         <Section title="Today's classes">
           {today === null ? <Loading /> : today.periods.length === 0 ? (
             <Empty icon={PartyPopper} title="No classes today" hint="Enjoy the day off." />

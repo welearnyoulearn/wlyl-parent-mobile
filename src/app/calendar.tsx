@@ -23,7 +23,8 @@ export default function CalendarScreen() {
     student ? `/api/school-calendar?school_id=${student.school_id}&year=${currentYear}` : null
   )
   const examsApi = useApi<CalendarExam[]>(
-    student ? `/api/exams/calendar?school_id=${student.school_id}&class_id=${student.class_id}` : null
+    // Parents must pass student_id and not class_id; the platform scopes it to that child's class.
+    student ? `/api/exams/calendar?school_id=${student.school_id}&student_id=${student.id}` : null
   )
 
   const loading = eventsApi.loading || examsApi.loading
