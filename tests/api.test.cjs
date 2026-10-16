@@ -30,5 +30,9 @@ test('Writes invalidate screen data; account changes also reset the session gene
     assert.equal(cache.accountGeneration(), generation)
     await api('/api/parent/auth/login', { method: 'POST' })
     assert.equal(cache.accountGeneration(), generation + 1)
+    await api('/api/parent/auth/me', { method: 'PUT' })
+    assert.equal(cache.accountGeneration(), generation + 2)
+    await api('/api/parent/auth/change-password', { method: 'POST' })
+    assert.equal(cache.accountGeneration(), generation + 3)
   } finally { global.fetch = originalFetch }
 })

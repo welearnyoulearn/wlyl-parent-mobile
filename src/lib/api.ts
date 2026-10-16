@@ -152,7 +152,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       throw new ApiError(res.status, msg)
     }
     if (init?.method && init.method.toUpperCase() !== 'GET') {
-      clearRequestCache(/^\/api\/parent\/auth\/(login|logout)$/.test(path))
+      clearRequestCache(path.startsWith('/api/parent/auth/'))
     }
     return data as T
   } catch (error) {
