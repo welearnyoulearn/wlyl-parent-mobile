@@ -1,3 +1,4 @@
+import { ClassLoading } from '@/components/class-loading'
 import { useState } from 'react'
 import { Text, View, Pressable } from 'react-native'
 import { Link, useLocalSearchParams } from 'expo-router'
@@ -13,7 +14,7 @@ export default function MarkSheetScreen() {
   const [busy, setBusy] = useState(false)
   const [ackError, setAckError] = useState('')
 
-  const q = student ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
+  const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
   const { data: sheets, loading, error, refresh, refreshing } = useApi<MarkSheet[]>(student && q ? `/api/students/${student.id}/exams?${q}` : null)
 
   const sheet = sheets?.find(s => s.exam_id === Number(id))
@@ -34,6 +35,8 @@ export default function MarkSheetScreen() {
       setBusy(false)
     }
   }
+
+  if (student && student.class_id === 0) return <Screen><ClassLoading /></Screen>
 
   if (error) return <Screen><Alert>{error}</Alert></Screen>
   if (loading || !student) return <Screen><Loading /></Screen>

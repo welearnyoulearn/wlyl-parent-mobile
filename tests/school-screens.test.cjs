@@ -10,7 +10,7 @@ const { renderToStaticMarkup } = require('react-dom/server')
 // Exercise the actual screen render functions with the deployed API contracts.
 // Native presentation primitives are replaced; screen hooks and data selection run.
 const root = path.resolve(__dirname, '..')
-const student = { id: 1, school_id: 1, class_id: 1 }
+const student = { id: 1, school_id: 1, class_id: 1, grade: '6', name: 'Test child' }
 const month = new Date().toISOString().slice(0, 7)
 const date = `${month}-01`
 const summary = { present: 5, late: 1, absent: 2, marked: 8, attended: 6, pct: 75 }
@@ -30,8 +30,8 @@ const responses = {
   '/api/parent/attendance': attendance,
   '/api/announcements': [], '/api/school-calendar': calendar, '/api/exams/calendar': [],
 }
-function Primitive({ children, title }) {
-  return React.createElement('div', null, title, children)
+function Primitive({ children, title, hint }) {
+  return React.createElement('div', null, title, hint, children)
 }
 const primitives = new Proxy({}, { get: () => Primitive })
 function compile(relative, overrides = {}) {
@@ -51,14 +51,14 @@ function compile(relative, overrides = {}) {
   mod._compile(code, filename)
   return mod.exports
 }
-const api = compile('src/lib/api.ts')
+const api = compile('src/lib/api.ts', { './request-cache': compile('src/lib/request-cache.ts') })
 function render(screen, data = responses) {
   const Component = compile(screen, {
     'react-native': primitives, 'lucide-react-native': primitives,
-    'expo-router': { Stack: { Screen: Primitive }, useRouter: () => ({ push() {} }) },
-    '@/components/ui': primitives, '@/components/quick-links': { QuickLinks: Primitive },
+    'expo-router': { Stack: { Screen: Primitive }, useRouter: () => ({ push() {} }), useFocusEffect() {} },
+    '@/components/ui': primitives, '@/components/class-loading': { ClassLoading: Primitive }, '@/components/quick-links': { QuickLinks: Primitive },
     '@/stores/session': { useSession: () => ({ student, year: null, has: f => f !== 'timetable' }) },
-    '@/lib/api': api,
+    '@/lib/api': api, '@/lib/books': { isDownloaded: () => false },
     '@/lib/use-api': { useApi: url => ({ data: url ? data[url.split('?')[0]] : null, error: null, loading: false, refreshing: false, refresh() {} }) },
   }).default
   return renderToStaticMarkup(React.createElement(Component))
@@ -82,4 +82,15 @@ test('A month with no marked sessions renders an empty state and no false percen
   const html = render('src/app/(tabs)/attendance.tsx', { ...responses, '/api/parent/attendance': empty })
   assert.match(html, /No attendance marked yet/)
   assert.doesNotMatch(html, /NaN|0%/)
+})
+
+test('Library empty state identifies the child grade instead of implying the entire library is empty', () => {
+  const html = render('src/app/library.tsx', { '/api/school/library': [] })
+  assert.match(html, /No textbooks for Grade 6/)
+  assert.match(html, /school has not assigned textbooks for this grade/)
+})
+test('Library renders assigned textbooks', () => {
+  const html = render('src/app/library.tsx', { '/api/school/library': [{ material_id: 1, grade: '6', subject_name: 'Mathematics', material_type: 'textbook', title: 'Grade 6 Mathematics', created_at: '2026-01-01' }] })
+  assert.match(html, /Grade 6 Mathematics/)
+  assert.doesNotMatch(html, /No textbooks/)
 })

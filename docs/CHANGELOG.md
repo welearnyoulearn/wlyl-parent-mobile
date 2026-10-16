@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-10-16
+
+### Fixed
+- Library empty state now identifies the child's grade and current academic year. Parent access remains textbooks for the child's grade only; other grades and staff handbooks remain excluded by the server.
+- Account and child-independent cards render before school metadata finishes. Login and the signed-in shell share one session load; class-dependent screens wait for class lookup and offer retry on failure.
+- Repeated screen requests share a 30-second memory cache, including the Home and Fees fee summary. Pull-to-refresh bypasses cached results; successful writes and sign-out clear cached data. Late responses from a previous account cannot restore its data.
+- Requests time out after 25 seconds with a retry message instead of waiting indefinitely.
+- Added cache, account-race, timeout and Library render regression coverage.
+
 ## [1.0.1] — 2026-10-16
 
 ### Fixed

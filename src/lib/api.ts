@@ -7,6 +7,8 @@
 // OkHttp CookieJar), so sending credentials is enough; no token handling.
 // ponytail: cookie auth, move to a bearer token on the platform if the native
 // cookie jar ever proves unreliable (see welearnyoulearn/wlyl-parent-app#7).
+import { clearRequestCache } from './request-cache'
+
 export const API_ORIGIN = process.env.EXPO_PUBLIC_API_ORIGIN ?? 'https://wlyl-dev.vercel.app'
 // Google Play requires the privacy policy to be reachable inside the app (source: site/).
 export const PRIVACY_URL = 'https://wlyl.varchas.store/privacy/'
@@ -125,19 +127,41 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_ORIGIN}${path}`, {
-    credentials: 'include',
-    ...init,
-    headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    // Keep the failing route in Android logs without query strings or login data.
-    console.warn(`WLYL API: ${init?.method ?? 'GET'} ${path.split('?')[0]} failed (${res.status})`)
-    const msg = (data as { error?: string }).error ?? `Request failed (${res.status})`
-    throw new ApiError(res.status, msg)
+  const controller = new AbortController()
+  let timedOut = false
+  const cancel = () => controller.abort()
+  if (init?.signal?.aborted) cancel()
+  init?.signal?.addEventListener('abort', cancel)
+  const timer = setTimeout(() => { timedOut = true; controller.abort() }, 25_000)
+  try {
+    const res = await fetch(`${API_ORIGIN}${path}`, {
+      credentials: 'include',
+      ...init,
+      signal: controller.signal,
+      headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
+    })
+    const data: unknown = await res.json().catch(error => {
+      if (controller.signal.aborted) throw error
+      return {}
+    })
+    if (!res.ok) {
+      if (res.status === 401) clearRequestCache(false)
+      // Keep the failing route in Android logs without query strings or login data.
+      console.warn(`WLYL API: ${init?.method ?? 'GET'} ${path.split('?')[0]} failed (${res.status})`)
+      const msg = (data as { error?: string }).error ?? `Request failed (${res.status})`
+      throw new ApiError(res.status, msg)
+    }
+    if (init?.method && init.method.toUpperCase() !== 'GET') {
+      clearRequestCache(/^\/api\/parent\/auth\/(login|logout)$/.test(path))
+    }
+    return data as T
+  } catch (error) {
+    if (timedOut) throw new Error('The server is taking too long. Please pull down to try again.')
+    throw error
+  } finally {
+    clearTimeout(timer)
+    init?.signal?.removeEventListener('abort', cancel)
   }
-  return data as T
 }
 
 export const num = (v: number | string | null | undefined) => Number(v ?? 0)

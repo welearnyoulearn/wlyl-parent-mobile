@@ -23,7 +23,7 @@ const shownStatus = (r: FeeRow) => (num(r.balance) > 0 && r.due_date && r.due_da
 
 export default function FeesScreen() {
   const { student, year, has } = useSession()
-  const path = student ? `/api/parent/fees?school_id=${student.school_id}&student_id=${student.id}${year ? `&academic_year=${year}` : ''}` : null
+  const path = student ? `/api/parent/fees?school_id=${student.school_id}&student_id=${student.id}` : null
   const { data, error, loading, refreshing, refresh } = useApi<Fees>(path)
 
   const [tab, setTab] = useState<'dues' | 'payments' | 'all'>('dues')

@@ -1,3 +1,4 @@
+import { ClassLoading } from '@/components/class-loading'
 import { useState } from 'react'
 import { Text, View, Pressable } from 'react-native'
 import { Stack } from 'expo-router'
@@ -13,7 +14,7 @@ export default function SyllabusScreen() {
   const [open, setOpen] = useState<string | null>(null)
 
   const { data, error, loading, refreshing, refresh, status } = useApi<Syllabus>(
-    student && enabled ? `/api/syllabus?school_id=${student.school_id}&class_id=${student.class_id}` : null
+    student && student.class_id > 0 && enabled ? `/api/syllabus?school_id=${student.school_id}&class_id=${student.class_id}` : null
   )
 
   if (!enabled) {
@@ -24,6 +25,8 @@ export default function SyllabusScreen() {
       </>
     )
   }
+
+  if (student && student.class_id === 0) return <Screen><ClassLoading /></Screen>
 
   if (status === 404 || status === 405) {
     return (

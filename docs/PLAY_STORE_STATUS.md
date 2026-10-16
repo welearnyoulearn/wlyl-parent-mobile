@@ -2,6 +2,14 @@
 
 Last checked: 16 October 2026 (Asia/Kolkata).
 
+## Library and loading update — 1.0.2
+
+- Parent access confirmed by the user: textbooks for the selected child's grade only.
+- Read-only checks found the school has library materials for Grades 8 and 10 in current academic year 2027-28, with no Grade 6 assignments. The web screenshot's wider shelf is consistent with an administrator session; mobile parent access remains restricted.
+- Clearer grade/year empty state, account rendering before school metadata, session/request deduplication, shared Home/Fees requests, 30-second memory cache and 25-second request timeout.
+- Cache and late account response guards are covered by tests; no school subscriptions or library permissions changed.
+- Build/publishing: pending.
+
 ## Crash-fix update — 1.0.1 (6)
 
 - User supplied a dashboard screenshot showing `Request failed (404)` and reported that the app also closes.

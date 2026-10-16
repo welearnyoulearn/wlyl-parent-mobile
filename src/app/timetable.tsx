@@ -1,3 +1,4 @@
+import { ClassLoading } from '@/components/class-loading'
 import { useState } from 'react'
 import { ScrollView, View, Text, Pressable } from 'react-native'
 import { Stack } from 'expo-router'
@@ -12,8 +13,10 @@ export default function TimetableScreen() {
   const [dayName, setDayName] = useState(DAYS[(new Date().getDay() + 6) % 7])
 
   const { data, error, status, loading, refreshing, refresh } = useApi<Timetable>(
-    student ? `/api/parent/timetable?school_id=${student.school_id}&class_id=${student.class_id}` : null
+    student && student.class_id > 0 ? `/api/parent/timetable?school_id=${student.school_id}&class_id=${student.class_id}` : null
   )
+
+  if (student && student.class_id === 0) return <Screen><ClassLoading /></Screen>
 
   if (status === 404 || status === 405) {
     return (

@@ -1,3 +1,4 @@
+import { ClassLoading } from '@/components/class-loading'
 import { useState } from 'react'
 import { Text, View, Pressable } from 'react-native'
 import { Link } from 'expo-router'
@@ -14,7 +15,7 @@ function daysUntil(d: string) {
 
 export default function ExamsScreen() {
   const { student } = useSession()
-  const q = student ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
+  const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
   const summaryApi = useApi<Summary>(q ? `/api/parent/child-summary?${q}` : null)
   const sheetsApi = useApi<MarkSheet[]>(student && q ? `/api/students/${student.id}/exams?${q}` : null)
   const [tab, setTab] = useState<string | null>(null)
@@ -23,6 +24,8 @@ export default function ExamsScreen() {
   const error = summaryApi.error || sheetsApi.error
   const refreshing = summaryApi.refreshing || sheetsApi.refreshing
   const onRefresh = () => { summaryApi.refresh(); sheetsApi.refresh() }
+
+  if (student && student.class_id === 0) return <Screen><ClassLoading /></Screen>
 
   if (error) return <Screen><Alert>{error}</Alert></Screen>
   if (loading || !student) return <Screen><Loading /></Screen>

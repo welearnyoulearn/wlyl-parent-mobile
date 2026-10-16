@@ -9,7 +9,7 @@ import { useApi } from '@/lib/use-api'
 import { Screen, Loading, Alert, Empty, Panel, Section, Row, Divider, Chip } from '@/components/ui'
 
 export default function LibraryScreen() {
-  const { student, has } = useSession()
+  const { student, year, has } = useSession()
   const enabled = has('library')
   const router = useRouter()
   // Re-read which books are on the phone whenever the list comes back into view.
@@ -78,7 +78,7 @@ export default function LibraryScreen() {
       <Stack.Screen options={{ title: 'Library' }} />
       <Screen refreshing={refreshing} onRefresh={refresh} testID="library-screen">
         {entries.length === 0 ? (
-          <Empty icon={Library} title="No books yet" hint={`Textbooks for ${student.name.split(' ')[0]}'s class appear here once the school adds them.`} />
+          <Empty icon={Library} title={`No textbooks for Grade ${student.grade}`} hint={`Your school has not assigned textbooks for this grade${year ? ` in ${year}` : ''}. Books will appear here once the school adds them. Pull down to check again.`} />
         ) : (
           <View className="gap-5">
             {entries.map(([subject, list]) => (

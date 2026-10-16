@@ -1,7 +1,7 @@
 {
   "name": "wlyl-parent-mobile",
   "main": "expo-router/entry",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "dependencies": {
     "@expo/ui": "~57.0.19",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -51,6 +51,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.cjs",
     "test:screens": "node --test tests/school-screens.test.cjs"
   },
   "private": true

@@ -23,9 +23,9 @@ export default function LoginScreen() {
         method: 'POST',
         body: JSON.stringify({ identifier: identifier.trim(), password }),
       })
-      // Reload the session first: it still holds `unauthorized` from before
-      // sign-in, and the tabs gate would bounce straight back to /login.
-      await useSession.getState().load()
+      // Clear the signed-out gate synchronously; the shell shows account loading
+      // while school metadata continues in the background.
+      void useSession.getState().load()
       router.replace(r.passwordChanged ? '/' : '/change-password')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : (err instanceof Error ? err.message : 'Login failed'))

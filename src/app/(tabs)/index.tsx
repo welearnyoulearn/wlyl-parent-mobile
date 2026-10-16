@@ -1,3 +1,4 @@
+import { ClassLoading } from '@/components/class-loading'
 import { Pressable, Text, View } from 'react-native'
 import { Href, useRouter } from 'expo-router'
 import { AlertTriangle, CalendarDays, ChevronRight, Megaphone, PartyPopper } from 'lucide-react-native'
@@ -13,10 +14,10 @@ export default function HomePage() {
   const { student, year, has } = useSession()
   const router = useRouter()
 
-  const q = student ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
+  const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
 
   const { data: summary, error: er1, refreshing: r1, refresh: ref1 } = useApi<Summary>(q ? `/api/parent/child-summary?${q}` : null)
-  const { data: feesData, error: er2, refreshing: r2, refresh: ref2 } = useApi<Fees>(q ? `/api/parent/fees?${q}${year ? `&academic_year=${year}` : ''}` : null)
+  const { data: feesData, error: er2, refreshing: r2, refresh: ref2 } = useApi<Fees>(student ? `/api/parent/fees?school_id=${student.school_id}&student_id=${student.id}` : null)
   const { data: today, error: ttError, status: ttStatus, refreshing: r3, refresh: ref3 } = useApi<Timetable>(q && has('timetable') ? `/api/parent/timetable?${q}` : null)
   // 404/405: this platform has no timetable route — hide the card instead of erroring.
   const noTimetable = ttStatus === 404 || ttStatus === 405
@@ -142,7 +143,7 @@ export default function HomePage() {
 
       {has('exam-marks') && (
         <Section title="Exams" action={{ label: 'See all', testID: 'see-all-exams', onPress: () => router.push('/exams') }}>
-          {summary === null ? <Loading /> : (
+          {summary === null ? (student.class_id === 0 ? <ClassLoading /> : <Loading />) : (
             <View className="gap-2">
               {latest && (
                 <Pressable testID="latest-result" onPress={() => router.push({ pathname: '/exam/[id]', params: { id: String(latest.id) } })}>
