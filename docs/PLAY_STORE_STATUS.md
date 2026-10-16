@@ -8,7 +8,16 @@ Last checked: 16 October 2026 (Asia/Kolkata).
 - Read-only checks found the school has library materials for Grades 8 and 10 in current academic year 2027-28, with no Grade 6 assignments. The web screenshot's wider shelf is consistent with an administrator session; mobile parent access remains restricted.
 - Clearer grade/year empty state, account rendering before school metadata, session/request deduplication, shared Home/Fees requests, 30-second memory cache and 25-second request timeout.
 - Cache and late account response guards are covered by tests; no school subscriptions or library permissions changed.
-- Build/publishing: pending.
+- Validation: 14 regression tests, TypeScript, lint and Android Metro export pass. Physical-device verification remains pending; ADB lists no connected devices.
+- Build: `26c7a959-e18b-496a-b4b1-5fef145151cc`, version 1.0.2, code 8, source `be022368c642600a19444f5a62345f907705cdbf`.
+- Build URL: https://expo.dev/accounts/thindaam/projects/wlyl-parent-mobile/builds/26c7a959-e18b-496a-b4b1-5fef145151cc
+- Code 7 (`54c0faf3-f868-4803-b926-864b39b46223`) was canceled before publication to include profile/password session invalidation in the final build.
+- Published and verified **Active / Available to internal testers**, 16 October 2026 at 18:53 IST. Previous code 6 is replaced; the tester audience is unchanged.
+- Release URL: https://play.google.com/console/u/0/developers/6447683415189331565/app/4974602149007088670/tracks/4701325226419928085?tab=releases
+- Update link: https://play.google.com/apps/internaltest/4701325226419928085
+- Signed local bundle: `store/wlyl-parent-1.0.2-8.aab` (gitignored), SHA-256 `a2f51895c78c2c8e4ac5a8f7d041d98ce77464de802bec28e576410fe5ada2ef`.
+- Bundle integrity, package, version and dev API address verified. Play reports no lost device support; only the existing optional deobfuscation-file warning. Estimated update size 3.7 MB.
+- The temporary local upload server was stopped after the browser read the verified bundle.
 
 ## Crash-fix update — 1.0.1 (6)
 
