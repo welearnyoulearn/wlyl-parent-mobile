@@ -7,8 +7,18 @@ Tracking issue: [welearnyoulearn/wlyl-parent-app#7](https://github.com/welearnyo
 
 ## Screens
 
-Login, first-login password change, Home, Attendance, Fees, Exams and the per-exam mark sheet.
-Parents with more than one child switch between them in the header.
+Login, first-login password change, Home, Attendance, Fees, Exams (with exam calendar) and the per-exam mark sheet, Calendar, Syllabus, Library, Notifications and Profile — in English or Telugu.
+Parents with more than one child switch between them in the header. Homework, Leave, Bus, Rewards, Activity and Timetable show as "Coming soon" until the platform backend ships.
+
+## What you need from the team
+
+| What | Needed for | Who gives it |
+|---|---|---|
+| Access to this GitHub repo | Getting the code | Repo admin |
+| A parent login on the dev platform (a test account, not a real parent) | Signing in to the app | School admin / platform team |
+| Invite to the **thindaam** Expo account (expo.dev → Members) | Only for building or publishing | Expo account owner |
+
+**Environment variables:** none to hand over. The app reads only `EXPO_PUBLIC_API_ORIGIN`, which is not a secret and defaults to the dev platform. `google-services.json` is in the repo; the push key and app signing key live in EAS.
 
 ## Set up a new computer
 
