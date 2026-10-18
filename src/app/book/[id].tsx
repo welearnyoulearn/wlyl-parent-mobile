@@ -6,6 +6,11 @@ import * as ScreenOrientation from 'expo-screen-orientation'
 import { BookOpen, RotateCw, Trash2 } from 'lucide-react-native'
 import { downloadBook, deleteBook, isDownloaded, readerUri, libraryDirUri } from '@/lib/books'
 import { Screen, Alert, Button, COLORS, SafeAreaView, Loading } from '@/components/ui'
+import { useT } from '@/lib/i18n'
+
+// Error markers translated at render time (the download effect must not re-run on a language switch).
+const NO_LINK = '\u0000no-link'
+const FAILED = '\u0000failed'
 
 // In-app textbook reader (#9): downloads the PDF once into the app, then opens
 // it offline in the bundled PDF.js reader — no browser involved.
@@ -13,6 +18,7 @@ export default function BookScreen() {
   const { id: idParam, title, url } = useLocalSearchParams<{ id: string; title?: string; url?: string }>()
   const id = Number(idParam)
   const router = useRouter()
+  const t = useT()
   const [uri, setUri] = useState<string | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const [error, setError] = useState('')
@@ -31,14 +37,14 @@ export default function BookScreen() {
       setError('')
       try {
         if (!isDownloaded(id)) {
-          if (!url) throw new Error('This book has no download link.')
+          if (!url) throw new Error(NO_LINK)
           setProgress(0)
           await downloadBook(id, url, setProgress, abort.signal)
         }
         const reader = await readerUri(id)
         if (!abort.signal.aborted) setUri(reader)
       } catch (e) {
-        if (!abort.signal.aborted) setError(e instanceof Error ? e.message : 'Download failed')
+        if (!abort.signal.aborted) setError(e instanceof Error ? e.message : FAILED)
       }
     })()
     // Leaving the screen cancels an unfinished download.
@@ -46,22 +52,22 @@ export default function BookScreen() {
   }, [id, url, attempt])
 
   function confirmDelete() {
-    RNAlert.alert('Remove download?', 'The book will be removed from this phone. You can download it again anytime.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => { deleteBook(id); router.back() } },
+    RNAlert.alert(t.book.removeTitle, t.book.removeMessage, [
+      { text: t.cancel, style: 'cancel' },
+      { text: t.book.remove, style: 'destructive', onPress: () => { deleteBook(id); router.back() } },
     ])
   }
 
   const header = (
     <Stack.Screen options={{
-      title: title ?? 'Book',
+      title: title ?? t.book.titleFallback,
       headerRight: uri ? () => (
         <View className="flex-row items-center gap-6">
           <Pressable onPress={() => setLandscape(l => !l)} hitSlop={12} testID="book-rotate" accessibilityRole="button"
-            accessibilityLabel={landscape ? 'Read in portrait' : 'Read in landscape'}>
+            accessibilityLabel={landscape ? t.book.readPortrait : t.book.readLandscape}>
             <RotateCw size={20} color={COLORS.primary} />
           </Pressable>
-          <Pressable onPress={confirmDelete} hitSlop={12} testID="book-delete" accessibilityRole="button" accessibilityLabel="Remove download">
+          <Pressable onPress={confirmDelete} hitSlop={12} testID="book-delete" accessibilityRole="button" accessibilityLabel={t.book.removeDownload}>
             <Trash2 size={20} color={COLORS.red} />
           </Pressable>
         </View>
@@ -74,9 +80,9 @@ export default function BookScreen() {
       <>
         {header}
         <Screen>
-          <Alert>{`Couldn't download this book. ${error}`}</Alert>
+          <Alert>{t.book.downloadErrorPrefix(error === NO_LINK ? t.book.noLink : error === FAILED ? t.book.downloadFailed : error)}</Alert>
           <View className="mt-4">
-            <Button label="Try again" onPress={() => setAttempt(a => a + 1)} testID="book-retry" />
+            <Button label={t.tryAgain} onPress={() => setAttempt(a => a + 1)} testID="book-retry" />
           </View>
         </Screen>
       </>
@@ -92,13 +98,13 @@ export default function BookScreen() {
           <View className="h-14 w-14 items-center justify-center rounded-2xl bg-teal-50">
             <BookOpen size={26} color="#0f766e" />
           </View>
-          <Text className="text-center text-base font-semibold text-foreground">{title ?? 'Book'}</Text>
+          <Text className="text-center text-base font-semibold text-foreground">{title ?? t.book.titleFallback}</Text>
           <View className="h-2 w-full overflow-hidden rounded-full bg-muted"
             accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: pct ?? undefined }}>
             <View className="h-full rounded-full bg-primary" style={{ width: `${pct ?? 100}%`, opacity: pct === null ? 0.4 : 1 }} />
           </View>
           <Text className="text-sm text-muted-foreground">
-            {pct === null ? 'Downloading…' : `Downloading ${pct}%`} · saved on this phone for offline reading
+            {t.book.downloadingLine(pct)}
           </Text>
         </View>
       </>
@@ -123,7 +129,7 @@ export default function BookScreen() {
         setSupportMultipleWindows={false}
         webviewDebuggingEnabled={__DEV__}
         startInLoadingState
-        renderLoading={() => <View className="absolute inset-0 bg-[#e5e7eb]"><Loading label="Opening book" /></View>}
+        renderLoading={() => <View className="absolute inset-0 bg-[#e5e7eb]"><Loading label={t.book.openingBook} /></View>}
         style={{ flex: 1, backgroundColor: '#e5e7eb' }}
       />
       </SafeAreaView>

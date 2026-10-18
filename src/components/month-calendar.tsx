@@ -2,15 +2,11 @@ import type { ReactNode } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { ChevronLeft, ChevronRight } from 'lucide-react-native'
 import { Panel } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 // Shared month grid for the School Calendar and Exam Calendar screens, ported
 // from the web app's SchoolCalendarView/TestCalendar month grids.
 
-const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
 const CELL_WIDTH = `${100 / 7}%`
 
 export function todayISO(): string {
@@ -31,9 +27,9 @@ export function monthRange(month: string): { from: string; to: string } {
   return { from: `${month}-01`, to: `${month}-${String(lastDay).padStart(2, '0')}` }
 }
 
-export function monthLabel(month: string): string {
+export function monthLabel(month: string, monthNames: readonly string[]): string {
   const [y, m] = month.split('-').map(Number)
-  return `${MONTH_NAMES[m - 1]} ${y}`
+  return `${monthNames[m - 1]} ${y}`
 }
 
 export function monthDays(month: string): string[] {
@@ -56,6 +52,7 @@ export function MonthCalendar({
   dayMarkers?: (date: string) => ReactNode
   accessibilityLabelFor?: (date: string) => string
 }) {
+  const t = useT()
   const today = todayISO()
   const [y, m] = month.split('-').map(Number)
   const lead = new Date(y, m - 1, 1).getDay()
@@ -66,17 +63,17 @@ export function MonthCalendar({
       <View className="flex-row items-center justify-between pb-2">
         <Pressable
           testID={`${testIDPrefix}-prev`} onPress={onPrev} hitSlop={8}
-          accessibilityRole="button" accessibilityLabel="Previous month"
+          accessibilityRole="button" accessibilityLabel={t.monthCalendar.prevMonth}
           className="h-9 w-9 items-center justify-center rounded-full active:bg-muted"
         >
           <ChevronLeft size={18} color="#6b7280" />
         </Pressable>
         <Text testID={`${testIDPrefix}-month-label`} className="text-sm font-semibold text-foreground">
-          {monthLabel(month)}
+          {monthLabel(month, t.monthCalendar.monthNames)}
         </Text>
         <Pressable
           testID={`${testIDPrefix}-next`} onPress={onNext} hitSlop={8}
-          accessibilityRole="button" accessibilityLabel="Next month"
+          accessibilityRole="button" accessibilityLabel={t.monthCalendar.nextMonth}
           className="h-9 w-9 items-center justify-center rounded-full active:bg-muted"
         >
           <ChevronRight size={18} color="#6b7280" />
@@ -84,7 +81,7 @@ export function MonthCalendar({
       </View>
 
       <View className="flex-row">
-        {WEEKDAY_SHORT.map(d => (
+        {t.monthCalendar.weekdayShort.map(d => (
           <Text key={d} style={{ width: CELL_WIDTH }} className="text-center text-[10px] text-muted-foreground">{d}</Text>
         ))}
       </View>

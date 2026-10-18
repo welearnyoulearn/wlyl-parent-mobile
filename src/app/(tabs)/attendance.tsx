@@ -5,20 +5,22 @@ import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { type Attendance, day } from '@/lib/api'
 import { Screen, Loading, Ring, Section, Panel, Empty, Row, Chip, Alert, type Tone, Divider } from '@/components/ui'
+import { useT, type Strings } from '@/lib/i18n'
 
-const TONE: Record<string, { chip: Tone; dot: string; label: string }> = {
-  present: { chip: 'green', dot: 'bg-emerald-500', label: 'Present' },
-  absent: { chip: 'red', dot: 'bg-rose-500', label: 'Absent' },
-  late: { chip: 'amber', dot: 'bg-amber-400', label: 'Late' },
-  half: { chip: 'amber', dot: 'bg-orange-400', label: 'Half day' },
-  holiday: { chip: 'blue', dot: 'bg-sky-200', label: 'Holiday' },
-  weekly_off: { chip: 'muted', dot: 'bg-transparent', label: 'Weekly off' },
-  future: { chip: 'muted', dot: 'bg-transparent', label: 'Upcoming' },
-  before_joining: { chip: 'muted', dot: 'bg-transparent', label: 'Before joining' },
+const TONE: Record<string, { chip: Tone; dot: string; label: (t: Strings) => string }> = {
+  present: { chip: 'green', dot: 'bg-emerald-500', label: t => t.present },
+  absent: { chip: 'red', dot: 'bg-rose-500', label: t => t.absent },
+  late: { chip: 'amber', dot: 'bg-amber-400', label: t => t.late },
+  half: { chip: 'amber', dot: 'bg-orange-400', label: t => t.attendance.half },
+  holiday: { chip: 'blue', dot: 'bg-sky-200', label: t => t.attendance.holiday },
+  weekly_off: { chip: 'muted', dot: 'bg-transparent', label: t => t.attendance.weeklyOff },
+  future: { chip: 'muted', dot: 'bg-transparent', label: t => t.attendance.upcoming },
+  before_joining: { chip: 'muted', dot: 'bg-transparent', label: t => t.attendance.beforeJoining },
 }
 
 export default function AttendanceScreen() {
   const { student } = useSession()
+  const t = useT()
   const { data, error, loading, refreshing, refresh } = useApi<Attendance>(
     student ? `/api/parent/attendance?school_id=${student.school_id}&student_id=${student.id}` : null
   )
@@ -56,7 +58,7 @@ export default function AttendanceScreen() {
   if (error) {
     return (
       <Screen refreshing={refreshing} onRefresh={refresh} testID="attendance-screen">
-        <Alert>{error || 'Failed to load attendance'}</Alert>
+        <Alert>{error || t.attendance.loadError}</Alert>
       </Screen>
     )
   }
@@ -64,7 +66,7 @@ export default function AttendanceScreen() {
   if (loading && !data) {
     return (
       <Screen testID="attendance-screen">
-        <Loading label="Loading attendance..." />
+        <Loading label={t.attendance.loading} />
       </Screen>
     )
   }
@@ -84,33 +86,33 @@ export default function AttendanceScreen() {
         </Ring>
         <View className="flex-1">
           <Text className="text-sm font-semibold text-foreground">{monthName(data.month.month)}</Text>
-          <Text className="text-xs text-muted-foreground">{s.marked} marked sessions</Text>
+          <Text className="text-xs text-muted-foreground">{t.attendance.markedSessions(s.marked)}</Text>
           <View className="mt-2 flex-row gap-2">
             <View className="flex-1 items-center rounded-xl bg-emerald-50 py-1.5">
               <Text className="text-base font-bold text-emerald-700">{s.present}</Text>
-              <Text className="text-[10px] text-emerald-700/80">Present</Text>
+              <Text className="text-[10px] text-emerald-700/80">{t.present}</Text>
             </View>
             <View className="flex-1 items-center rounded-xl bg-rose-50 py-1.5">
               <Text className="text-base font-bold text-rose-700">{s.absent}</Text>
-              <Text className="text-[10px] text-rose-700/80">Absent</Text>
+              <Text className="text-[10px] text-rose-700/80">{t.absent}</Text>
             </View>
             <View className="flex-1 items-center rounded-xl bg-amber-50 py-1.5">
               <Text className="text-base font-bold text-amber-700">{s.late}</Text>
-              <Text className="text-[10px] text-amber-700/80">Late</Text>
+              <Text className="text-[10px] text-amber-700/80">{t.late}</Text>
             </View>
           </View>
         </View>
       </Panel>
 
       {s.marked === 0 ? (
-        <Empty icon={CalendarCheck} title="No attendance marked yet" hint="Your child's daily attendance will appear here." />
+        <Empty icon={CalendarCheck} title={t.attendance.emptyTitle} hint={t.attendance.emptyHint} />
       ) : (
         <>
-          <Section title="This month">
+          <Section title={t.thisMonth}>
             <Panel className="p-4">
               <View className="gap-1.5">
                 <View className="flex-row justify-between">
-                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                  {t.attendance.weekdayLetters.map((d, i) => (
                     <Text key={i} className="w-8 text-center text-[10px] text-muted-foreground">{d}</Text>
                   ))}
                 </View>
@@ -135,14 +137,14 @@ export default function AttendanceScreen() {
                 {(['present', 'absent', 'late', 'half', 'holiday'] as const).map(k => (
                   <View key={k} className="flex-row items-center gap-1.5">
                     <View className={`h-3 w-3 rounded-sm ${TONE[k].dot}`} />
-                    <Text className="text-xs text-muted-foreground">{TONE[k].label}</Text>
+                    <Text className="text-xs text-muted-foreground">{TONE[k].label(t)}</Text>
                   </View>
                 ))}
               </View>
             </Panel>
           </Section>
 
-          <Section title="By month">
+          <Section title={t.attendance.byMonth}>
             <Panel className="gap-4 p-4">
               {[...data.trend].reverse().map(({ month, summary: m }) => {
                 const pct = m.pct ?? 0
@@ -151,7 +153,7 @@ export default function AttendanceScreen() {
                   <View key={month} className="gap-1.5">
                     <View className="flex-row items-end justify-between">
                       <Text className="text-sm font-medium text-foreground">{monthName(month)}</Text>
-                      <Text className="text-xs text-muted-foreground">{m.attended}/{m.marked} sessions · {m.pct === null ? '—' : `${m.pct}%`}</Text>
+                      <Text className="text-xs text-muted-foreground">{t.attendance.sessionsLine(m.attended, m.marked, m.pct === null ? '—' : `${m.pct}%`)}</Text>
                     </View>
                     <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <View className={`h-full rounded-full ${fill}`} style={{ width: `${pct}%` }} />
@@ -162,9 +164,9 @@ export default function AttendanceScreen() {
             </Panel>
           </Section>
 
-          <Section title="Absences and late arrivals">
+          <Section title={t.attendance.absencesTitle}>
             {absences.length === 0 ? (
-              <Empty icon={CalendarCheck} title="Full attendance" hint="No absences or late arrivals this month." />
+              <Empty icon={CalendarCheck} title={t.attendance.fullAttendanceTitle} hint={t.attendance.fullAttendanceHint} />
             ) : (
               <Panel className="overflow-hidden">
                 {absences.map((d, index) => (
@@ -172,7 +174,7 @@ export default function AttendanceScreen() {
                     {index > 0 && <Divider />}
                     <Row testID={`absence-row-${d.date}`}>
                       <Text className="flex-1 text-sm text-foreground">{day(d.date)}</Text>
-                      <Chip tone={TONE[d.status]?.chip ?? 'muted'}>{TONE[d.status]?.label ?? d.status}</Chip>
+                      <Chip tone={TONE[d.status]?.chip ?? 'muted'}>{TONE[d.status]?.label(t) ?? d.status}</Chip>
                     </Row>
                   </View>
                 ))}

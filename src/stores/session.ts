@@ -8,6 +8,7 @@ import { unregisterPush } from '@/lib/push'
 import { clearRequestCache, accountGeneration } from '@/lib/request-cache'
 
 export type Student = Child & { class_id: number }
+export type Lang = 'en' | 'te'
 
 type SessionState = {
   me: Me | null
@@ -16,6 +17,7 @@ type SessionState = {
   year: string | null
   features: Set<string> | null // enabled parent-portal feature keys; null = unknown (show all)
   childId: number | null
+  lang: Lang
   loading: boolean
   error: string | null
   classError: string | null
@@ -23,6 +25,7 @@ type SessionState = {
   load: (force?: boolean) => Promise<void>
   selectChild: (child: Child) => void
   has: (feature: string) => boolean
+  setLang: (lang: Lang) => void
   logout: () => Promise<void>
 }
 
@@ -33,7 +36,7 @@ let loadedAt = 0
 export const useSession = create<SessionState>()(
   persist(
     (set, get) => ({
-      me: null, children: [], student: null, year: null, features: null, childId: null, loading: true, error: null, classError: null, unauthorized: false,
+      me: null, children: [], student: null, year: null, features: null, childId: null, lang: 'en', loading: true, error: null, classError: null, unauthorized: false,
 
       load(force = false) {
         const generation = accountGeneration()
@@ -92,6 +95,10 @@ export const useSession = create<SessionState>()(
         return f === null || f.has(feature)
       },
 
+      setLang(lang) {
+        set({ lang })
+      },
+
       async logout() {
         clearRequestCache()
         set({ me: null, children: [], student: null, year: null, features: null, childId: null, loading: false, error: null, classError: null, unauthorized: true })
@@ -101,7 +108,7 @@ export const useSession = create<SessionState>()(
         set({ me: null, children: [], student: null, childId: null, unauthorized: true })
       },
     }),
-    // Only the selected child survives an app restart; everything else reloads from the API.
-    { name: 'wlyl-parent', storage: createJSONStorage(() => AsyncStorage), partialize: s => ({ childId: s.childId }) },
+    // Only the selected child and language survive an app restart; everything else reloads from the API.
+    { name: 'wlyl-parent', storage: createJSONStorage(() => AsyncStorage), partialize: s => ({ childId: s.childId, lang: s.lang }) },
   ),
 )

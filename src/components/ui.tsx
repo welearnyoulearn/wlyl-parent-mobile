@@ -5,6 +5,8 @@ import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context'
 import { withUniwind } from 'uniwind'
 import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native'
 import { initials } from '@/lib/api'
+import { useT } from '@/lib/i18n'
+import { useSession, type Lang } from '@/stores/session'
 
 // Shared building blocks, ported from wlyl-parent-app/components/app/bits.tsx.
 // Every screen is built from these so the app looks consistent.
@@ -31,9 +33,10 @@ export function Screen({ children, refreshing = false, onRefresh, testID }: {
   )
 }
 
-export function Loading({ label = 'Loading' }: { label?: string }) {
+export function Loading({ label }: { label?: string }) {
+  const t = useT()
   return (
-    <View className="items-center py-12" accessibilityLabel={label}>
+    <View className="items-center py-12" accessibilityLabel={label ?? t.ui.loading}>
       <ActivityIndicator color={COLORS.primary} />
     </View>
   )
@@ -153,9 +156,34 @@ export function Button({ label, onPress, loading = false, disabled = false, vari
   )
 }
 
+// EN / తెలుగు segmented control (More tab and login).
+export function LangToggle() {
+  const { lang, setLang } = useSession()
+  const t = useT()
+  const options: { value: Lang; text: string; label: string }[] = [
+    { value: 'en', text: 'EN', label: t.more.langEnglish },
+    { value: 'te', text: t.more.langTelugu, label: t.more.langTelugu },
+  ]
+  return (
+    <View className="flex-row rounded-lg bg-muted p-0.5">
+      {options.map(o => {
+        const selected = (lang ?? 'en') === o.value
+        return (
+          <Pressable key={o.value} onPress={() => setLang(o.value)} testID={`lang-${o.value}`}
+            accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={o.label}
+            className={`rounded-md px-3 py-1 ${selected ? 'bg-card' : ''}`}>
+            <Text className={`text-xs font-semibold ${selected ? 'text-primary' : 'text-muted-foreground'}`}>{o.text}</Text>
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+}
+
 // Labelled text input. `password` adds a show/hide toggle (same as the web app, #5).
 export function Field({ label, password = false, testID, ...input }: TextInputProps & { label: string; password?: boolean; testID: string }) {
   const [shown, setShown] = useState(false)
+  const t = useT()
   return (
     <View className="gap-1.5">
       <Text className="text-sm font-medium text-foreground">{label}</Text>
@@ -172,7 +200,7 @@ export function Field({ label, password = false, testID, ...input }: TextInputPr
         />
         {password && (
           <Pressable onPress={() => setShown(s => !s)} testID={`${testID}-toggle`} hitSlop={10}
-            accessibilityRole="button" accessibilityLabel={shown ? 'Hide password' : 'Show password'}>
+            accessibilityRole="button" accessibilityLabel={shown ? t.ui.hidePassword : t.ui.showPassword}>
             {shown ? <EyeOff size={20} color="#6b7280" /> : <Eye size={20} color="#6b7280" />}
           </Pressable>
         )}

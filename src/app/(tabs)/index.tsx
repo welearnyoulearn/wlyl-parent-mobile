@@ -4,15 +4,17 @@ import { Href, useRouter } from 'expo-router'
 import { AlertTriangle, CalendarDays, ChevronRight, Megaphone, PartyPopper } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
-import { day, longDay, hhmm, inr, EXAM_TYPE, type Announcement, type SchoolCalendar, type Fees, type Summary, type Timetable } from '@/lib/api'
+import { day, longDay, hhmm, inr, type Announcement, type SchoolCalendar, type Fees, type Summary, type Timetable } from '@/lib/api'
 import { QuickLinks } from '@/components/quick-links'
 import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 function nowHHMM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
 
 export default function HomePage() {
   const { student, has } = useSession()
   const router = useRouter()
+  const t = useT()
 
   const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
 
@@ -57,10 +59,10 @@ export default function HomePage() {
 
   const attention: { key: string; text: string; href?: string }[] = []
   if (fees && fees.overdue_count > 0) {
-    attention.push({ key: 'overdue', text: `${fees.overdue_count} fee${fees.overdue_count > 1 ? 's' : ''} overdue · ${inr(fees.total_outstanding)} outstanding`, href: '/fees' })
+    attention.push({ key: 'overdue', text: t.home.feesOverdue(fees.overdue_count, inr(fees.total_outstanding)), href: '/fees' })
   }
   if (pending.length > 0) {
-    attention.push({ key: 'ack', text: `${pending.length} result${pending.length > 1 ? 's' : ''} waiting for your acknowledgement`, href: '/exams' })
+    attention.push({ key: 'ack', text: t.home.resultsWaiting(pending.length), href: '/exams' })
   }
   news.filter(n => n.priority === 'urgent').forEach(n => {
     attention.push({ key: `news-${n.id}`, text: n.title })
@@ -97,8 +99,8 @@ export default function HomePage() {
                 {!summary && <Text className="text-xs font-bold">…</Text>}
               </Ring>
               <View className="flex-1">
-                <Text className="text-xs text-muted-foreground">Attendance</Text>
-                <Text className="text-sm font-semibold text-foreground">This month</Text>
+                <Text className="text-xs text-muted-foreground">{t.home.attendance}</Text>
+                <Text className="text-sm font-semibold text-foreground">{t.thisMonth}</Text>
               </View>
             </Panel>
           </Pressable>
@@ -107,9 +109,9 @@ export default function HomePage() {
         {has('fee-management') && (
           <Pressable className="flex-1" testID="tile-fees" onPress={() => router.push('/fees')}>
             <Panel className={`h-24 justify-center p-3.5 ${fees && fees.total_outstanding > 0 ? 'bg-amber-50' : ''}`}>
-              <Text className="text-xs text-muted-foreground">Fees due</Text>
+              <Text className="text-xs text-muted-foreground">{t.home.feesDue}</Text>
               <Text className="text-2xl font-bold tracking-tight text-foreground">{fees ? inr(fees.total_outstanding) : '—'}</Text>
-              <Text className="text-[11px] text-muted-foreground">{fees === null ? ' ' : fees.total_outstanding > 0 ? 'Tap to pay' : 'All clear'}</Text>
+              <Text className="text-[11px] text-muted-foreground">{fees === null ? ' ' : fees.total_outstanding > 0 ? t.home.tapToPay : t.allClear}</Text>
             </Panel>
           </Pressable>
         )}
@@ -118,9 +120,9 @@ export default function HomePage() {
       <QuickLinks />
 
       {has('timetable') && !noTimetable && (
-        <Section title="Today's classes">
+        <Section title={t.home.todaysClasses}>
           {today === null ? <Loading /> : today.periods.length === 0 ? (
-            <Empty icon={PartyPopper} title="No classes today" hint="Enjoy the day off." />
+            <Empty icon={PartyPopper} title={t.home.noClassesTitle} hint={t.home.noClassesHint} />
           ) : (
             <Panel className="overflow-hidden">
               {today.periods.filter(p => !p.is_break).map((p, i, arr) => {
@@ -129,8 +131,8 @@ export default function HomePage() {
                   <View key={p.period_number}>
                     <Row className={live ? 'bg-teal-50/60' : ''}>
                       <Text className="w-16 shrink-0 text-[11px] leading-tight text-muted-foreground">{hhmm(p.time_from)}</Text>
-                      <Text className="flex-1 text-sm font-medium text-foreground">{p.subject_name ?? 'Free period'}</Text>
-                      {live ? <Chip tone="teal">Now</Chip> : p.teacher_name ? <Text className="text-xs text-muted-foreground">{p.teacher_name.split(' ')[0]}</Text> : null}
+                      <Text className="flex-1 text-sm font-medium text-foreground">{p.subject_name ?? t.home.freePeriod}</Text>
+                      {live ? <Chip tone="teal">{t.home.now}</Chip> : p.teacher_name ? <Text className="text-xs text-muted-foreground">{p.teacher_name.split(' ')[0]}</Text> : null}
                     </Row>
                     {i < arr.length - 1 && <Divider />}
                   </View>
@@ -142,7 +144,7 @@ export default function HomePage() {
       )}
 
       {has('exam-marks') && (
-        <Section title="Exams" action={{ label: 'See all', testID: 'see-all-exams', onPress: () => router.push('/exams') }}>
+        <Section title={t.home.examsTitle} action={{ label: t.seeAll, testID: 'see-all-exams', onPress: () => router.push('/exams') }}>
           {summary === null ? (student.class_id === 0 ? <ClassLoading /> : <Loading />) : (
             <View className="gap-2">
               {latest && (
@@ -157,9 +159,9 @@ export default function HomePage() {
                       )
                     })()}
                     <View className="flex-1">
-                      <Text className="text-[11px] text-muted-foreground">Latest result</Text>
+                      <Text className="text-[11px] text-muted-foreground">{t.home.latestResult}</Text>
                       <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{latest.exam_name}</Text>
-                      <Text className="text-[11px] text-muted-foreground">{latest.parent_acknowledged ? 'Acknowledged' : 'Tap to view mark sheet'}</Text>
+                      <Text className="text-[11px] text-muted-foreground">{latest.parent_acknowledged ? t.acknowledged : t.home.tapToViewMarkSheet}</Text>
                     </View>
                     <ChevronRight size={16} color="#9ca3af" />
                   </Panel>
@@ -174,19 +176,19 @@ export default function HomePage() {
                   </View>
                   <View className="flex-1">
                     <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{e.exam_name}</Text>
-                    <Text className="text-[11px] text-muted-foreground">{EXAM_TYPE[e.exam_type] ?? e.exam_type} · {e.total_subjects} subjects</Text>
+                    <Text className="text-[11px] text-muted-foreground">{t.examType[e.exam_type] ?? e.exam_type} · {t.home.subjectsCount(e.total_subjects)}</Text>
                   </View>
                   <Chip tone="blue">{day(e.exam_date)}</Chip>
                 </Panel>
               ))}
-              {!latest && summary.upcoming_exams.length === 0 && <Empty icon={CalendarDays} title="No exams yet" />}
+              {!latest && summary.upcoming_exams.length === 0 && <Empty icon={CalendarDays} title={t.home.noExamsYet} />}
             </View>
           )}
         </Section>
       )}
 
       {news.length > 0 && (
-        <Section title="From the school">
+        <Section title={t.home.fromSchool}>
           <View className="gap-2">
             {news.map(n => (
               <Panel key={n.id} className="p-3.5">
@@ -197,7 +199,7 @@ export default function HomePage() {
                   <View className="flex-1">
                     <View className="flex-row items-center gap-2 flex-wrap">
                       <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{n.title}</Text>
-                      {n.priority === 'urgent' ? <Chip tone="red">Urgent</Chip> : n.priority === 'high' ? <Chip tone="amber">Important</Chip> : null}
+                      {n.priority === 'urgent' ? <Chip tone="red">{t.urgent}</Chip> : n.priority === 'high' ? <Chip tone="amber">{t.home.important}</Chip> : null}
                     </View>
                     <Text className="mt-0.5 text-xs text-muted-foreground" numberOfLines={3}>{n.content}</Text>
                     <Text className="mt-1 text-[11px] text-muted-foreground/80">{n.created_by_name ? `${n.created_by_name} · ` : ''}{day(n.created_at)}</Text>
@@ -210,7 +212,7 @@ export default function HomePage() {
       )}
 
       {events.length > 0 && (
-        <Section title="Coming up">
+        <Section title={t.home.comingUp}>
           <Panel className="overflow-hidden">
             {events.map((e, i, arr) => (
               <View key={e.id}>

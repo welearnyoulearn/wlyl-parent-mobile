@@ -5,9 +5,11 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { api, ApiError } from '@/lib/api'
 import { Screen, Panel, Section, Row, Button, Field, Alert, Empty, Avatar, Divider, COLORS } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 export default function ProfileScreen() {
   const { me, children, load } = useSession()
+  const t = useT()
   const [name, setName] = useState(me?.name ?? '')
   const [email, setEmail] = useState(me?.email ?? '')
   const [phone, setPhone] = useState(me?.phone ?? '')
@@ -23,10 +25,10 @@ export default function ProfileScreen() {
     const e = email.trim()
     const p = phone.trim()
 
-    if (n.length < 2) return setError('Enter your name')
-    if (e !== '' && !/^\S+@\S+\.\S+$/.test(e)) return setError('Enter a valid email')
-    if (p !== '' && !/^[6-9]\d{9}$/.test(p)) return setError('Enter a 10-digit mobile number')
-    if (!e && !p) return setError('Keep at least an email or a phone number to sign in with')
+    if (n.length < 2) return setError(t.profile.errName)
+    if (e !== '' && !/^\S+@\S+\.\S+$/.test(e)) return setError(t.profile.errEmail)
+    if (p !== '' && !/^[6-9]\d{9}$/.test(p)) return setError(t.profile.errPhone)
+    if (!e && !p) return setError(t.profile.errContact)
 
     setBusy(true)
     setError('')
@@ -42,7 +44,7 @@ export default function ProfileScreen() {
       if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
         setNotAvailable(true)
       } else {
-        setError(err instanceof Error ? err.message : 'Could not save')
+        setError(err instanceof Error ? err.message : t.profile.saveError)
       }
     } finally {
       setBusy(false)
@@ -51,17 +53,17 @@ export default function ProfileScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Profile' }} />
+      <Stack.Screen options={{ title: t.screenTitles.profile }} />
       <Screen testID="profile-screen">
-        <Section title="School Details">
+        <Section title={t.profile.schoolDetails}>
           <Panel>
             <View className="px-4 py-3">
-              <Text className="text-sm font-medium text-foreground">{me.school_name ?? 'School'}</Text>
+              <Text className="text-sm font-medium text-foreground">{me.school_name ?? t.profile.schoolFallback}</Text>
             </View>
           </Panel>
         </Section>
 
-        <Section title={children.length > 1 ? 'Linked Children' : 'Linked Child'}>
+        <Section title={children.length > 1 ? t.profile.linkedChildren : t.profile.linkedChild}>
           <Panel className="divide-y divide-black/5">
             {children.map((c, i) => (
               <View key={c.id}>
@@ -71,7 +73,7 @@ export default function ProfileScreen() {
                   <View className="flex-1">
                     <Text className="text-sm font-medium text-foreground">{c.name}</Text>
                     <Text className="text-[11px] text-muted-foreground">
-                      Class {c.grade}-{c.section} · Roll {c.roll_number.split('-').pop()}
+                      {t.classRoll(c.grade, c.section, c.roll_number.split('-').pop() ?? '')}
                     </Text>
                   </View>
                 </Row>
@@ -80,20 +82,20 @@ export default function ProfileScreen() {
           </Panel>
         </Section>
 
-        <Section title="Edit Profile">
+        <Section title={t.profile.editProfile}>
           {notAvailable ? (
-            <Empty icon={AlertCircle} title="Not available yet" hint="Editing your profile isn't available yet." />
+            <Empty icon={AlertCircle} title={t.notAvailableTitle} hint={t.profile.editNotAvailableHint} />
           ) : (
             <Panel className="gap-3 p-4">
               <Field
-                label="Name"
+                label={t.profile.nameLabel}
                 value={name}
                 onChangeText={setName}
                 autoComplete="name"
                 testID="profile-name-input"
               />
               <Field
-                label="Email"
+                label={t.profile.emailLabel}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -101,28 +103,28 @@ export default function ProfileScreen() {
                 testID="profile-email-input"
               />
               <Field
-                label="Mobile number"
+                label={t.profile.mobileLabel}
                 value={phone}
-                onChangeText={(t) => setPhone(t.replace(/\D/g, ''))}
+                onChangeText={(v) => setPhone(v.replace(/\D/g, ''))}
                 keyboardType="number-pad"
                 maxLength={10}
                 autoComplete="tel"
                 testID="profile-phone-input"
               />
               <Text className="text-[11px] text-muted-foreground">
-                You sign in with this email or mobile number.
+                {t.profile.signInHint}
               </Text>
 
               {error ? <Alert>{error}</Alert> : null}
               {saved ? (
                 <View className="flex-row items-center gap-1.5">
                   <CheckCircle2 size={16} color={COLORS.green} />
-                  <Text className="text-sm text-emerald-700">Saved</Text>
+                  <Text className="text-sm text-emerald-700">{t.profile.saved}</Text>
                 </View>
               ) : null}
 
               <Button
-                label={busy ? 'Saving…' : 'Save changes'}
+                label={busy ? t.savingEllipsis : t.profile.saveChanges}
                 onPress={submit}
                 loading={busy}
                 testID="profile-save-btn"

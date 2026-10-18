@@ -4,9 +4,11 @@ import { useRouter } from 'expo-router'
 import { api, ApiError } from '@/lib/api'
 import { useSession } from '@/stores/session'
 import { Button, Field, Alert, SafeAreaView } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 export default function ChangePasswordScreen() {
   const router = useRouter()
+  const t = useT()
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -16,11 +18,11 @@ export default function ChangePasswordScreen() {
   async function submit() {
     if (!current || !next || !confirm) return
     if (next !== confirm) {
-      setError('New passwords do not match')
+      setError(t.changePassword.mismatch)
       return
     }
     if (next.length < 8) {
-      setError('New password must be at least 8 characters')
+      setError(t.changePassword.tooShort)
       return
     }
     setBusy(true)
@@ -33,7 +35,7 @@ export default function ChangePasswordScreen() {
       await useSession.getState().load()
       router.replace('/')
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : (err instanceof Error ? err.message : 'Could not change password'))
+      setError(err instanceof ApiError ? err.message : (err instanceof Error ? err.message : t.changePassword.error))
     } finally {
       setBusy(false)
     }
@@ -54,13 +56,13 @@ export default function ChangePasswordScreen() {
       >
         <ScrollView contentContainerClassName="flex-grow justify-center p-6 gap-6" keyboardShouldPersistTaps="handled">
           <View className="mb-2">
-            <Text className="text-2xl font-bold text-foreground text-center">Set your password</Text>
-            <Text className="text-muted-foreground mt-2 text-center text-sm">Replace the temporary password from your school with one only you know.</Text>
+            <Text className="text-2xl font-bold text-foreground text-center">{t.changePassword.title}</Text>
+            <Text className="text-muted-foreground mt-2 text-center text-sm">{t.changePassword.subtitle}</Text>
           </View>
 
           <View className="gap-4">
             <Field
-              label="Temporary password"
+              label={t.changePassword.tempLabel}
               testID="current-password-input"
               value={current}
               onChangeText={setCurrent}
@@ -68,7 +70,7 @@ export default function ChangePasswordScreen() {
               autoComplete="current-password"
             />
             <Field
-              label="New password (8+ characters)"
+              label={t.changePassword.newLabel}
               testID="new-password-input"
               value={next}
               onChangeText={setNext}
@@ -76,7 +78,7 @@ export default function ChangePasswordScreen() {
               autoComplete="new-password"
             />
             <Field
-              label="Repeat new password"
+              label={t.changePassword.repeatLabel}
               testID="confirm-password-input"
               value={confirm}
               onChangeText={setConfirm}
@@ -85,7 +87,7 @@ export default function ChangePasswordScreen() {
             />
             {error ? <Alert>{error}</Alert> : null}
             <Button
-              label={busy ? 'Saving…' : 'Save and continue'}
+              label={busy ? t.savingEllipsis : t.changePassword.submit}
               testID="change-password-submit-btn"
               onPress={submit}
               loading={busy}
@@ -93,7 +95,7 @@ export default function ChangePasswordScreen() {
             />
 
             <Pressable testID="change-password-logout-btn" onPress={logout} className="mt-4 p-4 items-center">
-              <Text className="text-muted-foreground font-medium text-sm">Log out instead</Text>
+              <Text className="text-muted-foreground font-medium text-sm">{t.changePassword.logout}</Text>
             </Pressable>
           </View>
         </ScrollView>

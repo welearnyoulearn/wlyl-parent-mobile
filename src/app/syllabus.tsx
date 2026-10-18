@@ -7,10 +7,12 @@ import { useSession } from '@/stores/session'
 import { type ClassSubject, type Syllabus, day } from '@/lib/api'
 import { useApi } from '@/lib/use-api'
 import { Screen, Loading, Alert, Empty, Panel, Divider } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 export default function SyllabusScreen() {
   const { student, has } = useSession()
   const enabled = has('curriculum')
+  const t = useT()
   const [open, setOpen] = useState<string | null>(null)
   // subject name -> semester label currently selected for that subject's own tabs.
   const [semesterBySubject, setSemesterBySubject] = useState<Record<string, string>>({})
@@ -25,8 +27,8 @@ export default function SyllabusScreen() {
   if (!enabled) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Syllabus' }} />
-        <Screen><Alert>Syllabus tracking is not enabled for your school.</Alert></Screen>
+        <Stack.Screen options={{ title: t.screenTitles.syllabus }} />
+        <Screen><Alert>{t.syllabus.notEnabled}</Alert></Screen>
       </>
     )
   }
@@ -36,9 +38,9 @@ export default function SyllabusScreen() {
   if (status === 404 || status === 405) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Syllabus' }} />
+        <Stack.Screen options={{ title: t.screenTitles.syllabus }} />
         <Screen refreshing={refreshing} onRefresh={refresh}>
-          <Empty icon={BookOpenCheck} title="Not available yet" hint="Your school's server doesn't have this feature yet." />
+          <Empty icon={BookOpenCheck} title={t.notAvailableTitle} hint={t.notAvailableHint} />
         </Screen>
       </>
     )
@@ -47,7 +49,7 @@ export default function SyllabusScreen() {
   if (error) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Syllabus' }} />
+        <Stack.Screen options={{ title: t.screenTitles.syllabus }} />
         <Screen refreshing={refreshing} onRefresh={refresh}>
           <Alert>{error}</Alert>
         </Screen>
@@ -58,7 +60,7 @@ export default function SyllabusScreen() {
   if (loading || !data || !student) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Syllabus' }} />
+        <Stack.Screen options={{ title: t.screenTitles.syllabus }} />
         <Screen><Loading /></Screen>
       </>
     )
@@ -68,10 +70,10 @@ export default function SyllabusScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Syllabus' }} />
+      <Stack.Screen options={{ title: t.screenTitles.syllabus }} />
       <Screen refreshing={refreshing} onRefresh={refresh} testID="syllabus-screen">
         {subjects.every(s => s.total === 0) ? (
-          <Empty icon={BookOpenCheck} title="Syllabus not added yet" hint={`Topics appear here as ${student.name.split(' ')[0]}'s teachers mark them taught.`} />
+          <Empty icon={BookOpenCheck} title={t.syllabus.emptyTitle} hint={t.syllabus.emptyHint(student.name.split(' ')[0])} />
         ) : (
           <View className="gap-4">
             {subjects.map(s => {
@@ -109,13 +111,13 @@ export default function SyllabusScreen() {
                       )}
                     </View>
                     {teacherOf[s.subject] && (
-                      <Text className="mt-1 text-[11px] text-muted-foreground">Taught by {teacherOf[s.subject]}</Text>
+                      <Text className="mt-1 text-[11px] text-muted-foreground">{t.syllabus.taughtBy(teacherOf[s.subject])}</Text>
                     )}
                     <View className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                       <View className="h-full rounded-full bg-teal-500" style={{ width: `${s.completion_pct}%` }} />
                     </View>
                     <Text className="mt-1.5 text-[11px] text-muted-foreground">
-                      {s.total > 0 ? `${s.covered} of ${s.total} topics taught` : 'Syllabus not added yet'}
+                      {s.total > 0 ? t.syllabus.topicsTaught(s.covered, s.total) : t.syllabus.emptyTitle}
                     </Text>
                   </Pressable>
 
@@ -123,7 +125,7 @@ export default function SyllabusScreen() {
                     <View className="border-t border-border">
                       {semesterChoices.length > 0 && (
                         <View className="flex-row gap-2 px-4 pt-3">
-                          {semesterChoices.map(label => (
+                          {semesterChoices.map((label, si) => (
                             <Pressable
                               key={label}
                               onPress={() => setSemesterBySubject(prev => ({ ...prev, [s.subject]: label }))}
@@ -132,7 +134,7 @@ export default function SyllabusScreen() {
                               testID={`syllabus-semester-${slug}-${label.replace(/\W/g, '')}`}
                               className={`rounded-full px-3 py-1 ${label === effectiveSemester ? 'bg-primary' : 'bg-muted'}`}
                             >
-                              <Text className={`text-xs font-medium ${label === effectiveSemester ? 'text-primary-foreground' : 'text-muted-foreground'}`}>{label}</Text>
+                              <Text className={`text-xs font-medium ${label === effectiveSemester ? 'text-primary-foreground' : 'text-muted-foreground'}`}>{t.syllabus.semester(si + 1)}</Text>
                             </Pressable>
                           ))}
                         </View>
@@ -147,20 +149,20 @@ export default function SyllabusScreen() {
                             </View>
                             <View className="mt-2 gap-1.5">
                               {c.topics.length === 0 && (
-                                <Text className="text-xs italic text-muted-foreground">No topics added to this chapter yet.</Text>
+                                <Text className="text-xs italic text-muted-foreground">{t.syllabus.noTopicsYet}</Text>
                               )}
-                              {c.topics.map(t => t.status === 'covered' ? (
-                                <View key={t.id} className="flex-row items-start gap-2">
+                              {c.topics.map(tp => tp.status === 'covered' ? (
+                                <View key={tp.id} className="flex-row items-start gap-2">
                                   <CheckCircle2 size={14} color="#10b981" style={{ marginTop: 2 }} />
-                                  <Text className="flex-1 text-xs text-foreground">{t.topic_name}</Text>
+                                  <Text className="flex-1 text-xs text-foreground">{tp.topic_name}</Text>
                                   <Text className="text-[11px] text-muted-foreground">
-                                    {t.covered_date ? day(t.covered_date) : 'Taught'}{t.covered_by_name ? ` · ${t.covered_by_name}` : ''}
+                                    {tp.covered_date ? day(tp.covered_date) : t.syllabus.taughtWord}{tp.covered_by_name ? ` · ${tp.covered_by_name}` : ''}
                                   </Text>
                                 </View>
                               ) : (
-                                <View key={t.id} className="flex-row items-start gap-2">
+                                <View key={tp.id} className="flex-row items-start gap-2">
                                   <Circle size={14} color="#9ca3af" style={{ opacity: 0.4, marginTop: 2 }} />
-                                  <Text className="flex-1 text-xs text-muted-foreground">{t.topic_name}</Text>
+                                  <Text className="flex-1 text-xs text-muted-foreground">{tp.topic_name}</Text>
                                 </View>
                               ))}
                             </View>

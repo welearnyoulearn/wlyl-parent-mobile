@@ -6,9 +6,11 @@ import { onNotificationReceived } from '@/lib/push'
 import { useSession } from '@/stores/session'
 import { api, longDay, type Notification } from '@/lib/api'
 import { Screen, Panel, Empty, Alert, Loading, Row } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 export default function NotificationsScreen() {
   const { me } = useSession()
+  const t = useT()
   const [items, setItems] = useState<Notification[] | null>(null)
   const [error, setError] = useState('')
 
@@ -34,14 +36,14 @@ export default function NotificationsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Notifications' }} />
+      <Stack.Screen options={{ title: t.screenTitles.notifications }} />
       <Screen testID="notifications-screen">
         {error ? (
           <Alert>{error}</Alert>
         ) : !items ? (
           <Loading />
         ) : items.length === 0 ? (
-          <Empty icon={BellOff} title="No notifications" />
+          <Empty icon={BellOff} title={t.notifications.empty} />
         ) : (
           <Panel className="divide-y divide-black/5">
             {items.map((n) => (

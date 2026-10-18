@@ -52,15 +52,16 @@ function compile(relative, overrides = {}) {
   return mod.exports
 }
 const api = compile('src/lib/api.ts', { './request-cache': compile('src/lib/request-cache.ts') })
+const t = compile('src/lib/i18n.ts', { '@/stores/session': { useSession: () => ({}) } }).TRANSLATIONS.en
 function render(screen, data = responses) {
-  const monthCalendar = compile('src/components/month-calendar.tsx', { 'react-native': primitives, 'lucide-react-native': primitives, '@/components/ui': primitives })
+  const monthCalendar = compile('src/components/month-calendar.tsx', { 'react-native': primitives, 'lucide-react-native': primitives, '@/components/ui': primitives, '@/lib/i18n': { useT: () => t } })
   const Component = compile(screen, {
     '@/components/month-calendar': monthCalendar,
     'react-native': primitives, 'lucide-react-native': primitives,
     'expo-router': { Stack: { Screen: Primitive }, useRouter: () => ({ push() {} }), useFocusEffect() {} },
     '@/components/ui': primitives, '@/components/class-loading': { ClassLoading: Primitive }, '@/components/quick-links': { QuickLinks: Primitive },
     '@/stores/session': { useSession: () => ({ student, year: null, has: f => f !== 'timetable' }) },
-    '@/lib/api': api, '@/lib/books': { isDownloaded: () => false },
+    '@/lib/api': api, '@/lib/books': { isDownloaded: () => false }, '@/lib/i18n': { useT: () => t },
     '@/lib/use-api': { useApi: url => ({ data: url ? data[url.split('?')[0]] : null, error: null, loading: false, refreshing: false, refresh() {} }) },
   }).default
   return renderToStaticMarkup(React.createElement(Component))

@@ -7,20 +7,24 @@ import { useApi } from '@/lib/use-api'
 import { longDay, titleCase, type SchoolCalendar, type CalendarEvent } from '@/lib/api'
 import { Screen, Loading, Alert, Empty, Panel, Divider } from '@/components/ui'
 import { MonthCalendar, monthRange, shiftMonth, todayISO } from '@/components/month-calendar'
+import { useT, type Strings } from '@/lib/i18n'
+
+type LabelKey = Exclude<keyof Strings['calendar'], 'nothingOn'>
 
 type Kind = 'holiday' | 'exam' | 'event'
 
-const FILTERS = [['all', 'All'], ['holiday', 'Holidays'], ['exam', 'Exams'], ['event', 'Events']] as const
+const FILTERS = [['all', 'filterAll'], ['holiday', 'filterHolidays'], ['exam', 'filterExams'], ['event', 'filterEvents']] as const satisfies readonly (readonly [Kind | 'all', LabelKey])[]
 const DOT: Record<Kind, string> = { holiday: 'bg-emerald-500', exam: 'bg-violet-500', event: 'bg-sky-500' }
 const BADGE: Record<Kind, string> = { holiday: 'bg-emerald-50', exam: 'bg-violet-50', event: 'bg-sky-50' }
 const BADGE_TEXT: Record<Kind, string> = { holiday: 'text-emerald-700', exam: 'text-violet-700', event: 'text-sky-700' }
-const EVENT_LABEL: Record<string, string> = { holiday: 'Holiday', exam: 'Exam', meeting: 'Meeting', event: 'Event', other: 'Other' }
+const EVENT_LABEL: Record<string, LabelKey> = { holiday: 'labelHoliday', exam: 'labelExam', meeting: 'labelMeeting', event: 'labelEvent', other: 'labelOther' }
 
 const kindOf = (eventType: string): Kind => (eventType === 'holiday' || eventType === 'exam' ? eventType : 'event')
 const covers = (e: CalendarEvent, d: string) => e.event_date <= d && d <= (e.end_date ?? e.event_date)
 
 export default function CalendarScreen() {
   const { student } = useSession()
+  const t = useT()
   const [month, setMonth] = useState(() => todayISO().slice(0, 7))
   const [selected, setSelected] = useState<string | null>(null)
   const [filter, setFilter] = useState<Kind | 'all'>('all')
@@ -40,8 +44,8 @@ export default function CalendarScreen() {
   if (eventsApi.status === 404 || eventsApi.status === 405) {
     return (
       <View className="flex-1 bg-background pt-4 px-4">
-        <Stack.Screen options={{ title: 'Calendar' }} />
-        <Empty icon={CalendarDays} title="Not available yet" hint="Your school's server doesn't have this feature yet." />
+        <Stack.Screen options={{ title: t.screenTitles.calendar }} />
+        <Empty icon={CalendarDays} title={t.notAvailableTitle} hint={t.notAvailableHint} />
       </View>
     )
   }
@@ -57,10 +61,10 @@ export default function CalendarScreen() {
 
   return (
     <Screen refreshing={eventsApi.refreshing} onRefresh={eventsApi.refresh} testID="calendar-screen">
-      <Stack.Screen options={{ title: 'Calendar' }} />
+      <Stack.Screen options={{ title: t.screenTitles.calendar }} />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 px-1 py-1">
-        {FILTERS.map(([k, label]) => (
+        {FILTERS.map(([k, labelKey]) => (
           <Pressable
             key={k}
             onPress={() => setFilter(k)}
@@ -70,7 +74,7 @@ export default function CalendarScreen() {
             className={`rounded-full px-4 py-2 ${k === filter ? 'bg-teal-700' : 'bg-card border border-border'}`}
           >
             <Text className={`text-xs font-medium ${k === filter ? 'text-white' : 'text-muted-foreground'}`}>
-              {label}
+              {t.calendar[labelKey]}
             </Text>
           </Pressable>
         ))}
@@ -120,7 +124,7 @@ export default function CalendarScreen() {
                       <View className="flex-row items-center gap-2">
                         <View className={`rounded-full px-2 py-0.5 ${BADGE[kindOf(e.event_type)]}`}>
                           <Text className={`text-[10px] font-medium ${BADGE_TEXT[kindOf(e.event_type)]}`}>
-                            {EVENT_LABEL[e.event_type] ?? titleCase(e.event_type)}
+                            {e.event_type in EVENT_LABEL ? t.calendar[EVENT_LABEL[e.event_type]] : titleCase(e.event_type)}
                           </Text>
                         </View>
                         <Text className="flex-1 text-sm font-medium text-foreground">{e.title}</Text>
@@ -130,13 +134,13 @@ export default function CalendarScreen() {
                   ))}
                 </View>
               ) : (
-                <Text className="text-sm text-muted-foreground">{longDay(selected)} — nothing scheduled.</Text>
+                <Text className="text-sm text-muted-foreground">{t.calendar.nothingOn(longDay(selected))}</Text>
               )
             ) : monthEvents.length === 0 ? (
-              <Text className="text-sm text-muted-foreground">Nothing scheduled this month.</Text>
+              <Text className="text-sm text-muted-foreground">{t.calendar.nothingThisMonth}</Text>
             ) : (
               <View>
-                <Text className="mb-2 text-xs font-medium text-muted-foreground">This month</Text>
+                <Text className="mb-2 text-xs font-medium text-muted-foreground">{t.thisMonth}</Text>
                 {monthEvents.map((e, index) => (
                   <View key={e.id}>
                     {index > 0 && <Divider />}

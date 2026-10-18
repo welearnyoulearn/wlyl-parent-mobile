@@ -7,14 +7,16 @@ import { type LibraryItem, day } from '@/lib/api'
 import { isDownloaded } from '@/lib/books'
 import { useApi } from '@/lib/use-api'
 import { Screen, Loading, Alert, Empty, Panel, Section, Row, Divider, Chip } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 export default function LibraryScreen() {
   const { student, year, has } = useSession()
   const enabled = has('library')
+  const t = useT()
   const router = useRouter()
   // Re-read which books are on the phone whenever the list comes back into view.
   const [, setFocusTick] = useState(0)
-  useFocusEffect(useCallback(() => setFocusTick(t => t + 1), []))
+  useFocusEffect(useCallback(() => setFocusTick(n => n + 1), []))
 
   const { data: items, error, loading, refreshing, refresh, status } = useApi<LibraryItem[]>(
     student && enabled ? `/api/school/library?school_id=${student.school_id}&student_id=${student.id}` : null
@@ -23,8 +25,8 @@ export default function LibraryScreen() {
   if (!enabled) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Library' }} />
-        <Screen><Alert>The digital library is not enabled for your school.</Alert></Screen>
+        <Stack.Screen options={{ title: t.screenTitles.library }} />
+        <Screen><Alert>{t.library.notEnabled}</Alert></Screen>
       </>
     )
   }
@@ -32,9 +34,9 @@ export default function LibraryScreen() {
   if (status === 404 || status === 405) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Library' }} />
+        <Stack.Screen options={{ title: t.screenTitles.library }} />
         <Screen refreshing={refreshing} onRefresh={refresh}>
-          <Empty icon={Library} title="Not available yet" hint="Your school's server doesn't have this feature yet." />
+          <Empty icon={Library} title={t.notAvailableTitle} hint={t.notAvailableHint} />
         </Screen>
       </>
     )
@@ -43,7 +45,7 @@ export default function LibraryScreen() {
   if (error) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Library' }} />
+        <Stack.Screen options={{ title: t.screenTitles.library }} />
         <Screen refreshing={refreshing} onRefresh={refresh}>
           <Alert>{error}</Alert>
         </Screen>
@@ -54,7 +56,7 @@ export default function LibraryScreen() {
   if (loading || !items || !student) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Library' }} />
+        <Stack.Screen options={{ title: t.screenTitles.library }} />
         <Screen><Loading /></Screen>
       </>
     )
@@ -75,10 +77,10 @@ export default function LibraryScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Library' }} />
+      <Stack.Screen options={{ title: t.screenTitles.library }} />
       <Screen refreshing={refreshing} onRefresh={refresh} testID="library-screen">
         {entries.length === 0 ? (
-          <Empty icon={Library} title={`No textbooks for Grade ${student.grade}`} hint={`Your school has not assigned textbooks for this grade${year ? ` in ${year}` : ''}. Books will appear here once the school adds them. Pull down to check again.`} />
+          <Empty icon={Library} title={t.library.noTextbooksTitle(student.grade)} hint={t.library.noTextbooksHint(year ? t.library.inYear(year) : '')} />
         ) : (
           <View className="gap-5">
             {entries.map(([subject, list]) => (
@@ -94,10 +96,10 @@ export default function LibraryScreen() {
                         <View className="flex-1">
                           <Text className="text-sm font-medium text-foreground">{m.title}</Text>
                           <Text className="text-[11px] text-muted-foreground">
-                            {m.material_type === 'textbook' ? 'Textbook' : 'Handbook'} · added {day(m.created_at)}
+                            {t.library.itemMeta(m.material_type === 'textbook' ? t.library.textbook : t.library.handbook, day(m.created_at))}
                           </Text>
                         </View>
-                        {isDownloaded(m.material_id) && <Chip tone="green">Downloaded</Chip>}
+                        {isDownloaded(m.material_id) && <Chip tone="green">{t.library.downloaded}</Chip>}
                         <ChevronRight size={16} color="#9ca3af" />
                       </Row>
                     </View>

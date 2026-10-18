@@ -4,13 +4,15 @@ import { Text, View, Pressable } from 'react-native'
 import { Link, useLocalSearchParams } from 'expo-router'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
-import { api, EXAM_TYPE, longDay, type MarkSheet } from '@/lib/api'
+import { api, longDay, type MarkSheet } from '@/lib/api'
 import { useApi } from '@/lib/use-api'
 import { Screen, Loading, Panel, Chip, Alert, Ring, Button } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 export default function MarkSheetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { student, me } = useSession()
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const [ackError, setAckError] = useState('')
 
@@ -30,7 +32,7 @@ export default function MarkSheetScreen() {
       })
       refresh()
     } catch (e) {
-      setAckError(e instanceof Error ? e.message : 'Could not acknowledge')
+      setAckError(e instanceof Error ? e.message : t.examDetail.ackError)
     } finally {
       setBusy(false)
     }
@@ -40,7 +42,7 @@ export default function MarkSheetScreen() {
 
   if (error) return <Screen><Alert>{error}</Alert></Screen>
   if (loading || !student) return <Screen><Loading /></Screen>
-  if (!sheet) return <Screen><Alert>This result is not available.</Alert></Screen>
+  if (!sheet) return <Screen><Alert>{t.examDetail.notAvailable}</Alert></Screen>
 
   const pct = sheet.percentage === null ? null : Math.round(sheet.percentage)
 
@@ -49,7 +51,7 @@ export default function MarkSheetScreen() {
       <Link href="/exams" asChild>
         <Pressable className="mb-2 flex-row items-center gap-1 self-start" testID="back-to-exams">
           <ArrowLeft size={16} color="#6b7280" />
-          <Text className="text-sm text-muted-foreground">Results</Text>
+          <Text className="text-sm text-muted-foreground">{t.examDetail.backToResults}</Text>
         </Pressable>
       </Link>
 
@@ -58,18 +60,18 @@ export default function MarkSheetScreen() {
           <Ring pct={pct} size={96} stroke={9}>
             <View className="items-center justify-center">
               <Text className="text-xl font-bold text-foreground">{pct === null ? '—' : `${pct}%`}</Text>
-              {sheet.grade && <Text className="text-[11px] text-muted-foreground">Grade {sheet.grade}</Text>}
+              {sheet.grade && <Text className="text-[11px] text-muted-foreground">{t.exams.gradeChip(sheet.grade)}</Text>}
             </View>
           </Ring>
           <View className="flex-1">
             <Text className="text-base font-semibold text-foreground">{sheet.exam_name}</Text>
-            <Text className="text-xs text-muted-foreground">{EXAM_TYPE[sheet.exam_type] ?? sheet.exam_type} · {longDay(sheet.exam_date)}</Text>
+            <Text className="text-xs text-muted-foreground">{t.examType[sheet.exam_type] ?? sheet.exam_type} · {longDay(sheet.exam_date)}</Text>
             <Text className="mt-1 text-sm text-foreground">
-              {sheet.total_obtained !== null ? <Text><Text className="font-semibold">{sheet.total_obtained}</Text> / {sheet.total_max} marks</Text> : 'Some marks not entered yet'}
+              {sheet.total_obtained !== null ? <Text><Text className="font-semibold">{sheet.total_obtained}</Text> / {sheet.total_max} {t.examDetail.marksWord}</Text> : t.examDetail.someMarksNotEntered}
             </Text>
             <View className="mt-1.5 flex-row flex-wrap gap-1.5">
-              {sheet.pass !== null && (sheet.pass ? <Chip tone="green">Passed</Chip> : <Chip tone="red">Below pass mark</Chip>)}
-              <Chip>Pass mark {sheet.passing_pct}%</Chip>
+              {sheet.pass !== null && (sheet.pass ? <Chip tone="green">{t.examDetail.passed}</Chip> : <Chip tone="red">{t.examDetail.belowPassMark}</Chip>)}
+              <Chip>{t.examDetail.passMark(sheet.passing_pct)}</Chip>
             </View>
           </View>
         </View>
@@ -85,7 +87,7 @@ export default function MarkSheetScreen() {
                 <Text className="text-sm font-medium text-foreground">{s.subject_name}</Text>
                 <View className="flex-row items-center gap-2">
                   {s.is_absent ? (
-                    <Chip tone="muted">Absent</Chip>
+                    <Chip tone="muted">{t.absent}</Chip>
                   ) : (
                     <Text className="text-sm text-foreground">
                       <Text className="font-semibold">{s.marks_obtained ?? '—'}</Text>
@@ -109,8 +111,8 @@ export default function MarkSheetScreen() {
       {sheet.remarks && (sheet.remarks.class_teacher_remark || sheet.remarks.attendance_remark || sheet.remarks.next_term_advice) && (
         <Panel className="p-4" testID="marksheet-remarks">
           <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-sm font-semibold text-foreground">Class teacher&apos;s remarks</Text>
-            {sheet.remarks.conduct && <Chip tone="teal">Conduct: {sheet.remarks.conduct}</Chip>}
+            <Text className="text-sm font-semibold text-foreground">{t.examDetail.teacherRemarksTitle}</Text>
+            {sheet.remarks.conduct && <Chip tone="teal">{t.examDetail.conductChip(sheet.remarks.conduct)}</Chip>}
           </View>
           <View className="gap-2">
              {sheet.remarks.class_teacher_remark && (
@@ -119,10 +121,10 @@ export default function MarkSheetScreen() {
                </View>
              )}
              {sheet.remarks.attendance_remark && (
-               <Text className="text-xs text-foreground"><Text className="font-medium">Attendance: </Text><Text className="text-muted-foreground">{sheet.remarks.attendance_remark}</Text></Text>
+               <Text className="text-xs text-foreground"><Text className="font-medium">{t.examDetail.attendanceLabel}</Text><Text className="text-muted-foreground">{sheet.remarks.attendance_remark}</Text></Text>
              )}
              {sheet.remarks.next_term_advice && (
-               <Text className="text-xs text-foreground"><Text className="font-medium">Next term: </Text><Text className="text-muted-foreground">{sheet.remarks.next_term_advice}</Text></Text>
+               <Text className="text-xs text-foreground"><Text className="font-medium">{t.examDetail.nextTermLabel}</Text><Text className="text-muted-foreground">{sheet.remarks.next_term_advice}</Text></Text>
              )}
           </View>
         </Panel>
@@ -134,22 +136,22 @@ export default function MarkSheetScreen() {
           <View className="flex-row items-center gap-3">
             <CheckCircle2 size={20} color="#10b981" />
             <View>
-              <Text className="text-sm font-medium text-foreground">Acknowledged</Text>
+              <Text className="text-sm font-medium text-foreground">{t.acknowledged}</Text>
               <Text className="text-xs text-muted-foreground">
-                by {sheet.parent_ack_name ?? me?.name ?? 'you'}
-                {sheet.parent_ack_at ? ` on ${longDay(sheet.parent_ack_at)}` : ''}
+                {t.examDetail.byName(sheet.parent_ack_name ?? me?.name ?? t.examDetail.you)}
+                {sheet.parent_ack_at ? t.examDetail.onDate(longDay(sheet.parent_ack_at)) : ''}
               </Text>
             </View>
           </View>
         ) : (
           <View>
-            <Text className="text-sm font-medium text-foreground">Please acknowledge this result</Text>
+            <Text className="text-sm font-medium text-foreground">{t.examDetail.pleaseAcknowledge}</Text>
             <Text className="mt-0.5 text-xs text-muted-foreground">
-              This tells the class teacher you have seen {student.name.split(' ')[0]}&apos;s marks.
+              {t.examDetail.tellsTeacher(student.name.split(' ')[0])}
             </Text>
             <View className="mt-3">
               <Button
-                label={busy ? 'Saving...' : 'I have seen this result'}
+                label={busy ? t.saving : t.examDetail.iHaveSeen}
                 onPress={acknowledge}
                 loading={busy}
                 disabled={busy}

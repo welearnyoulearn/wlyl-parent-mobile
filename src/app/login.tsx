@@ -3,12 +3,14 @@ import { Text, View, KeyboardAvoidingView, ScrollView, Linking } from 'react-nat
 import { useRouter } from 'expo-router'
 import { useSession } from '@/stores/session'
 import { api, ApiError, PRIVACY_URL } from '@/lib/api'
-import { Button, Field, Alert, SafeAreaView } from '@/components/ui'
+import { Button, Field, Alert, SafeAreaView, LangToggle } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 
 type LoginResponse = { success: boolean; passwordChanged: boolean; name: string | null; schoolName: string | null }
 
 export default function LoginScreen() {
   const router = useRouter()
+  const t = useT()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -28,7 +30,7 @@ export default function LoginScreen() {
       void useSession.getState().load()
       router.replace(r.passwordChanged ? '/' : '/change-password')
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : (err instanceof Error ? err.message : 'Login failed'))
+      setError(err instanceof ApiError ? err.message : (err instanceof Error ? err.message : t.login.error))
     } finally {
       setBusy(false)
     }
@@ -43,17 +45,20 @@ export default function LoginScreen() {
         className="flex-1"
       >
         <ScrollView contentContainerClassName="flex-grow justify-center p-6 gap-6" keyboardShouldPersistTaps="handled">
+          <View className="items-end">
+            <LangToggle />
+          </View>
           <View className="items-center bg-primary rounded-3xl p-8 mb-2">
             <View className="mb-3 size-14 items-center justify-center rounded-2xl bg-white/20">
               <Text className="text-3xl font-bold text-primary-foreground">W</Text>
             </View>
-            <Text className="text-2xl font-bold text-primary-foreground">WLYL Parent</Text>
-            <Text className="text-primary-foreground/90 mt-2 text-center text-sm">Sign in with the login your school sent you.</Text>
+            <Text className="text-2xl font-bold text-primary-foreground">{t.appName}</Text>
+            <Text className="text-primary-foreground/90 mt-2 text-center text-sm">{t.login.subtitle}</Text>
           </View>
 
           <View className="gap-4">
             <Field
-              label="Email or phone number"
+              label={t.login.identifierLabel}
               testID="login-identifier-input"
               value={identifier}
               onChangeText={setIdentifier}
@@ -62,7 +67,7 @@ export default function LoginScreen() {
               autoComplete="username"
             />
             <Field
-              label="Password"
+              label={t.password}
               testID="login-password-input"
               value={password}
               onChangeText={setPassword}
@@ -71,7 +76,7 @@ export default function LoginScreen() {
             />
             {error ? <Alert>{error}</Alert> : null}
             <Button
-              label={busy ? 'Signing in…' : 'Sign in'}
+              label={busy ? t.login.signingIn : t.login.signIn}
               testID="login-submit-btn"
               onPress={submit}
               loading={busy}
@@ -83,7 +88,7 @@ export default function LoginScreen() {
               onPress={() => Linking.openURL(PRIVACY_URL)}
               className="py-2 text-center text-sm text-primary underline"
             >
-              Privacy policy
+              {t.privacyPolicy}
             </Text>
           </View>
         </ScrollView>
