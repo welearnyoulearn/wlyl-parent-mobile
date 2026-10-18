@@ -1,6 +1,14 @@
 # Play Store release status
 
-Last checked: 16 October 2026 (Asia/Kolkata).
+Last checked: 18 October 2026 (Asia/Kolkata).
+
+## Tester feedback + push update — 1.0.3 (9)
+
+- Fixes kowsik's round-1 feedback (docs/FEEDBACK_TRACKER.md FB-2..FB-6), English/Telugu switch, Firebase (wlyl-512003) for Android push, per-kind notification sounds ("Set A").
+- Build: `ae642434-a03c-4c75-9c24-776f84607b79`, version 1.0.3, code 9, source `69b0a83`.
+- Build URL: https://expo.dev/accounts/thindaam/projects/wlyl-parent-mobile/builds/ae642434-a03c-4c75-9c24-776f84607b79
+- Local bundle: `~/Desktop/wlyl-parent-1.0.3-9.aab`, SHA-256 `6109eac5f161f3c3a0437faac0396f20842730a2066a9cbde47e92446d08dbd3`. Verified: package, version 1.0.3, six sounds in res/raw, Firebase app id, dev API origin.
+- Not yet uploaded to Play internal testing (no Play service-account key on this machine). Push also needs platform branch `feature/133-expo-push-v2` on dev.
 
 ## Library and loading update — 1.0.2
 
