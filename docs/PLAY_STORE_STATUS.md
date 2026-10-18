@@ -2,13 +2,16 @@
 
 Last checked: 18 October 2026 (Asia/Kolkata).
 
-## Tester feedback + push update — 1.0.3 (9)
+## Tester feedback + push update — 1.0.3 (10)
 
-- Fixes kowsik's round-1 feedback (docs/FEEDBACK_TRACKER.md FB-2..FB-6), English/Telugu switch, Firebase (wlyl-512003) for Android push, per-kind notification sounds ("Set A").
-- Build: `ae642434-a03c-4c75-9c24-776f84607b79`, version 1.0.3, code 9, source `69b0a83`.
-- Build URL: https://expo.dev/accounts/thindaam/projects/wlyl-parent-mobile/builds/ae642434-a03c-4c75-9c24-776f84607b79
-- Local bundle: `~/Desktop/wlyl-parent-1.0.3-9.aab`, SHA-256 `6109eac5f161f3c3a0437faac0396f20842730a2066a9cbde47e92446d08dbd3`. Verified: package, version 1.0.3, six sounds in res/raw, Firebase app id, dev API origin.
-- Not yet uploaded to Play internal testing (no Play service-account key on this machine). Push also needs platform branch `feature/133-expo-push-v2` on dev.
+- Fixes kowsik's round-1 feedback (docs/FEEDBACK_TRACKER.md FB-2..FB-6), English/Telugu switch, "Coming soon" for homework/leave/bus/rewards/activity/timetable (Home, More, notification taps), "Academic year …" label, Firebase (wlyl-512003) for Android push, per-kind notification sounds ("Set A").
+- Build: `232fb1b3-6a8b-4fe9-b529-914511752006`, version 1.0.3, code 10, source `86b9837`. Code 9 (`ae642434…`) was built earlier the same day but never uploaded; superseded.
+- Build URL: https://expo.dev/accounts/thindaam/projects/wlyl-parent-mobile/builds/232fb1b3-6a8b-4fe9-b529-914511752006
+- Bundle SHA-256 `b3e1fccbedd5c66688944070f90e87f572609b7a91dd6b814e690570947277ea` (`~/Desktop/wlyl-parent-1.0.3-10.aab`). Verified: version 1.0.3, six sounds in res/raw, Firebase app id, dev API origin, new strings.
+- Uploaded through Play Console in the browser; only the existing optional deobfuscation-file warning; no device support lost (12,381 phones). Install size 28.2 MB (+770 KB).
+- Published and confirmed **Available to internal testers**, 18 October 2026 at 12:14 IST. Replaces code 8 (1.0.2).
+- Update link: https://play.google.com/apps/internaltest/4701325226419928085
+- Push notifications start working once platform branch `feature/133-expo-push-v2` is merged to dev and deployed (no new app build needed).
 
 ## Library and loading update — 1.0.2
 
