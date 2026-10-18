@@ -4,6 +4,8 @@ import Constants, { ExecutionEnvironment } from 'expo-constants'
 import { Platform } from 'react-native'
 import type { Href } from 'expo-router'
 import { api } from '@/lib/api'
+import { TRANSLATIONS, type Strings } from '@/lib/i18n'
+import { useSession } from '@/stores/session'
 
 // Every use of expo-notifications lives in this file. On Android, Expo Go
 // (SDK 53+) throws as soon as expo-notifications is imported, which took the
@@ -23,6 +25,19 @@ Notifications?.setNotificationHandler({
   }),
 })
 
+// The server sends `channelId` = one of these ids and `sound` = the file name (iOS plays `sound`),
+// so ids and file names must stay in sync with the platform's lib/expoPush.ts and the `sounds`
+// list in app.json. Android binds a sound to a channel when it is created and it cannot be
+// changed afterwards, so a new sound needs a new id.
+export const PUSH_CHANNELS: { id: keyof Strings['pushChannels']; sound: string }[] = [
+  { id: 'exams', sound: 'exams_chime.wav' },
+  { id: 'results', sound: 'results_bells.wav' },
+  { id: 'fees', sound: 'fees_coin.wav' },
+  { id: 'absent', sound: 'absent_alert.wav' },
+  { id: 'messages', sound: 'message_ding.wav' },
+  { id: 'birthday', sound: 'birthday_jingle.wav' },
+]
+
 let registeredToken: string | null = null
 
 export async function registerForPush(): Promise<void> {
@@ -34,6 +49,14 @@ export async function registerForPush(): Promise<void> {
         name: 'School updates',
         importance: Notifications.AndroidImportance.MAX,
       })
+      const names = TRANSLATIONS[useSession.getState().lang ?? 'en'].pushChannels
+      for (const { id, sound } of PUSH_CHANNELS) {
+        await Notifications.setNotificationChannelAsync(id, {
+          name: names[id],
+          importance: Notifications.AndroidImportance.MAX,
+          sound,
+        })
+      }
     }
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync()

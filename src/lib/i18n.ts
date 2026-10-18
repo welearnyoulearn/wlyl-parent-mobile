@@ -332,6 +332,9 @@ const en = {
 
   // Shared bits: src/components/ui.tsx
   ui: { loading: 'Loading', showPassword: 'Show password', hidePassword: 'Hide password' },
+
+  // Android notification channel names: src/lib/push.ts
+  pushChannels: { exams: 'Exams', results: 'Results', fees: 'Fees', absent: 'Attendance', messages: 'School messages', birthday: 'Birthdays' },
 }
 
 const te: typeof en = {
@@ -636,6 +639,8 @@ const te: typeof en = {
   },
 
   ui: { loading: 'లోడ్ అవుతున్నది', showPassword: 'పాస్‌వర్డ్ చూపించు', hidePassword: 'పాస్‌వర్డ్ దాచు' },
+
+  pushChannels: { exams: 'పరీక్షలు', results: 'ఫలితాలు', fees: 'ఫీజులు', absent: 'హాజరు', messages: 'బడి సందేశాలు', birthday: 'పుట్టినరోజులు' },
 }
 
 export const TRANSLATIONS = { en, te }

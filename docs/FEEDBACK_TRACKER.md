@@ -16,5 +16,6 @@ Status: `Open` · `In progress` · `Done` · `Blocked`
 | FB-6 | Can't see which academic year | App loads the current year but never shows it | "AY 2026-27" pill in the header on every tab | Done — not yet tested on a device |
 
 ## Follow-ups
+- Notification sounds: "Set A" chosen 18 Oct 2026, one Android channel per kind (exams, results, fees, absent, messages, birthday); the platform's lib/expoPush.ts must send matching `channelId` and `sound`.
 - Platform branches `feature/129-parent-app-backend` and `feature/133-expo-push` are local only and 102 commits behind `dev` — rebase and open PRs before re-enabling FB-5 screens and FB-1.
 - Create a GitHub repo for this app so these can become real issues.

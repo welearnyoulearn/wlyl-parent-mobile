@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [1.0.3] — 2026-10-18
+
+### Fixed
+- Tester feedback FB-2 to FB-6 (see `docs/FEEDBACK_TRACKER.md`), including the academic year pill in the header on every tab (FB-6).
+
+### Added
+- Firebase/FCM push setup so Android builds can receive push notifications.
+- Per-type notification sounds: exams, results, fees, absence, school messages and birthdays each have their own sound and Android channel (`exams`, `results`, `fees`, `absent`, `messages`, `birthday`), named in the chosen language. The `default` channel remains the fallback.
+
 ## [1.0.2] — 2026-10-16
 
 ### Fixed

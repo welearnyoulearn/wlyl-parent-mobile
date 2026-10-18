@@ -2,7 +2,7 @@
   "expo": {
     "name": "WLYL Parent",
     "slug": "wlyl-parent-mobile",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wlylparent",
@@ -40,7 +40,15 @@
         "expo-notifications",
         {
           "color": "#0d7d76",
-          "defaultChannel": "default"
+          "defaultChannel": "default",
+          "sounds": [
+            "./assets/sounds/exams_chime.wav",
+            "./assets/sounds/results_bells.wav",
+            "./assets/sounds/fees_coin.wav",
+            "./assets/sounds/absent_alert.wav",
+            "./assets/sounds/message_ding.wav",
+            "./assets/sounds/birthday_jingle.wav"
+          ]
         }
       ],
       "expo-asset"
