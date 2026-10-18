@@ -284,7 +284,7 @@ const en = {
     goodAfternoon: 'Good afternoon',
     goodEvening: 'Good evening',
     greetingSuffix: (name: string) => `, ${name}`,
-    ay: (year: string) => `AY ${year}`,
+    ay: (year: string) => `Academic year ${year}`,
     logOut: 'Log out',
     childrenList: 'Children',
     classShort: (grade: string, section: string) => `Class ${grade}-${section}`,
@@ -314,6 +314,7 @@ const en = {
   more: {
     school: 'School',
     account: 'Account',
+    comingSoon: 'Coming soon',
     signOut: 'Sign out',
     langEnglish: 'English',
     langTelugu: 'తెలుగు',
@@ -596,7 +597,7 @@ const te: typeof en = {
     goodAfternoon: 'శుభ మధ్యాహ్నం',
     goodEvening: 'శుభ సాయంత్రం',
     greetingSuffix: (name) => `, ${name}`,
-    ay: (year) => `AY ${year}`,
+    ay: (year) => `విద్యా సంవత్సరం ${year}`,
     logOut: 'లాగ్ అవుట్',
     childrenList: 'పిల్లలు',
     classShort: (grade, section) => `తరగతి ${grade}-${section}`,
@@ -624,6 +625,7 @@ const te: typeof en = {
   more: {
     school: 'పాఠశాల',
     account: 'ఖాతా',
+    comingSoon: 'త్వరలో వస్తున్నాయి',
     signOut: 'సైన్ అవుట్',
     langEnglish: 'English',
     langTelugu: 'తెలుగు',

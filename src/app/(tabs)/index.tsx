@@ -9,6 +9,9 @@ import { QuickLinks } from '@/components/quick-links'
 import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
+// Timetable stays "Coming soon" until /api/parent/timetable ships on the platform (#129).
+const TIMETABLE_READY = false
+
 function nowHHMM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
 
 export default function HomePage() {
@@ -20,7 +23,7 @@ export default function HomePage() {
 
   const { data: summary, error: er1, refreshing: r1, refresh: ref1 } = useApi<Summary>(q ? `/api/parent/child-summary?${q}` : null)
   const { data: feesData, error: er2, refreshing: r2, refresh: ref2 } = useApi<Fees>(student ? `/api/parent/fees?school_id=${student.school_id}&student_id=${student.id}` : null)
-  const { data: today, error: ttError, status: ttStatus, refreshing: r3, refresh: ref3 } = useApi<Timetable>(q && has('timetable') ? `/api/parent/timetable?${q}` : null)
+  const { data: today, error: ttError, status: ttStatus, refreshing: r3, refresh: ref3 } = useApi<Timetable>(q && TIMETABLE_READY && has('timetable') ? `/api/parent/timetable?${q}` : null)
   // 404/405: this platform has no timetable route — hide the card instead of erroring.
   const noTimetable = ttStatus === 404 || ttStatus === 405
   const er3 = noTimetable ? null : ttError
@@ -119,7 +122,7 @@ export default function HomePage() {
 
       <QuickLinks />
 
-      {has('timetable') && !noTimetable && (
+      {TIMETABLE_READY && has('timetable') && !noTimetable && (
         <Section title={t.home.todaysClasses}>
           {today === null ? <Loading /> : today.periods.length === 0 ? (
             <Empty icon={PartyPopper} title={t.home.noClassesTitle} hint={t.home.noClassesHint} />

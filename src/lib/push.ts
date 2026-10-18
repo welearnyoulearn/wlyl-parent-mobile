@@ -107,9 +107,9 @@ export function routeForPush(url: unknown): Href {
   if (typeof url !== 'string') return '/notifications'
 
   const routes = [
-    '/', '/attendance', '/fees', '/exams', '/more', '/timetable',
-    '/calendar', '/notifications', '/profile', '/syllabus',
-    '/library', '/homework', '/leave', '/transport', '/rewards', '/activity'
+    // Homework, leave, bus, rewards, activity and timetable are "Coming soon", so taps never open them.
+    '/', '/attendance', '/fees', '/exams', '/more',
+    '/calendar', '/notifications', '/profile', '/syllabus', '/library',
   ]
 
   if (routes.includes(url)) {

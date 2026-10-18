@@ -24,7 +24,7 @@ export const SCHOOL_LINKS: AppLink[] = [
 
 // Not built in the app yet. Shown disabled so everyone can see what's left:
 // homework, leave, transport, rewards, activity and timetable wait on the platform backend (#129).
-const COMING_SOON: { id: string; label: (t: Strings) => string; icon: LucideIcon }[] = [
+export const COMING_SOON: { id: string; label: (t: Strings) => string; icon: LucideIcon }[] = [
   { id: 'homework', label: t => t.quickLinks.homework, icon: NotebookPen },
   { id: 'leave', label: t => t.quickLinks.leave, icon: CalendarX2 },
   { id: 'transport', label: t => t.quickLinks.bus, icon: Bus },

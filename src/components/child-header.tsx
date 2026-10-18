@@ -30,14 +30,12 @@ export function ChildHeader() {
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-xs text-white/75">{greeting(t)}{firstName ? t.header.greetingSuffix(firstName) : ''}</Text>
-          <View className="flex-row items-center gap-2">
-            <Text className="text-sm font-semibold text-white" numberOfLines={1}>{me?.school_name ?? t.appName}</Text>
-            {year && (
-              <View className="rounded-full bg-white/15 px-2 py-0.5">
-                <Text testID="header-academic-year" className="text-[10px] font-medium text-white/90">{t.header.ay(year)}</Text>
-              </View>
-            )}
-          </View>
+          <Text className="text-sm font-semibold text-white" numberOfLines={1}>{me?.school_name ?? t.appName}</Text>
+          {year && (
+            <View className="mt-1 self-start rounded-full bg-white/15 px-2.5 py-0.5">
+              <Text testID="header-academic-year" className="text-[11px] font-semibold text-white">{t.header.ay(year)}</Text>
+            </View>
+          )}
         </View>
         <Pressable onPress={() => void onLogout()} testID="logout-button" accessibilityRole="button" accessibilityLabel={t.header.logOut}
           className="size-10 items-center justify-center rounded-full bg-white/15 active:bg-white/25">
