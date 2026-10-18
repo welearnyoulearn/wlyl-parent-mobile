@@ -1,16 +1,100 @@
 import { ClassLoading } from '@/components/class-loading'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Text, View, Pressable } from 'react-native'
 import { Link } from 'expo-router'
-import { CalendarDays, ChevronRight, GraduationCap } from 'lucide-react-native'
+import { CalendarDays, ChevronRight, GraduationCap, Inbox } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
-import { EXAM_TYPE, day, longDay, type Summary, type MarkSheet } from '@/lib/api'
+import { EXAM_TYPE, day, longDay, type CalendarExam, type Summary, type MarkSheet } from '@/lib/api'
 import { useApi } from '@/lib/use-api'
 import { Screen, Loading, Panel, Empty, Chip, Alert, Ring } from '@/components/ui'
+import { MonthCalendar, monthRange, shiftMonth, todayISO } from '@/components/month-calendar'
 
 function daysUntil(d: string) {
   const n = Math.ceil((new Date(d).getTime() - Date.now()) / 86400000)
   return n <= 0 ? 'Today' : n === 1 ? 'Tomorrow' : `In ${n} days`
+}
+
+const EXAM_DOT: Record<string, string> = { unit_test: 'bg-sky-500', mid_term: 'bg-amber-500', final_exam: 'bg-violet-500', practical: 'bg-emerald-500' }
+
+function ExamCalendar({ schoolId, studentId }: { schoolId: number; studentId: number }) {
+  const [month, setMonth] = useState(() => todayISO().slice(0, 7))
+  const [selected, setSelected] = useState<string | null>(null)
+  const { from, to } = monthRange(month)
+  const { data, error, loading } = useApi<CalendarExam[]>(
+    `/api/exams/calendar?school_id=${schoolId}&student_id=${studentId}&from=${from}&to=${to}`
+  )
+
+  const byDate = useMemo(() => {
+    const map = new Map<string, CalendarExam[]>()
+    for (const e of data ?? []) {
+      if (!e.exam_date) continue
+      if (!map.has(e.exam_date)) map.set(e.exam_date, [])
+      map.get(e.exam_date)!.push(e)
+    }
+    return map
+  }, [data])
+
+  const selectedExams = selected ? byDate.get(selected) ?? [] : []
+
+  function go(delta: number) {
+    setMonth(m => shiftMonth(m, delta))
+    setSelected(null)
+  }
+
+  if (loading) return <Loading label="Loading exam calendar" />
+  if (error) return <Alert>{error}</Alert>
+
+  return (
+    <View className="gap-3" testID="exam-calendar">
+      <MonthCalendar
+        month={month}
+        onPrev={() => go(-1)}
+        onNext={() => go(1)}
+        selected={selected}
+        onSelectDay={d => setSelected(s => (s === d ? null : d))}
+        testIDPrefix="exam-cal"
+        dayMarkers={d => {
+          const exams = byDate.get(d) ?? []
+          if (!exams.length) return null
+          return (
+            <View className="flex-row gap-0.5">
+              {exams.slice(0, 3).map(e => <View key={e.id} className={`h-1.5 w-1.5 rounded-full ${EXAM_DOT[e.exam_type] ?? 'bg-gray-400'}`} />)}
+            </View>
+          )
+        }}
+        accessibilityLabelFor={d => {
+          const exams = byDate.get(d) ?? []
+          return exams.length ? `${longDay(d)}: ${exams.map(e => e.exam_name).join(', ')}` : longDay(d)
+        }}
+      />
+
+      <Panel className="p-4" testID="exam-calendar-detail">
+        {selected ? (
+          selectedExams.length > 0 ? (
+            <View className="gap-2">
+              <Text className="text-sm font-semibold text-foreground">{longDay(selected)}</Text>
+              {selectedExams.map(e => (
+                <View key={e.id} className="gap-1">
+                  <Text className="text-sm font-medium text-foreground">{e.exam_name}</Text>
+                  <View className="flex-row flex-wrap items-center gap-1.5">
+                    <Chip tone="teal">{EXAM_TYPE[e.exam_type] ?? e.exam_type}</Chip>
+                    {e.subjects.map(s => <Chip key={s}>{s}</Chip>)}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View className="flex-row items-center gap-2">
+              <Inbox size={16} color="#9ca3af" />
+              <Text className="text-sm text-muted-foreground">No exams on {longDay(selected)}</Text>
+            </View>
+          )
+        ) : (
+          <Text className="text-sm text-muted-foreground">Tap a day to see that day’s exams.</Text>
+        )}
+      </Panel>
+    </View>
+  )
 }
 
 export default function ExamsScreen() {
@@ -66,6 +150,8 @@ export default function ExamsScreen() {
       </View>
 
       <Screen refreshing={refreshing} onRefresh={onRefresh}>
+        {activeTab === 'upcoming' && <ExamCalendar schoolId={student.school_id} studentId={student.id} />}
+
         {activeTab === 'upcoming' ? (
           summary?.upcoming_exams.length === 0 ? (
             <Empty icon={CalendarDays} title="No exams scheduled" hint="Upcoming exams for the next two months appear here." />

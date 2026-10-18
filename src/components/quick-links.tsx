@@ -11,23 +11,24 @@ export type AppLink = { id: string; label: string; icon: LucideIcon; route: Href
 
 // Shared by Home's Quick Links and the More tab.
 export const CHILD_LINKS: AppLink[] = [
-  { id: 'homework', label: 'Homework', icon: NotebookPen, route: '/homework', feature: 'homework' },
-  { id: 'leave', label: 'Leave', icon: CalendarX2, route: '/leave', feature: 'attendance' },
-  { id: 'transport', label: 'Bus', icon: Bus, route: '/transport', feature: 'transport' },
-  { id: 'rewards', label: 'Rewards', icon: Trophy, route: '/rewards' },
-  { id: 'activity', label: 'Activity', icon: Activity, route: '/activity' },
   { id: 'pay-online', label: 'Pay fees', icon: CreditCard, route: '/fees', feature: 'online-payments' },
 ]
 
 export const SCHOOL_LINKS: AppLink[] = [
-  { id: 'timetable', label: 'Timetable', icon: Clock, route: '/timetable', feature: 'timetable' },
-  { id: 'calendar', label: 'Calendar', icon: CalendarDays, route: '/calendar' },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays, route: '/calendar', feature: 'calendar' },
   { id: 'syllabus', label: 'Syllabus', icon: BookOpenCheck, route: '/syllabus', feature: 'curriculum' },
   { id: 'library', label: 'Library', icon: Library, route: '/library', feature: 'library' },
 ]
 
-// Not built in the app yet. Shown disabled so everyone can see what's left (#10).
+// Not built in the app yet. Shown disabled so everyone can see what's left:
+// homework, leave, transport, rewards, activity and timetable wait on the platform backend (#129).
 const COMING_SOON: { id: string; label: string; icon: LucideIcon }[] = [
+  { id: 'homework', label: 'Homework', icon: NotebookPen },
+  { id: 'leave', label: 'Leave', icon: CalendarX2 },
+  { id: 'transport', label: 'Bus', icon: Bus },
+  { id: 'rewards', label: 'Rewards', icon: Trophy },
+  { id: 'activity', label: 'Activity', icon: Activity },
+  { id: 'timetable', label: 'Timetable', icon: Clock },
   { id: 'receipts', label: 'Receipts', icon: ReceiptText },
   { id: 'report-card', label: 'Report card', icon: FileText },
   { id: 'photos', label: 'Photos', icon: Images },

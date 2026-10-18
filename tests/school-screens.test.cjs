@@ -53,7 +53,9 @@ function compile(relative, overrides = {}) {
 }
 const api = compile('src/lib/api.ts', { './request-cache': compile('src/lib/request-cache.ts') })
 function render(screen, data = responses) {
+  const monthCalendar = compile('src/components/month-calendar.tsx', { 'react-native': primitives, 'lucide-react-native': primitives, '@/components/ui': primitives })
   const Component = compile(screen, {
+    '@/components/month-calendar': monthCalendar,
     'react-native': primitives, 'lucide-react-native': primitives,
     'expo-router': { Stack: { Screen: Primitive }, useRouter: () => ({ push() {} }), useFocusEffect() {} },
     '@/components/ui': primitives, '@/components/class-loading': { ClassLoading: Primitive }, '@/components/quick-links': { QuickLinks: Primitive },

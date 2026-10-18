@@ -84,9 +84,20 @@ export type SyllabusTopic = {
   id: number; topic_name: string; topic_order: number; status: 'covered' | 'pending' | string
   covered_date: string | null; covered_by_name: string | null
 }
-export type SyllabusChapter = { school_chapter_id: number; chapter_name: string; chapter_order: number; total: number; covered: number; topics: SyllabusTopic[] }
+// class_semester_label is the per-CLASS Semester 1/2/... grouping from the teacher's Setup
+// screen (not school_chapters' own shared `semester` column) — it drives the Semester tabs.
+export type SyllabusChapter = {
+  school_chapter_id: number; chapter_name: string; chapter_order: number
+  class_semester_label: string | null; total: number; covered: number; topics: SyllabusTopic[]
+}
+export type SyllabusSubject = {
+  subject: string; board: string | null; total: number; covered: number; completion_pct: number; chapters: SyllabusChapter[]
+  setup_completed_at: string | null; semester_mode: boolean; semester_count: number | null
+}
 // completion_pct is chapter-weighted on the platform (each chapter an equal share), not covered/total.
-export type Syllabus = { subjects: { subject: string; board: string | null; total: number; covered: number; completion_pct: number; chapters: SyllabusChapter[] }[] }
+export type Syllabus = { subjects: SyllabusSubject[] }
+// /api/parent/subjects?student_id= — one child's class subjects with each subject's teacher.
+export type ClassSubject = { subject_name: string; teacher_name: string | null }
 
 // /api/school/library — parents only ever get 'textbook' rows for the child's grade.
 export type LibraryItem = {

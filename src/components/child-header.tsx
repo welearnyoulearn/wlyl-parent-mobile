@@ -15,7 +15,7 @@ function greeting() {
 export function ChildHeader() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { me, children, student, selectChild, logout } = useSession()
+  const { me, children, student, year, selectChild, logout } = useSession()
   const firstName = me?.name?.split(' ')[0]
 
   async function onLogout() {
@@ -28,7 +28,14 @@ export function ChildHeader() {
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-xs text-white/75">{greeting()}{firstName ? `, ${firstName}` : ''}</Text>
-          <Text className="text-sm font-semibold text-white" numberOfLines={1}>{me?.school_name ?? 'WLYL Parent'}</Text>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-sm font-semibold text-white" numberOfLines={1}>{me?.school_name ?? 'WLYL Parent'}</Text>
+            {year && (
+              <View className="rounded-full bg-white/15 px-2 py-0.5">
+                <Text testID="header-academic-year" className="text-[10px] font-medium text-white/90">AY {year}</Text>
+              </View>
+            )}
+          </View>
         </View>
         <Pressable onPress={() => void onLogout()} testID="logout-button" accessibilityRole="button" accessibilityLabel="Log out"
           className="size-10 items-center justify-center rounded-full bg-white/15 active:bg-white/25">

@@ -4,14 +4,14 @@ import { Href, useRouter } from 'expo-router'
 import { AlertTriangle, CalendarDays, ChevronRight, Megaphone, PartyPopper } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
-import { day, longDay, hhmm, inr, num, EXAM_TYPE, type Announcement, type SchoolCalendar, type Fees, type Summary, type Timetable } from '@/lib/api'
+import { day, longDay, hhmm, inr, EXAM_TYPE, type Announcement, type SchoolCalendar, type Fees, type Summary, type Timetable } from '@/lib/api'
 import { QuickLinks } from '@/components/quick-links'
 import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring } from '@/components/ui'
 
 function nowHHMM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
 
 export default function HomePage() {
-  const { student, year, has } = useSession()
+  const { student, has } = useSession()
   const router = useRouter()
 
   const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
@@ -225,10 +225,6 @@ export default function HomePage() {
           </Panel>
         </Section>
       )}
-
-      {num(fees?.total_due) > 0 && year ? (
-        <Text className="pt-2 text-center text-[11px] text-muted-foreground">Academic year {year}</Text>
-      ) : null}
 
     </Screen>
   )

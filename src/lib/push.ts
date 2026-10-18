@@ -58,8 +58,9 @@ export async function registerForPush(): Promise<void> {
     })
 
     registeredToken = token
-  } catch {
-    // Ignore errors: Expo Go on Android cannot get push tokens, and the app must keep working
+  } catch (err) {
+    // Log, don't throw: Expo Go on Android cannot get push tokens, and the app must keep working
+    console.warn('[push] registration failed', err)
   }
 }
 
@@ -71,8 +72,9 @@ export async function unregisterPush(): Promise<void> {
       method: 'DELETE',
       body: JSON.stringify({ token: registeredToken }),
     })
-  } catch {
-    // Ignore errors
+  } catch (err) {
+    // Log, don't throw: unregistering is best-effort and must not block logout
+    console.warn('[push] unregister failed', err)
   } finally {
     registeredToken = null
   }
