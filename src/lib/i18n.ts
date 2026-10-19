@@ -48,7 +48,7 @@ const en = {
   },
 
   // Stack screen titles, shared with quick-links labels
-  screenTitles: { calendar: 'Calendar', syllabus: 'Syllabus', library: 'Library', notifications: 'Notifications', profile: 'Profile' },
+  screenTitles: { calendar: 'Calendar', syllabus: 'Syllabus', library: 'Library', notifications: 'Notifications', profile: 'Profile', notices: 'School notices' },
 
   // Home: src/app/(tabs)/index.tsx
   home: {
@@ -66,10 +66,32 @@ const en = {
     latestResult: 'Latest result',
     tapToViewMarkSheet: 'Tap to view mark sheet',
     noExamsYet: 'No exams yet',
-    fromSchool: 'From the school',
     important: 'Important',
     comingUp: 'Coming up',
     subjectsCount: (n: number) => `${n} subjects`,
+    contactTitle: 'Contact & Support',
+    classTeacher: 'Class teacher',
+    schoolAdmin: 'School administration',
+    call: (name: string) => `Call ${name}`,
+  },
+
+  // School notices: src/app/notices.tsx, src/components/notices.tsx (texts from the web's NoticeCenter / NoticeModal)
+  notices: {
+    title: 'School notices',
+    viewAll: (n: number) => `View all notices (${n})`,
+    search: 'Search notices…',
+    filters: { all: 'All', unread: 'Unread', pinned: 'Pinned', action: 'Action needed', past: 'Past' },
+    none: 'No notices found',
+    showing: (a: number, b: number) => `Showing ${a} of ${b}`,
+    isNew: 'NEW',
+    pinned: 'Pinned',
+    type: { general: 'General', circular: 'Circular', event: 'Event', alert: 'Alert' } as Record<string, string>,
+    ack: 'I have read this',
+    needsAck: 'Please confirm you have read this',
+    ackError: 'Could not save. Please try again.',
+    thanks: 'Thank you',
+    postedBy: (name: string, date: string) => `Posted by ${name} · ${date}`,
+    validUntil: (date: string) => `Valid until ${date}`,
   },
 
   // Attendance: src/app/(tabs)/attendance.tsx
@@ -320,6 +342,8 @@ const en = {
     logOut: 'Log out',
     childrenList: 'Children',
     classShort: (grade: string, section: string) => `Class ${grade}-${section}`,
+    resultsToSign: (n: number) => `${n} result${n > 1 ? 's' : ''} to sign ✍`,
+    feeOverdue: (n: number) => `${n} fee overdue`,
   },
 
   // Quick links: src/components/quick-links.tsx
@@ -407,7 +431,7 @@ const te: typeof en = {
     signOut: 'సైన్ అవుట్',
   },
 
-  screenTitles: { calendar: 'క్యాలెండర్', syllabus: 'పాఠ్యక్రమం', library: 'లైబ్రరీ', notifications: 'నోటిఫికేషన్లు', profile: 'ప్రొఫైల్' },
+  screenTitles: { calendar: 'క్యాలెండర్', syllabus: 'పాఠ్యక్రమం', library: 'లైబ్రరీ', notifications: 'నోటిఫికేషన్లు', profile: 'ప్రొఫైల్', notices: 'పాఠశాల నోటీసులు' },
 
   home: {
     feesOverdue: (n, amt) => `${n} రుసుము${n > 1 ? 'లు' : ''} ఆలస్యం · ${amt} బాకీ`,
@@ -424,10 +448,31 @@ const te: typeof en = {
     latestResult: 'తాజా ఫలితం',
     tapToViewMarkSheet: 'మార్క్ షీట్ చూడటానికి నొక్కండి',
     noExamsYet: 'ఇంకా పరీక్షలు లేవు',
-    fromSchool: 'పాఠశాల నుండి',
     important: 'ముఖ్యమైనది',
     comingUp: 'రాబోయేవి',
     subjectsCount: (n) => `${n} సబ్జెక్టులు`,
+    contactTitle: 'సంప్రదింపు & సహాయం',
+    classTeacher: 'తరగతి ఉపాధ్యాయులు',
+    schoolAdmin: 'పాఠశాల పరిపాలన',
+    call: (name) => `${name}కి కాల్ చేయండి`,
+  },
+
+  notices: {
+    title: 'పాఠశాల నోటీసులు',
+    viewAll: (n) => `అన్ని నోటీసులు చూడండి (${n})`,
+    search: 'నోటీసులు వెతకండి…',
+    filters: { all: 'అన్నీ', unread: 'చదవనివి', pinned: 'పిన్ చేసినవి', action: 'చర్య అవసరం', past: 'పాతవి' },
+    none: 'నోటీసులు లేవు',
+    showing: (a, b) => `${b} లో ${a}`,
+    isNew: 'కొత్త',
+    pinned: 'పిన్ చేయబడింది',
+    type: { general: 'సాధారణ', circular: 'సర్క్యులర్', event: 'కార్యక్రమం', alert: 'హెచ్చరిక' },
+    ack: 'నేను చదివాను',
+    needsAck: 'దయచేసి మీరు చదివినట్లు నిర్ధారించండి',
+    ackError: 'సేవ్ కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.',
+    thanks: 'ధన్యవాదాలు',
+    postedBy: (name, date) => `పంపినవారు ${name} · ${date}`,
+    validUntil: (date) => `చెల్లుబాటు తేదీ ${date}`,
   },
 
   attendance: {
@@ -662,6 +707,8 @@ const te: typeof en = {
     logOut: 'లాగ్ అవుట్',
     childrenList: 'పిల్లలు',
     classShort: (grade, section) => `తరగతి ${grade}-${section}`,
+    resultsToSign: (n) => `${n} ఫలితాలకు సంతకం అవసరం ✍`,
+    feeOverdue: (n) => `${n} రుసుము ఆలస్యం`,
   },
 
   quickLinks: {
