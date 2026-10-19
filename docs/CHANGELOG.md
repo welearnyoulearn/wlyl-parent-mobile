@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+- Exams (#6): today's exams banner with a live "Starts in N minutes / In progress / Done" countdown, next-60-days and completed (last 60 days) lists, day detail with time, duration and room, web exam-type colours; results show Pass/Fail and sign-off asks Confirm / Cancel.
+- Attendance (#6): month switcher, four summary cards (incl. full-days streak), band message, tap-a-day detail, full legend, trend with 90/75 lines from two months, upcoming holidays. Notifications grouped by feature with "Mark all read" / "Mark these read"; taps open the exam calendar, mark sheet, fees or attendance.
+
 ## [1.0.3] — 2026-10-18
 
 ### Fixed

@@ -14,6 +14,7 @@ export default function MarkSheetScreen() {
   const { student, me } = useSession()
   const t = useT()
   const [busy, setBusy] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [ackError, setAckError] = useState('')
 
   const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
@@ -30,6 +31,7 @@ export default function MarkSheetScreen() {
         method: 'POST',
         body: JSON.stringify({ student_id: student.id, school_id: student.school_id })
       })
+      setConfirming(false)
       refresh()
     } catch (e) {
       setAckError(e instanceof Error ? e.message : t.examDetail.ackError)
@@ -48,8 +50,8 @@ export default function MarkSheetScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={refresh} testID="marksheet-screen">
-      <Link href="/exams" asChild>
-        <Pressable className="mb-2 flex-row items-center gap-1 self-start" testID="back-to-exams">
+      <Link href={{ pathname: '/exams', params: { tab: 'results' } }} asChild>
+        <Pressable className="mb-2 flex-row items-center gap-1 self-start" testID="back-to-exams" accessibilityRole="link">
           <ArrowLeft size={16} color="#6b7280" />
           <Text className="text-sm text-muted-foreground">{t.examDetail.backToResults}</Text>
         </Pressable>
@@ -95,6 +97,7 @@ export default function MarkSheetScreen() {
                     </Text>
                   )}
                   {s.grade && <Chip tone={s.pass === false ? 'red' : 'teal'}>{s.grade}</Chip>}
+                  {s.pass !== null && <Chip tone={s.pass ? 'green' : 'red'}>{s.pass ? t.examDetail.pass : t.examDetail.fail}</Chip>}
                 </View>
               </View>
               <View className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -149,15 +152,35 @@ export default function MarkSheetScreen() {
             <Text className="mt-0.5 text-xs text-muted-foreground">
               {t.examDetail.tellsTeacher(student.name.split(' ')[0])}
             </Text>
-            <View className="mt-3">
-              <Button
-                label={busy ? t.saving : t.examDetail.iHaveSeen}
-                onPress={acknowledge}
-                loading={busy}
-                disabled={busy}
-                testID={`acknowledge-${sheet.exam_id}`}
-              />
-            </View>
+            {/* Confirm before signing off: it notifies the class teacher and cannot be undone. */}
+            {confirming ? (
+              <View className="mt-3 flex-row gap-2">
+                <View className="flex-1">
+                  <Button
+                    label={busy ? t.saving : t.examDetail.confirm}
+                    onPress={acknowledge}
+                    loading={busy}
+                    disabled={busy}
+                    testID={`acknowledge-confirm-${sheet.exam_id}`}
+                  />
+                </View>
+                <Button
+                  label={t.cancel}
+                  variant="outline"
+                  onPress={() => { setConfirming(false); setAckError('') }}
+                  disabled={busy}
+                  testID={`acknowledge-cancel-${sheet.exam_id}`}
+                />
+              </View>
+            ) : (
+              <View className="mt-3">
+                <Button
+                  label={t.examDetail.iHaveSeen}
+                  onPress={() => setConfirming(true)}
+                  testID={`acknowledge-${sheet.exam_id}`}
+                />
+              </View>
+            )}
           </View>
         )}
       </Panel>
