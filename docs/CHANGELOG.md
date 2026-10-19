@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+- Home: Contact & Support card (class teacher and school administration with Call buttons, school address) and School notices (latest 4, NEW / Urgent / Action needed / Pinned badges, Telugu text when the school gave one). Unseen urgent, action-needed and greeting notices pop up one at a time; "I have read this" acknowledges (#4).
+- School notices screen with search and All / Unread / Pinned / Action needed / Past filters; the section hides when the school has notices switched off (403).
+- Header chips: red "N results to sign" → Exams, amber "N fee overdue" → Fees (#4).
+
 ## [1.0.3] — 2026-10-18
 
 ### Fixed

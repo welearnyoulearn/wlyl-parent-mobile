@@ -53,16 +53,24 @@ function compile(relative, overrides = {}) {
 }
 const api = compile('src/lib/api.ts', { './request-cache': compile('src/lib/request-cache.ts') })
 const t = compile('src/lib/i18n.ts', { '@/stores/session': { useSession: () => ({}) } }).TRANSLATIONS.en
+const notices = compile('src/lib/notices.ts', { '@/lib/api': api, '@/lib/request-cache': compile('src/lib/request-cache.ts') })
 function render(screen, data = responses) {
   const monthCalendar = compile('src/components/month-calendar.tsx', { 'react-native': primitives, 'lucide-react-native': primitives, '@/components/ui': primitives, '@/lib/i18n': { useT: () => t } })
+  const session = { useSession: () => ({ student, year: null, has: f => f !== 'timetable' }) }
+  const useApi = url => ({ data: url ? data[url.split('?')[0]] : null, error: null, status: null, loading: false, refreshing: false, refresh() {} })
+  const noticeUi = compile('src/components/notices.tsx', {
+    'react-native': primitives, 'lucide-react-native': primitives, '@/components/ui': primitives,
+    '@/lib/api': api, '@/lib/notices': notices, '@/stores/session': session, '@/lib/i18n': { useT: () => t }, '@/lib/use-api': { useApi },
+  })
   const Component = compile(screen, {
     '@/components/month-calendar': monthCalendar,
     'react-native': primitives, 'lucide-react-native': primitives,
-    'expo-router': { Stack: { Screen: Primitive }, useRouter: () => ({ push() {} }), useFocusEffect() {} },
+    'expo-router': { Stack: { Screen: Primitive }, useRouter: () => ({ push() {} }), useFocusEffect() {}, useIsFocused: () => true },
+    '@/lib/notices': notices, '@/components/notices': noticeUi,
     '@/components/ui': primitives, '@/components/class-loading': { ClassLoading: Primitive }, '@/components/quick-links': { QuickLinks: Primitive },
-    '@/stores/session': { useSession: () => ({ student, year: null, has: f => f !== 'timetable' }) },
+    '@/stores/session': session,
     '@/lib/api': api, '@/lib/books': { isDownloaded: () => false }, '@/lib/i18n': { useT: () => t },
-    '@/lib/use-api': { useApi: url => ({ data: url ? data[url.split('?')[0]] : null, error: null, loading: false, refreshing: false, refresh() {} }) },
+    '@/lib/use-api': { useApi },
   }).default
   return renderToStaticMarkup(React.createElement(Component))
 }
@@ -96,4 +104,25 @@ test('Library renders assigned textbooks', () => {
   const html = render('src/app/library.tsx', { '/api/school/library': [{ material_id: 1, grade: '6', subject_name: 'Mathematics', material_type: 'textbook', title: 'Grade 6 Mathematics', created_at: '2026-01-01' }] })
   assert.match(html, /Grade 6 Mathematics/)
   assert.doesNotMatch(html, /No textbooks/)
+})
+
+const notice = (id, extra = {}) => ({ id, title: `Notice ${id}`, content: 'Body', announcement_type: 'general', priority: 'normal', created_by_name: 'Principal',
+  created_at: '2026-10-01T00:00:00Z', expires_at: null, pinned: false, requires_ack: false, template_key: null, card_data: null, translations: null, seen: true, acked: false, ...extra })
+test('Home shows the contact card with call buttons, and hides it without contact data', () => {
+  const subjects = { subjects: [], class_teacher: { name: 'Ms. Devi', phone: '98 480-22' }, school: { name: 'ABC School', phone: null, email: null, address: 'Main Road, Guntur' } }
+  const html = render('src/app/(tabs)/index.tsx', { ...responses, '/api/parent/subjects': subjects })
+  assert.match(html, /Contact &amp; Support/)
+  assert.match(html, /Ms\. Devi.*Class teacher/)
+  assert.match(html, /ABC School.*School administration.*Main Road, Guntur/)
+  assert.doesNotMatch(render('src/app/(tabs)/index.tsx'), /Contact &amp; Support/)
+})
+test('Home lists the latest 4 notices with badges and pops up an unseen urgent one', () => {
+  const list = [notice(1, { seen: false, priority: 'urgent' }), notice(2, { requires_ack: true }), notice(3), notice(4), notice(5)]
+  const html = render('src/app/(tabs)/index.tsx', { ...responses, '/api/announcements': list })
+  assert.match(html, /School notices/)
+  assert.match(html, /Notice 4/)
+  assert.doesNotMatch(html, /Notice 5/)
+  assert.match(html, /NEW/)
+  assert.match(html, /Action needed/)
+  assert.match(html, /Posted by Principal · 1 Oct 2026/)
 })

@@ -71,9 +71,14 @@ export type Fees = {
   summary: { total_due: number; total_paid: number; total_outstanding: number; total_waived: number; overdue_count: number }
 }
 
+// /api/announcements — notices addressed to this parent; seen/acked are this parent's own marks.
 export type Announcement = {
-  id: number; title: string; content: string; announcement_type: string
+  id: number; title: string; content: string; announcement_type: 'general' | 'circular' | 'event' | 'alert' | string
   priority: 'urgent' | 'high' | 'normal' | string; created_by_name: string | null; created_at: string
+  published_at?: string; expires_at: string | null; pinned: boolean; requires_ack: boolean
+  template_key: string | null; card_data: { headline?: string } | null
+  translations: Partial<Record<'te' | 'hi', { title?: string; content?: string }>> | null
+  seen?: boolean; acked?: boolean
 }
 export type CalendarEvent = { id: number; title: string; event_date: string; end_date: string | null; event_type: string; description: string | null }
 export type SchoolCalendar = { events: CalendarEvent[]; weeklyOff: number[]; today: string; canEdit: boolean }
@@ -98,6 +103,11 @@ export type SyllabusSubject = {
 export type Syllabus = { subjects: SyllabusSubject[] }
 // /api/parent/subjects?student_id= — one child's class subjects with each subject's teacher.
 export type ClassSubject = { subject_name: string; teacher_name: string | null }
+export type SchoolContacts = {
+  subjects: ClassSubject[]
+  class_teacher: { name: string; phone: string | null } | null
+  school: { name: string; phone: string | null; email: string | null; address: string | null } | null
+}
 
 // /api/school/library — parents only ever get 'textbook' rows for the child's grade.
 export type LibraryItem = {
@@ -184,6 +194,8 @@ export const hhmm = (t: string) => {
   const [h, m] = t.split(':').map(Number)
   return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
 }
+// tel: wants only digits and a leading + (stored numbers may have spaces or dashes).
+export const telHref = (phone: string) => `tel:${phone.trim().replace(/(?!^\+)\D/g, '')}`
 export const initials = (name: string) => name.split(/\s+/).slice(0, 2).map(s => s[0]?.toUpperCase() ?? '').join('')
 export const PAY_MODE: Record<string, string> = { cash: 'Cash', cheque: 'Cheque', dd: 'Demand draft', online: 'UPI (app)', upi: 'UPI' }
 export const EXAM_TYPE: Record<string, string> ={ unit_test: 'Unit Test', mid_term: 'Mid Term', final_exam: 'Final Exam', practical: 'Practical' }
