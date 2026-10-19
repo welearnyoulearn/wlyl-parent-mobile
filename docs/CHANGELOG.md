@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- Fees parity with the web (#5): academic-year switcher, earlier-year dues banner and "carried from" tags, pay one / selected / all pending bills, payment history with Confirmed / Pending verification / Rejected (reason) / Cancelled, receipt number and amount after paying, and a PDF receipt for confirmed payments (one per receipt number). Payments send an `idempotency_key` per sheet opening so a double tap can't report twice. Adds `expo-print` and `expo-sharing`: needs a new native build.
+
 ## [1.0.3] — 2026-10-18
 
 ### Fixed
