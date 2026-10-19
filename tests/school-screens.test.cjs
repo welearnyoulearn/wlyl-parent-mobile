@@ -54,9 +54,9 @@ function compile(relative, overrides = {}) {
 const api = compile('src/lib/api.ts', { './request-cache': compile('src/lib/request-cache.ts') })
 const t = compile('src/lib/i18n.ts', { '@/stores/session': { useSession: () => ({}) } }).TRANSLATIONS.en
 const notices = compile('src/lib/notices.ts', { '@/lib/api': api, '@/lib/request-cache': compile('src/lib/request-cache.ts') })
-function render(screen, data = responses) {
+function render(screen, data = responses, has = f => f !== 'timetable') {
   const monthCalendar = compile('src/components/month-calendar.tsx', { 'react-native': primitives, 'lucide-react-native': primitives, '@/components/ui': primitives, '@/lib/i18n': { useT: () => t } })
-  const session = { useSession: () => ({ student, year: null, has: f => f !== 'timetable' }) }
+  const session = { useSession: () => ({ student, year: null, has }) }
   const useApi = url => ({ data: url ? data[url.split('?')[0]] : null, error: null, status: null, loading: false, refreshing: false, refresh() {} })
   const noticeUi = compile('src/components/notices.tsx', {
     'react-native': primitives, 'lucide-react-native': primitives, '@/components/ui': primitives,
@@ -69,6 +69,7 @@ function render(screen, data = responses) {
     '@/lib/notices': notices, '@/components/notices': noticeUi,
     '@/components/ui': primitives, '@/components/class-loading': { ClassLoading: Primitive }, '@/components/quick-links': { QuickLinks: Primitive },
     '@/stores/session': session,
+    '@/components/pay-sheet': { PaySheet: Primitive }, '@/lib/receipt': { receiptHtml() {}, shareReceipt() {} },
     '@/lib/api': api, '@/lib/books': { isDownloaded: () => false }, '@/lib/i18n': { useT: () => t },
     '@/lib/use-api': { useApi },
   }).default
@@ -125,4 +126,39 @@ test('Home lists the latest 4 notices with badges and pops up an unseen urgent o
   assert.match(html, /NEW/)
   assert.match(html, /Action needed/)
   assert.match(html, /Posted by Principal · 1 Oct 2026/)
+})
+
+const bill = { id: 7, category_name: 'Tuition', frequency: 'monthly', period_label: 'Oct', amount_due: '5000', amount_paid: '2000', waiver_amount: '0', balance: '3000', due_date: '2026-10-10', status: 'pending', source_academic_year: '2024-25' }
+const fees = {
+  ledger: [bill], payments: [], waivers: [],
+  prior_dues: { total: 1200, items: [{ id: 1, academic_year: '2023-24', category_name: 'Bus', period_label: 'Mar', balance: '1200' }] },
+  summary: { total_due: 5000, total_paid: 2000, total_outstanding: 3000, carried_outstanding: 3000, total_waived: 0, overdue_count: 0 },
+}
+test('Fees shows earlier-year dues, carried bills and per-bill Pay when online payments are on', () => {
+  const html = render('src/app/(tabs)/fees.tsx', { '/api/parent/fees': fees, '/api/academic-years': [] })
+  assert.match(html, /₹1,200 from earlier years is still unpaid/)
+  assert.match(html, /2023-24: ₹1,200/)
+  assert.match(html, /carried from 2024-25/)
+  assert.match(html, /incl\. ₹3,000 carried from an earlier year/)
+  assert.match(html, />Pay</)
+  assert.doesNotMatch(html, /Online payment isn't available/)
+})
+test('Fees hides every Pay control and shows the office note when online payments are off', () => {
+  const html = render('src/app/(tabs)/fees.tsx', { '/api/parent/fees': fees, '/api/academic-years': [] }, f => f !== 'online-payments')
+  assert.match(html, /Online payment isn&#x27;t available for this school yet/)
+  assert.doesNotMatch(html, />Pay<|by UPI/)
+})
+
+const receipt = compile('src/lib/receipt.ts', { 'expo-print': {}, 'expo-sharing': {}, './api': api })
+const pay = (id, ledger, amount, status = 'completed') => ({ id, receipt_number: 'RCP-001-2026-000012', amount, payment_mode: 'online', payment_status: status, paid_date: '2026-10-12', transaction_ref: '4278<b>', rejection_reason: null, category_name: ledger, period_label: 'Oct' })
+test('Receipt combines every confirmed allocation under one receipt number and escapes stored text', () => {
+  const payments = [pay(1, 'Tuition', '600'), pay(2, 'Bus', '400'), pay(3, 'Lab', '50', 'rejected')]
+  const html = receipt.receiptHtml(payments[0], payments, { school: 'Sunrise School', student: 'Test child', className: '6-A' }, t)
+  assert.match(html, /Sunrise School/)
+  assert.match(html, /RCP-001-2026-000012/)
+  assert.match(html, /Covers 2 bills paid together/)
+  assert.match(html, /Total Paid:<\/td><td>₹1,000/)
+  assert.doesNotMatch(html, /Lab/)
+  assert.match(html, /4278&lt;b&gt;/)
+  assert.match(html, /6-A/)
 })

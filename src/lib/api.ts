@@ -59,17 +59,21 @@ export type FeeRow = {
   id: number; category_name: string; frequency: string; period_label: string
   amount_due: number | string; amount_paid: number | string; waiver_amount: number | string; balance: number | string
   due_date: string | null; status: 'pending' | 'paid' | 'partial' | 'overdue' | 'waived'
+  source_academic_year: string | null // set when the bill was carried in from an earlier year
 }
 export type Payment = {
   id: number; receipt_number: string; amount: number | string; payment_mode: string
-  payment_status: 'completed' | 'pending_verification' | 'rejected'; paid_date: string
+  payment_status: 'completed' | 'pending_verification' | 'rejected' | 'cancelled'; paid_date: string
   transaction_ref: string | null; rejection_reason: string | null; category_name: string; period_label: string
 }
 export type Waiver = { id: number; waiver_type: string; waiver_amount: number | string; reason: string; category_name: string; period_label: string }
+// Unpaid bills from earlier years (or 'passout'): shown only, not in the totals, paid at the school office.
+export type PriorDues = { total: number; items: { id: number; academic_year: string; category_name: string; period_label: string; balance: number | string }[] }
 export type Fees = {
-  ledger: FeeRow[]; payments: Payment[]; waivers: Waiver[]
-  summary: { total_due: number; total_paid: number; total_outstanding: number; total_waived: number; overdue_count: number }
+  ledger: FeeRow[]; payments: Payment[]; waivers: Waiver[]; prior_dues?: PriorDues
+  summary: { total_due: number; total_paid: number; total_outstanding: number; carried_outstanding?: number; total_waived: number; overdue_count: number }
 }
+export type AcademicYear = { id: number; label: string; is_current: boolean }
 
 // /api/announcements — notices addressed to this parent; seen/acked are this parent's own marks.
 export type Announcement = {
