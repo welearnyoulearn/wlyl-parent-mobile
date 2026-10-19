@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- Session, plan and usage (#3): the app keeps the session alive while open (`/me` every 60 s and on return from background) and returns to sign-in on a 401; "access revoked" signs out with the school's message (`/login?notice=`). A school whose plan has ended shows a full-screen "Portal access is paused" (Retry, Sign out), checked every 10 min (45 s while paused). Usage heartbeat every 60 s, section opens tracked, and the usage session closed on logout. `ApiError.code` exposes `PLAN_EXPIRED` / `FEATURE_DISABLED` / `access_revoked`; a `FEATURE_DISABLED` reply refreshes the enabled features.
+
 ## [1.0.3] — 2026-10-18
 
 ### Fixed

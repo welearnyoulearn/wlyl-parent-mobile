@@ -133,9 +133,15 @@ export type Transport = {
 }
 export type Notification = { id: number; type: string; title: string | null; message: string | null; is_read: boolean; created_at: string }
 
+// code: the platform's machine-readable reason — PLAN_EXPIRED, FEATURE_DISABLED or access_revoked.
 export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message) }
+  constructor(public status: number, message: string, public code?: string) { super(message) }
 }
+
+// The session store reacts to account-wide failures (access revoked, plan expired, feature
+// switched off) whichever screen's call hit them.
+let errorListener: ((error: ApiError) => void) | null = null
+export function onApiError(listener: (error: ApiError) => void) { errorListener = listener }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController()
@@ -159,10 +165,16 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       if (res.status === 401) clearRequestCache(false)
       // Keep the failing route in Android logs without query strings or login data.
       console.warn(`WLYL API: ${init?.method ?? 'GET'} ${path.split('?')[0]} failed (${res.status})`)
-      const msg = (data as { error?: string }).error ?? `Request failed (${res.status})`
-      throw new ApiError(res.status, msg)
+      const body = data as { error?: string; code?: string; message?: string }
+      // access_revoked arrives as the error key, with the text to show in message.
+      const code = body.code ?? (body.error === 'access_revoked' ? body.error : undefined)
+      const msg = (code === 'access_revoked' ? body.message : body.error) ?? `Request failed (${res.status})`
+      const error = new ApiError(res.status, msg, code)
+      if (code) try { errorListener?.(error) } catch { /* the caller still gets the error */ }
+      throw error
     }
-    if (init?.method && init.method.toUpperCase() !== 'GET') {
+    // Usage pings are not data writes; they must not wipe the screens' cache every minute.
+    if (init?.method && init.method.toUpperCase() !== 'GET' && !path.startsWith('/api/usage/')) {
       clearRequestCache(path.startsWith('/api/parent/auth/'))
     }
     return data as T
