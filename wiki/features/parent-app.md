@@ -5,7 +5,10 @@
 | Screen | Data | Platform endpoint |
 |---|---|---|
 | Login | Sign in with email or phone | `POST /api/parent/auth/login` |
-| Change password | Required on first login | `POST /api/parent/auth/change-password` |
+| Forgot password (#2) | Sends a reset link (email/WhatsApp); the reset itself happens on the web | `POST /api/parent/auth/forgot-password` |
+| Change password | Required on first login; also from Profile (current password needed) | `POST /api/parent/auth/change-password` |
+| Birthday (#2) | Asked once after first login (Skip allowed); Add/Edit on Profile. Server checks age 18–100 | `PUT /api/parent/auth/date-of-birth` |
+| Profile (#2) | Name, email, phone, school read-only; birthday; change password | `GET /api/parent/auth/me` |
 | Home | Attendance, fees due, today's classes, results, exams, announcements, events | child-summary, fees, timetable, announcements, school-calendar |
 | Attendance | Ring, month heat map, monthly %, absences | `GET /api/parent/attendance` |
 | Fees | Summary, dues, payments, waivers; Pay by UPI (#11) | `GET /api/parent/fees`, `GET /api/fees/upi-qr/info`, `POST /api/parent/fees` |

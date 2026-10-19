@@ -36,3 +36,15 @@ test('Writes invalidate screen data; account changes also reset the session gene
     assert.equal(cache.accountGeneration(), generation + 3)
   } finally { global.fetch = originalFetch }
 })
+test('Birthday input formats digits as YYYY-MM-DD and only accepts real dates', () => {
+  const { dobInput, isoDate } = compile('src/lib/api.ts', { './request-cache': { clearRequestCache() {} } })
+  assert.equal(dobInput('19850815'), '1985-08-15')
+  assert.equal(dobInput('1985-0'), '1985-0')
+  assert.equal(dobInput('1985-'), '1985')
+  assert.equal(dobInput('1985/08/15 extra 9'), '1985-08-15')
+  assert.equal(isoDate('1985-08-15'), true)
+  assert.equal(isoDate('2024-02-29'), true)
+  assert.equal(isoDate('2023-02-29'), false)
+  assert.equal(isoDate('1985-13-01'), false)
+  assert.equal(isoDate('1985-8-15'), false)
+})

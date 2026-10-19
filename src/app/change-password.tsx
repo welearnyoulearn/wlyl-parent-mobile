@@ -9,6 +9,8 @@ import { useT } from '@/lib/i18n'
 export default function ChangePasswordScreen() {
   const router = useRouter()
   const t = useT()
+  // Opened from Profile once the temporary password is gone; otherwise this is the first-login step.
+  const [signedIn] = useState(() => useSession.getState().me?.password_changed ?? false)
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -32,8 +34,11 @@ export default function ChangePasswordScreen() {
         method: 'POST',
         body: JSON.stringify({ currentPassword: current, newPassword: next }),
       })
+      if (signedIn) { router.back(); return }
       await useSession.getState().load()
-      router.replace('/')
+      // First login: ask for a birthday once, unless the school already has it.
+      const me = useSession.getState().me
+      router.replace(me && !me.date_of_birth ? '/birthday' : '/')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : (err instanceof Error ? err.message : t.changePassword.error))
     } finally {
@@ -56,13 +61,13 @@ export default function ChangePasswordScreen() {
       >
         <ScrollView contentContainerClassName="flex-grow justify-center p-6 gap-6" keyboardShouldPersistTaps="handled">
           <View className="mb-2">
-            <Text className="text-2xl font-bold text-foreground text-center">{t.changePassword.title}</Text>
-            <Text className="text-muted-foreground mt-2 text-center text-sm">{t.changePassword.subtitle}</Text>
+            <Text className="text-2xl font-bold text-foreground text-center">{signedIn ? t.changePassword.changeTitle : t.changePassword.title}</Text>
+            <Text className="text-muted-foreground mt-2 text-center text-sm">{signedIn ? t.changePassword.changeSubtitle : t.changePassword.subtitle}</Text>
           </View>
 
           <View className="gap-4">
             <Field
-              label={t.changePassword.tempLabel}
+              label={signedIn ? t.changePassword.currentLabel : t.changePassword.tempLabel}
               testID="current-password-input"
               value={current}
               onChangeText={setCurrent}
@@ -94,8 +99,9 @@ export default function ChangePasswordScreen() {
               disabled={busy || !current || !next || !confirm}
             />
 
-            <Pressable testID="change-password-logout-btn" onPress={logout} className="mt-4 p-4 items-center">
-              <Text className="text-muted-foreground font-medium text-sm">{t.changePassword.logout}</Text>
+            <Pressable testID={signedIn ? 'change-password-cancel-btn' : 'change-password-logout-btn'}
+              onPress={signedIn ? () => router.back() : logout} accessibilityRole="button" className="mt-4 p-4 items-center">
+              <Text className="text-muted-foreground font-medium text-sm">{signedIn ? t.cancel : t.changePassword.logout}</Text>
             </Pressable>
           </View>
         </ScrollView>

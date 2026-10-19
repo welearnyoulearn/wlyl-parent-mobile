@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+- Forgot password on the login screen (#2): sends the web reset link; the parent resets on the web and signs in here. Login shows a `?notice=` message above the form.
+- Birthday: asked once after the first-login password change (optional), and Add/Edit on Profile (`PUT /api/parent/auth/date-of-birth`).
+
+### Changed
+- Profile matches the web: name, email, phone and school are read-only (the platform has no `PUT /api/parent/auth/me`), plus birthday and a Change password entry.
+
 ## [1.0.3] — 2026-10-18
 
 ### Fixed

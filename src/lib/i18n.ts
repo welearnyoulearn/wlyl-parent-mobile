@@ -198,23 +198,16 @@ const en = {
 
   // Profile: src/app/profile.tsx
   profile: {
-    schoolDetails: 'School Details',
     schoolFallback: 'School',
     linkedChildren: 'Linked Children',
     linkedChild: 'Linked Child',
-    editProfile: 'Edit Profile',
-    editNotAvailableHint: "Editing your profile isn't available yet.",
-    nameLabel: 'Name',
+    accountInfo: 'Account Information',
+    nameLabel: 'Full Name',
     emailLabel: 'Email',
     mobileLabel: 'Mobile number',
-    signInHint: 'You sign in with this email or mobile number.',
-    errName: 'Enter your name',
-    errEmail: 'Enter a valid email',
-    errPhone: 'Enter a 10-digit mobile number',
-    errContact: 'Keep at least an email or a phone number to sign in with',
-    saveError: 'Could not save',
-    saved: 'Saved',
-    saveChanges: 'Save changes',
+    schoolLabel: 'School',
+    none: '—',
+    changePassword: 'Change password',
   },
 
   // Change password: src/app/change-password.tsx
@@ -229,6 +222,23 @@ const en = {
     error: 'Could not change password',
     submit: 'Save and continue',
     logout: 'Log out instead',
+    changeTitle: 'Change password',
+    changeSubtitle: 'Enter your current password, then choose a new one.',
+    currentLabel: 'Current password',
+  },
+
+  // Birthday: src/app/birthday.tsx and src/components/birthday-field.tsx
+  birthday: {
+    title: "When's your birthday?",
+    subtitle: "We'll mark it on your profile with a little birthday note 🎂",
+    label: 'Birthday',
+    inputLabel: 'Date of birth (YYYY-MM-DD)',
+    invalid: 'Enter a real date as YYYY-MM-DD, e.g. 1985-08-15',
+    save: 'Save birthday',
+    skip: 'Skip for now',
+    add: 'Add',
+    edit: 'Edit',
+    error: 'Could not save',
   },
 
   // Login: src/app/login.tsx
@@ -238,6 +248,21 @@ const en = {
     signingIn: 'Signing in…',
     signIn: 'Sign in',
     error: 'Login failed',
+    forgot: 'Forgot password?',
+  },
+
+  // Forgot password: src/app/forgot-password.tsx
+  forgotPassword: {
+    title: 'Forgot password?',
+    subtitle: "We'll send a reset link to your registered email or phone",
+    identifierLabel: 'Registered email or phone',
+    send: 'Send reset link',
+    sending: 'Sending…',
+    error: 'Could not send the reset link. Please try again.',
+    sentTitle: 'Reset link sent',
+    sent: (id: string) => `If ${id} is registered, you'll receive a reset link within a few minutes (email and/or WhatsApp). Valid for 1 hour.`,
+    openLink: 'Open the link to set a new password, then sign in here.',
+    back: '← Back to sign in',
   },
 
   // Exam detail: src/app/exam/[id].tsx
@@ -516,23 +541,16 @@ const te: typeof en = {
   notifications: { empty: 'నోటిఫికేషన్లు లేవు' },
 
   profile: {
-    schoolDetails: 'పాఠశాల వివరాలు',
     schoolFallback: 'పాఠశాల',
     linkedChildren: 'అనుసంధానించిన పిల్లలు',
     linkedChild: 'అనుసంధానించిన పిల్లవాడు',
-    editProfile: 'ప్రొఫైల్ సవరించు',
-    editNotAvailableHint: 'మీ ప్రొఫైల్ సవరించడం ఇంకా అందుబాటులో లేదు.',
-    nameLabel: 'పేరు',
+    accountInfo: 'ఖాతా సమాచారం',
+    nameLabel: 'పూర్తి పేరు',
     emailLabel: 'ఇమెయిల్',
     mobileLabel: 'మొబైల్ నంబర్',
-    signInHint: 'మీరు ఈ ఇమెయిల్ లేదా మొబైల్ నంబర్‌తో సైన్ ఇన్ అవుతారు.',
-    errName: 'మీ పేరు నమోదు చేయండి',
-    errEmail: 'చెల్లుబాటు అయ్యే ఇమెయిల్ నమోదు చేయండి',
-    errPhone: '10-అంకెల మొబైల్ నంబర్ నమోదు చేయండి',
-    errContact: 'సైన్ ఇన్ కావడానికి కనీసం ఇమెయిల్ లేదా ఫోన్ నంబర్ ఉంచండి',
-    saveError: 'సేవ్ చేయలేకపోయాము',
-    saved: 'సేవ్ చేయబడింది',
-    saveChanges: 'మార్పులు సేవ్ చేయండి',
+    schoolLabel: 'పాఠశాల',
+    none: '—',
+    changePassword: 'పాస్‌వర్డ్ మార్చండి',
   },
 
   changePassword: {
@@ -546,6 +564,22 @@ const te: typeof en = {
     error: 'పాస్‌వర్డ్ మార్చలేకపోయాము',
     submit: 'సేవ్ చేసి కొనసాగించండి',
     logout: 'బదులుగా లాగ్ అవుట్ చేయండి',
+    changeTitle: 'పాస్‌వర్డ్ మార్చండి',
+    changeSubtitle: 'మీ ప్రస్తుత పాస్‌వర్డ్ నమోదు చేసి, కొత్తది ఎంచుకోండి.',
+    currentLabel: 'ప్రస్తుత పాస్‌వర్డ్',
+  },
+
+  birthday: {
+    title: 'మీ పుట్టినరోజు ఎప్పుడు?',
+    subtitle: 'మీ ప్రొఫైల్‌లో చిన్న పుట్టినరోజు గుర్తుతో దీన్ని చూపిస్తాము 🎂',
+    label: 'పుట్టినరోజు',
+    inputLabel: 'పుట్టిన తేదీ (YYYY-MM-DD)',
+    invalid: 'సరైన తేదీని YYYY-MM-DD గా నమోదు చేయండి, ఉదా. 1985-08-15',
+    save: 'పుట్టినరోజు సేవ్ చేయండి',
+    skip: 'ప్రస్తుతానికి దాటవేయండి',
+    add: 'జోడించండి',
+    edit: 'సవరించండి',
+    error: 'సేవ్ చేయలేకపోయాము',
   },
 
   login: {
@@ -554,6 +588,20 @@ const te: typeof en = {
     signingIn: 'సైన్ ఇన్ అవుతున్నారు…',
     signIn: 'సైన్ ఇన్',
     error: 'లాగిన్ విఫలమైంది',
+    forgot: 'పాస్‌వర్డ్ మర్చిపోయారా?',
+  },
+
+  forgotPassword: {
+    title: 'పాస్‌వర్డ్ మర్చిపోయారా?',
+    subtitle: 'మీ నమోదైన ఇమెయిల్ లేదా ఫోన్‌కు రీసెట్ లింక్ పంపుతాము',
+    identifierLabel: 'నమోదైన ఇమెయిల్ లేదా ఫోన్',
+    send: 'రీసెట్ లింక్ పంపండి',
+    sending: 'పంపుతున్నాము…',
+    error: 'రీసెట్ లింక్ పంపలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.',
+    sentTitle: 'రీసెట్ లింక్ పంపబడింది',
+    sent: (id) => `${id} నమోదై ఉంటే, కొన్ని నిమిషాల్లో మీకు రీసెట్ లింక్ వస్తుంది (ఇమెయిల్ మరియు/లేదా WhatsApp). ఇది 1 గంట వరకు చెల్లుతుంది.`,
+    openLink: 'కొత్త పాస్‌వర్డ్ సెట్ చేయడానికి లింక్ తెరవండి, తర్వాత ఇక్కడ సైన్ ఇన్ చేయండి.',
+    back: '← సైన్ ఇన్‌కు తిరిగి',
   },
 
   examDetail: {

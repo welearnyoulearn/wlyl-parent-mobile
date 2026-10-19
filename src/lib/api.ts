@@ -16,7 +16,7 @@ export const PRIVACY_URL = 'https://wlyl.varchas.store/privacy/'
 export type Child = { id: number; name: string; grade: string; section: string; roll_number: string; school_id: number; has_photo?: boolean }
 export type Me = {
   id: number; name: string | null; email: string | null; phone: string | null
-  school_id: number; school_name: string | null; password_changed: boolean; children: Child[]
+  school_id: number; school_name: string | null; password_changed: boolean; date_of_birth?: string | null; children: Child[]
 }
 export type Exam = { id: number; exam_name: string; exam_type: string; exam_date: string; subjects: string[]; total_subjects: number }
 export type Result = {
@@ -180,6 +180,13 @@ export const inr = (v: number | string | null | undefined) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num(v))
 export const day = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 export const longDay = (d: string) => new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })
+// Birthday entry: digits only, dashes added as the parent types (YYYY-MM-DD), so the number pad works on Android.
+export const dobInput = (v: string) =>
+  v.replace(/\D/g, '').slice(0, 8).replace(/^(\d{4})(\d)/, '$1-$2').replace(/^(\d{4}-\d{2})(\d)/, '$1-$2')
+// A real calendar date in YYYY-MM-DD (rejects 2020-02-30); age rules are the server's.
+export const isoDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s)) && new Date(s).toISOString().startsWith(s)
+// "14 May", as the web profile shows a birthday.
+export const birthday = (d: string) => new Date(`${d.slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'long' })
 export const hhmm = (t: string) => {
   const [h, m] = t.split(':').map(Number)
   return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`

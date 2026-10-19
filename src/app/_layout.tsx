@@ -18,6 +18,8 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="change-password" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+        <Stack.Screen name="birthday" options={{ headerShown: false }} />
         <Stack.Screen name="exam/[id]" options={{ title: 'Mark sheet' }} />
         <Stack.Screen name="book/[id]" options={{ title: 'Book' }} />
       </Stack>
