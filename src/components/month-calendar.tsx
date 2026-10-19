@@ -39,12 +39,13 @@ export function monthDays(month: string): string[] {
 }
 
 export function MonthCalendar({
-  month, onPrev, onNext, selected, onSelectDay, testIDPrefix,
+  month, onPrev, onNext, nextDisabled = false, selected, onSelectDay, testIDPrefix,
   dayBg, dayMarkers, accessibilityLabelFor,
 }: {
   month: string
   onPrev: () => void
   onNext: () => void
+  nextDisabled?: boolean
   selected: string | null
   onSelectDay: (date: string) => void
   testIDPrefix: string
@@ -72,9 +73,9 @@ export function MonthCalendar({
           {monthLabel(month, t.monthCalendar.monthNames)}
         </Text>
         <Pressable
-          testID={`${testIDPrefix}-next`} onPress={onNext} hitSlop={8}
-          accessibilityRole="button" accessibilityLabel={t.monthCalendar.nextMonth}
-          className="h-9 w-9 items-center justify-center rounded-full active:bg-muted"
+          testID={`${testIDPrefix}-next`} onPress={onNext} hitSlop={8} disabled={nextDisabled}
+          accessibilityRole="button" accessibilityLabel={t.monthCalendar.nextMonth} accessibilityState={{ disabled: nextDisabled }}
+          className={`h-9 w-9 items-center justify-center rounded-full active:bg-muted ${nextDisabled ? 'opacity-30' : ''}`}
         >
           <ChevronRight size={18} color="#6b7280" />
         </Pressable>

@@ -53,6 +53,14 @@ export type Attendance = {
   trend: { month: string; summary: AttendanceSummary }[]
   upcomingHolidays: { title: string; event_date: string; end_date: string | null }[]
 }
+// "Full days in a row" (guide §6.2): over the month's marked days, count back from the latest
+// while the day is exactly present; a late, half or absent day ends the streak.
+export function attendanceStreak(days: AttendanceDay[]): number {
+  const marked = days.filter(d => ['present', 'late', 'absent', 'half'].includes(d.status))
+  let n = 0
+  for (let i = marked.length - 1; i >= 0 && marked[i].status === 'present'; i--) n++
+  return n
+}
 
 // NUMERIC columns arrive as strings from pg; use num() before doing maths.
 export type FeeRow = {
@@ -86,8 +94,13 @@ export type Announcement = {
 }
 export type CalendarEvent = { id: number; title: string; event_date: string; end_date: string | null; event_type: string; description: string | null }
 export type SchoolCalendar = { events: CalendarEvent[]; weeklyOff: number[]; today: string; canEdit: boolean }
-// /api/exams/calendar — class exams for the current calendar year; exam_date can be null for an undated exam.
-export type CalendarExam = { id: number; exam_name: string; exam_type: string; exam_date: string | null; status: string; subjects: string[]; total_subjects: number }
+// /api/exams/calendar — class exams in from..to; exam_date can be null for an undated exam.
+// Times are "HH:MM:SS". The platform strips syllabus/instructions for parents today, so they are optional.
+export type CalendarExam = {
+  id: number; exam_name: string; exam_type: string; exam_date: string | null; status: string; subjects: string[]; total_subjects: number
+  start_time: string | null; end_time: string | null; duration_minutes: number | null; room: string | null
+  syllabus?: string | null; instructions?: string | null
+}
 
 export type SyllabusTopic = {
   id: number; topic_name: string; topic_order: number; status: 'covered' | 'pending' | string
@@ -145,7 +158,11 @@ export type Transport = {
   stop_id: number | null
   stops: { id: number; name: string; stop_order: number; pickup_time: string | null; drop_time: string | null }[]
 }
-export type Notification = { id: number; type: string; title: string | null; message: string | null; is_read: boolean; created_at: string }
+// `data` is a JSONB column (exam_id, class_id, student_id); parse it if it ever arrives as a string.
+export type Notification = {
+  id: number; type: string; title: string | null; message: string | null; is_read: boolean; created_at: string
+  sender_name?: string | null; data?: string | Record<string, unknown> | null
+}
 
 // code: the platform's machine-readable reason — PLAN_EXPIRED, FEATURE_DISABLED or access_revoked.
 export class ApiError extends Error {
