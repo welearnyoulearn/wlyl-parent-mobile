@@ -1,21 +1,52 @@
 import { useCallback, useEffect } from 'react'
-import { View } from 'react-native'
-import { Redirect, Tabs, useRouter } from 'expo-router'
+import { AppState, View } from 'react-native'
+import { Redirect, Tabs, usePathname, useRouter } from 'expo-router'
 import { CalendarCheck, GraduationCap, Home, IndianRupee, Menu } from 'lucide-react-native'
-import { useSession } from '@/stores/session'
+import { navKeyFor, useSession } from '@/stores/session'
 import { Alert, Button, COLORS, Loading } from '@/components/ui'
 import { ChildHeader } from '@/components/child-header'
 import { registerForPush, useNotificationTap } from '@/lib/push'
 import { useT } from '@/lib/i18n'
 
+// Runs `fn` every `ms` and on each return to the app, only while the app is in the foreground.
+function useForegroundPoll(fn: () => void, ms: number) {
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | null = null
+    const start = () => { timer ??= setInterval(fn, ms) }
+    const stop = () => { if (timer) clearInterval(timer); timer = null }
+    if (AppState.currentState === 'active') start()
+    const sub = AppState.addEventListener('change', state => {
+      if (state === 'active') { if (!timer) fn(); start() } else stop()
+    })
+    return () => { stop(); sub.remove() }
+  }, [fn, ms])
+}
+
 // Signed-in shell: loads the parent's account, gates on login and first-login
 // password change, and hides tabs for features the school has switched off.
+// While open it keeps the session alive, watches the school's plan and reports
+// usage (heartbeat + sections opened).
 export default function TabsLayout() {
-  const { me, loading, error, unauthorized, load, has } = useSession()
+  const { me, loading, error, unauthorized, notice, locked, load, has, keepAlive, checkPlan, heartbeat, track } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
   const t = useT()
 
   useEffect(() => { void load() }, [load])
+
+  useForegroundPoll(useCallback(() => void keepAlive(), [keepAlive]), 60_000)
+  useForegroundPoll(heartbeat, 60_000)
+  useForegroundPoll(useCallback(() => void checkPlan(), [checkPlan]), locked ? 45_000 : 10 * 60_000)
+
+  useEffect(() => { if (me) track(navKeyFor(pathname)) }, [me, pathname, track])
+
+  // Signed out from anywhere (revoked, expired, logout) — leave pages opened
+  // over the tabs too, which a focus-based <Redirect> would not.
+  useEffect(() => {
+    if (!unauthorized) return
+    if (router.canDismiss()) router.dismissAll()
+    router.replace(notice ? { pathname: '/login', params: { notice } } : '/login')
+  }, [unauthorized, notice, router])
 
   useEffect(() => {
     if (me?.id) {
@@ -25,7 +56,7 @@ export default function TabsLayout() {
 
   useNotificationTap(useCallback(href => router.push(href), [router]))
 
-  if (unauthorized) return <Redirect href="/login" />
+  if (unauthorized) return null
   if (me && !me.password_changed) return <Redirect href="/change-password" />
   if (!me) {
     return (

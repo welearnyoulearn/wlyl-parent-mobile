@@ -6,7 +6,7 @@ import { api, ApiError, PRIVACY_URL } from '@/lib/api'
 import { Button, Field, Alert, SafeAreaView, LangToggle } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
-type LoginResponse = { success: boolean; passwordChanged: boolean; name: string | null; schoolName: string | null }
+type LoginResponse = { success: boolean; passwordChanged: boolean; name: string | null; schoolName: string | null; usageSessionId: number | null }
 
 export default function LoginScreen() {
   const router = useRouter()
@@ -29,6 +29,7 @@ export default function LoginScreen() {
       })
       // Clear the signed-out gate synchronously; the shell shows account loading
       // while school metadata continues in the background.
+      useSession.getState().setUsageSessionId(r.usageSessionId ?? null)
       void useSession.getState().load()
       router.replace(r.passwordChanged ? '/' : '/change-password')
     } catch (err) {

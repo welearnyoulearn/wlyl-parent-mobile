@@ -5,6 +5,7 @@
 ### Added
 - Forgot password on the login screen (#2): sends the web reset link; the parent resets on the web and signs in here. Login shows a `?notice=` message above the form.
 - Birthday: asked once after the first-login password change (optional), and Add/Edit on Profile (`PUT /api/parent/auth/date-of-birth`).
+- Session, plan and usage (#3): the app keeps the session alive while open (`/me` every 60 s and on return from background) and returns to sign-in on a 401; "access revoked" signs out with the school's message (`/login?notice=`). A school whose plan has ended shows a full-screen "Portal access is paused" (Retry, Sign out), checked every 10 min (45 s while paused). Usage heartbeat every 60 s, section opens tracked, and the usage session closed on logout. `ApiError.code` exposes `PLAN_EXPIRED` / `FEATURE_DISABLED` / `access_revoked`; a `FEATURE_DISABLED` reply refreshes the enabled features.
 
 ### Changed
 - Profile matches the web: name, email, phone and school are read-only (the platform has no `PUT /api/parent/auth/me`), plus birthday and a Change password entry.

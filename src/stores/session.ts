@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { api, ApiError, type Child, type Me } from '@/lib/api'
+import { api, ApiError, onApiError, type Child, type Me } from '@/lib/api'
 import { clearBooks } from '@/lib/books'
 import { unregisterPush } from '@/lib/push'
 import { clearRequestCache, accountGeneration } from '@/lib/request-cache'
@@ -22,21 +22,43 @@ type SessionState = {
   error: string | null
   classError: string | null
   unauthorized: boolean
+  notice: string | null        // why the parent was signed out (access revoked), shown on login
+  locked: boolean              // the school's plan has ended; the whole app shows the paused screen
+  usageSessionId: number | null
   load: (force?: boolean) => Promise<void>
   selectChild: (child: Child) => void
   has: (feature: string) => boolean
   setLang: (lang: Lang) => void
   logout: () => Promise<void>
+  setUsageSessionId: (id: number | null) => void
+  keepAlive: () => Promise<void>
+  checkPlan: () => Promise<void>
+  refreshFeatures: () => Promise<void>
+  heartbeat: () => void
+  track: (navKey: string | null) => void
 }
+
+// Usage nav keys the platform's analytics know, by app route.
+const NAV_KEYS: [RegExp, string][] = [
+  [/^\/$/, 'overview'], [/^\/attendance$/, 'attendance'], [/^\/calendar$/, 'calendar'], [/^\/fees$/, 'fees'],
+  [/^\/exams$/, 'exams'], [/^\/exam\//, 'results'], [/^\/syllabus$/, 'syllabus'], [/^\/(library$|book\/)/, 'library'], [/^\/profile$/, 'profile'],
+]
+export const navKeyFor = (pathname: string) => NAV_KEYS.find(([re]) => re.test(pathname))?.[1] ?? null
+
+const SIGNED_OUT = { loading: false, me: null, children: [], student: null, year: null, features: null, locked: false, unauthorized: true }
 
 let pendingLoad: { generation: number; promise: Promise<void> } | null = null
 let loadedGeneration = -1
 let loadedAt = 0
+let lastNavKey: string | null = null
+let featuresPending = false
+// Fire-and-forget: usage analytics must never affect the parent.
+const ping = (path: string, body: object) => { void api(path, { method: 'POST', body: JSON.stringify(body) }).catch(() => null) }
 
 export const useSession = create<SessionState>()(
   persist(
     (set, get) => ({
-      me: null, children: [], student: null, year: null, features: null, childId: null, lang: 'en', loading: true, error: null, classError: null, unauthorized: false,
+      me: null, children: [], student: null, year: null, features: null, childId: null, lang: 'en', loading: true, error: null, classError: null, unauthorized: false, notice: null, locked: false, usageSessionId: null,
 
       load(force = false) {
         const generation = accountGeneration()
@@ -46,7 +68,7 @@ export const useSession = create<SessionState>()(
           const current = () => generation === accountGeneration()
           const read = <T,>(path: string) => api<T>(path)
           if (loadedGeneration !== generation) set({ me: null, children: [], student: null, year: null, features: null })
-          set({ loading: !get().me, error: null, classError: null, unauthorized: false })
+          set({ loading: !get().me, error: null, classError: null, unauthorized: false, notice: null })
           try {
             const me = await read<Me>('/api/parent/auth/me')
             if (!current()) return
@@ -63,8 +85,8 @@ export const useSession = create<SessionState>()(
               }).catch(e => { if (current()) set({ classError: e instanceof Error ? e.message : 'Could not load your child’s class.' }) })
             const year = read<{ label: string }>(`/api/academic-year/current?school_id=${me.school_id}`)
               .then(value => { if (current()) set({ year: value.label }) })
-            const features = read<{ enabled: string[] }>(`/api/school/enabled-features?school_id=${me.school_id}&portal=parent`)
-              .then(value => { if (current()) set({ features: new Set(value.enabled) }) })
+            const features = get().refreshFeatures()
+            void get().checkPlan()
             // Keep load() awaitable by callers, while the signed-in shell can render immediately.
             await Promise.allSettled([classes, year, features])
             if (current() && !get().classError) { loadedGeneration = generation; loadedAt = Date.now() }
@@ -72,7 +94,7 @@ export const useSession = create<SessionState>()(
             if (!current()) return
             if (e instanceof ApiError && e.status === 401) {
               clearRequestCache()
-              set({ loading: false, me: null, children: [], student: null, year: null, features: null, unauthorized: true })
+              set(SIGNED_OUT)
               return
             }
             if (current()) set({ error: e instanceof Error ? e.message : 'Could not load your account' })
@@ -100,15 +122,79 @@ export const useSession = create<SessionState>()(
       },
 
       async logout() {
+        const usageSessionId = get().usageSessionId
         clearRequestCache()
-        set({ me: null, children: [], student: null, year: null, features: null, childId: null, loading: false, error: null, classError: null, unauthorized: true })
+        lastNavKey = null
+        set({ ...SIGNED_OUT, childId: null, error: null, classError: null, usageSessionId: null })
         await unregisterPush()
         try { clearBooks() } catch { /* a leftover book must never block sign-out */ }
-        await api('/api/parent/auth/logout', { method: 'POST', body: '{}' }).catch(() => null)
+        await api('/api/parent/auth/logout', { method: 'POST', body: JSON.stringify({ usageSessionId }) }).catch(() => null)
         set({ me: null, children: [], student: null, childId: null, unauthorized: true })
+      },
+
+      setUsageSessionId(usageSessionId) {
+        lastNavKey = null
+        set({ usageSessionId })
+      },
+
+      // Polled while the app is open: keeps the 20-minute idle session alive and
+      // notices an expired or revoked session (access_revoked is handled by onApiError).
+      async keepAlive() {
+        if (!get().me) return
+        const generation = accountGeneration()
+        try { await api<Me>('/api/parent/auth/me') } catch (e) {
+          if (e instanceof ApiError && e.status === 401 && generation === accountGeneration() && !get().unauthorized) {
+            clearRequestCache()
+            set(SIGNED_OUT)
+          }
+        }
+      },
+
+      async checkPlan() {
+        if (!get().me) return
+        const generation = accountGeneration()
+        const plan = await api<{ locked: boolean }>('/api/plan/status').catch(() => null)
+        if (plan && generation === accountGeneration()) set({ locked: plan.locked === true })
+      },
+
+      async refreshFeatures() {
+        const me = get().me
+        if (!me) return
+        const generation = accountGeneration()
+        const value = await api<{ enabled: string[] }>(`/api/school/enabled-features?school_id=${me.school_id}&portal=parent`)
+        if (generation === accountGeneration()) set({ features: new Set(value.enabled) })
+      },
+
+      heartbeat() {
+        const usageSessionId = get().usageSessionId
+        if (get().me && usageSessionId !== null) ping('/api/usage/heartbeat', { usageSessionId })
+      },
+
+      // Consecutive repeats of the same section are not counted again.
+      track(navKey) {
+        if (!navKey || navKey === lastNavKey || !get().me) return
+        lastNavKey = navKey
+        ping('/api/usage/track', { portal: 'parent', navKey })
       },
     }),
     // Only the selected child and language survive an app restart; everything else reloads from the API.
     { name: 'wlyl-parent', storage: createJSONStorage(() => AsyncStorage), partialize: s => ({ childId: s.childId, lang: s.lang }) },
   ),
 )
+
+onApiError(error => {
+  const s = useSession.getState()
+  if (error.code === 'access_revoked') {
+    clearRequestCache()
+    useSession.setState({ ...SIGNED_OUT, notice: error.message })
+    return
+  }
+  // A refused sign-in (no account loaded yet) is shown by the login screen itself.
+  if (!s.me) return
+  if (error.code === 'PLAN_EXPIRED') {
+    useSession.setState({ locked: true })
+  } else if (error.code === 'FEATURE_DISABLED' && !featuresPending) {
+    featuresPending = true
+    void s.refreshFeatures().catch(() => null).finally(() => { featuresPending = false })
+  }
+})

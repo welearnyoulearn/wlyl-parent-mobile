@@ -40,6 +40,13 @@ const en = {
   tabs: { home: 'Home', attendance: 'Attendance', fees: 'Fees', exams: 'Exams', more: 'More' },
   layout: { loadingAccount: 'Loading your account', loadError: 'Could not load your account' },
 
+  // Plan ended: src/components/plan-locked.tsx (copy from the web's PlanNotice)
+  planLocked: {
+    title: 'Portal access is paused',
+    message: 'Your school’s plan has ended, so this portal is not available right now. Please contact your school.',
+    signOut: 'Sign out',
+  },
+
   // Stack screen titles, shared with quick-links labels
   screenTitles: { calendar: 'Calendar', syllabus: 'Syllabus', library: 'Library', notifications: 'Notifications', profile: 'Profile' },
 
@@ -393,6 +400,12 @@ const te: typeof en = {
 
   tabs: { home: 'హోమ్', attendance: 'హాజరు', fees: 'రుసుములు', exams: 'పరీక్షలు', more: 'మరిన్ని' },
   layout: { loadingAccount: 'మీ ఖాతా లోడ్ అవుతున్నది', loadError: 'మీ ఖాతాను లోడ్ చేయలేకపోయాము' },
+
+  planLocked: {
+    title: 'పోర్టల్ యాక్సెస్ నిలిపివేయబడింది',
+    message: 'మీ పాఠశాల ప్లాన్ ముగిసింది, కాబట్టి ఈ పోర్టల్ ప్రస్తుతం అందుబాటులో లేదు. దయచేసి మీ పాఠశాలను సంప్రదించండి.',
+    signOut: 'సైన్ అవుట్',
+  },
 
   screenTitles: { calendar: 'క్యాలెండర్', syllabus: 'పాఠ్యక్రమం', library: 'లైబ్రరీ', notifications: 'నోటిఫికేషన్లు', profile: 'ప్రొఫైల్' },
 
