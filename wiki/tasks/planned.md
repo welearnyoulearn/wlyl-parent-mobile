@@ -1,0 +1,13 @@
+# Planned
+
+- Homework, leave, transport, rewards and the other #129 screens once that backend reaches dev
+- UPI fee payment
+- Native push notifications through Expo (FCM/APNs)
+- Bearer-token auth on the platform for mobile
+- App Store (iOS) build and submission — the Play Store path is in progress (#13)
+
+## Shown as "Soon" on Home (#10)
+- Fee receipts
+- Report card
+- Child photos
+- Live bus tracking (needs GPS from the bus; the platform has no location data yet)

@@ -1,18 +1,26 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import '@/global.css'
+import { Stack } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { COLORS } from '@/components/ui'
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+// Start on the tabs (home). Without this, the first declared Stack.Screen
+// (the mark sheet) became the initial route.
+export const unstable_settings = { initialRouteName: '(tabs)' }
 
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
-  );
+    <SafeAreaProvider>
+      <StatusBar style="light" />
+      {/* Pages opened from More (timetable, calendar, ...) get a header with a back
+          button; each sets its own title. Tabs and sign-in screens have none. */}
+      <Stack screenOptions={{ headerTintColor: COLORS.primary, headerTitleStyle: { fontWeight: '600' } }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="change-password" options={{ headerShown: false }} />
+        <Stack.Screen name="exam/[id]" options={{ title: 'Mark sheet' }} />
+        <Stack.Screen name="book/[id]" options={{ title: 'Book' }} />
+      </Stack>
+    </SafeAreaProvider>
+  )
 }

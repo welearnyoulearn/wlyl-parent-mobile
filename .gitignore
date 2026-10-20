@@ -17,6 +17,7 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+*.aab
 
 # Metro
 .metro-health-check*
@@ -41,3 +42,9 @@ example
 # generated native folders
 /ios
 /android
+
+# Google Play submit credentials (eas submit) — never commit
+google-play-service-account.json
+
+# Google Play reviewer demo login — never commit
+.play-review-credentials

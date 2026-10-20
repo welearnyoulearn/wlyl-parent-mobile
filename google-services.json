@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "715166517282",
+    "project_id": "wlyl-512003",
+    "storage_bucket": "wlyl-512003.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:715166517282:android:9e690c6e0223ab7fcf627b",
+        "android_client_info": {
+          "package_name": "com.welearnyoulearn.parent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKqLMAiAVYCy0nCwxU5BXXvoR86SQDnqQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

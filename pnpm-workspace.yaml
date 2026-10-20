@@ -1,0 +1,5 @@
+nodeLinker: hoisted
+
+# EAS uses pnpm 11, which requires an explicit decision for install scripts.
+allowBuilds:
+  unrs-resolver@1.12.2: true
