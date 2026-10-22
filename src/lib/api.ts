@@ -186,7 +186,8 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       credentials: 'include',
       ...init,
       signal: controller.signal,
-      headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
+      // Tells the platform this is the app, so login gives a session that lasts until the parent logs out.
+      headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), 'x-wlyl-client': 'mobile', ...init?.headers },
     })
     const data: unknown = await res.json().catch(error => {
       if (controller.signal.aborted) throw error
