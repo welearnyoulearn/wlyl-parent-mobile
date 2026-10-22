@@ -26,7 +26,7 @@ export function Screen({ children, refreshing = false, onRefresh, testID }: {
     <ScrollView
       testID={testID}
       className="flex-1 bg-background"
-      contentContainerClassName="gap-5 px-4 pb-10 pt-4"
+      contentContainerClassName="gap-6 px-4 pb-10 pt-5"
       refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} /> : undefined}>
       {children}
     </ScrollView>
@@ -42,20 +42,61 @@ export function Loading({ label }: { label?: string }) {
   )
 }
 
+// Soft lift for cards; boxShadow renders on both iOS and Android (new architecture) and on web.
+export const CARD_SHADOW = { boxShadow: '0 1px 2px rgba(16, 24, 40, 0.04), 0 3px 10px rgba(16, 24, 40, 0.06)' }
+
 export function Panel({ children, className = '', testID }: { children: ReactNode; className?: string; testID?: string }) {
-  return <View testID={testID} className={`rounded-2xl border border-border bg-card ${className}`}>{children}</View>
+  return <View testID={testID} style={CARD_SHADOW} className={`rounded-2xl bg-card ${className}`}>{children}</View>
 }
 
-export function Section({ title, action, children }: {
-  title: string; action?: { label: string; onPress: () => void; testID: string }; children: ReactNode
+// Pastel tile behind an icon: Quick Links, menu rows, stat cards, empty states.
+const TINTS = {
+  teal: ['bg-teal-50', '#0f766e'], green: ['bg-emerald-50', '#047857'], blue: ['bg-sky-50', '#0369a1'],
+  violet: ['bg-violet-50', '#6d28d9'], amber: ['bg-amber-50', '#b45309'], rose: ['bg-rose-50', '#be123c'],
+  muted: ['bg-muted', '#6b7280'],
+} as const
+export type Tint = keyof typeof TINTS
+
+// `onTint` puts it on white, for use inside an already tinted card.
+export function IconBadge({ icon: Icon, tint = 'teal', size = 36, round = false, onTint = false, className = '' }: {
+  icon: LucideIcon; tint?: Tint; size?: number; round?: boolean; onTint?: boolean; className?: string
+}) {
+  const [tinted, fg] = TINTS[tint]
+  const bg = onTint ? 'bg-white' : tinted
+  return (
+    <View style={{ width: size, height: size }} className={`shrink-0 items-center justify-center ${round ? 'rounded-full' : 'rounded-xl'} ${bg} ${className}`}>
+      <Icon size={Math.round(size * 0.48)} color={fg} />
+    </View>
+  )
+}
+
+// Month / day block for exams, events and holidays.
+const DATE_TINTS = { violet: 'bg-violet-50 text-violet-700', teal: 'bg-teal-50 text-teal-700', green: 'bg-emerald-50 text-emerald-700', rose: 'bg-rose-50 text-rose-700', amber: 'bg-amber-50 text-amber-700', blue: 'bg-sky-50 text-sky-700' } as const
+
+export function DateBadge({ date, tint = 'teal' }: { date: string; tint?: keyof typeof DATE_TINTS }) {
+  const [bg, fg] = DATE_TINTS[tint].split(' ')
+  const d = new Date(date)
+  return (
+    <View className={`size-12 shrink-0 items-center justify-center rounded-xl ${bg}`}>
+      <Text className={`text-[10px] font-semibold uppercase ${fg}`}>{d.toLocaleString('en-IN', { month: 'short' })}</Text>
+      <Text className={`text-lg font-bold leading-5 ${fg}`}>{d.getDate()}</Text>
+    </View>
+  )
+}
+
+export function Section({ title, icon: Icon, action, children }: {
+  title: string; icon?: LucideIcon; action?: { label: string; onPress: () => void; testID: string }; children: ReactNode
 }) {
   return (
-    <View className="gap-2">
-      <View className="flex-row items-baseline justify-between px-1">
-        <Text accessibilityRole="header" className="text-sm font-semibold text-foreground">{title}</Text>
+    <View className="gap-2.5">
+      <View className="flex-row items-center justify-between px-1">
+        <View className="flex-row items-center gap-1.5">
+          {Icon && <Icon size={16} color={COLORS.primary} />}
+          <Text accessibilityRole="header" className="text-base font-bold text-foreground">{title}</Text>
+        </View>
         {action && (
-          <Pressable onPress={action.onPress} testID={action.testID} accessibilityRole="button" hitSlop={8}>
-            <Text className="text-xs font-medium text-primary">{action.label} ›</Text>
+          <Pressable onPress={action.onPress} testID={action.testID} accessibilityRole="button" hitSlop={12}>
+            <Text className="text-xs font-semibold text-primary">{action.label} ›</Text>
           </Pressable>
         )}
       </View>
@@ -104,10 +145,8 @@ export function Alert({ children }: { children: ReactNode }) {
 export function Empty({ icon: Icon, title, hint }: { icon: LucideIcon; title: string; hint?: string }) {
   return (
     <Panel className="items-center gap-1.5 px-6 py-8">
-      <View className="size-11 items-center justify-center rounded-full bg-muted">
-        <Icon size={20} color="#6b7280" />
-      </View>
-      <Text className="text-center text-sm font-medium text-foreground">{title}</Text>
+      <IconBadge icon={Icon} size={52} round className="mb-1.5" />
+      <Text className="text-center text-sm font-semibold text-foreground">{title}</Text>
       {hint && <Text className="text-center text-xs text-muted-foreground">{hint}</Text>}
     </Panel>
   )

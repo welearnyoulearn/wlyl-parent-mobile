@@ -6,7 +6,7 @@ import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { day, inr, num, type AcademicYear, type Fees, type FeeRow, type Payment } from '@/lib/api'
 import { receiptHtml, shareReceipt } from '@/lib/receipt'
-import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Button, COLORS } from '@/components/ui'
+import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Button, COLORS, CARD_SHADOW } from '@/components/ui'
 import { useT, type Strings } from '@/lib/i18n'
 
 const STATUS: Record<string, { tone: 'green' | 'red' | 'amber' | 'muted' | 'blue'; label: (t: Strings) => string }> = {
@@ -108,22 +108,29 @@ export default function FeesScreen() {
     <Screen refreshing={refreshing} onRefresh={refresh} testID="fees-screen">
       {paying && <PaySheet rows={paying} student={student} onClose={() => { setPaying(null); setSelected(new Set()) }} onPaid={refresh} />}
       {yearPicker}
-      <Panel className={`p-4 ${s.total_outstanding > 0 ? 'bg-amber-50/50' : ''}`}>
-        <View className="flex-row items-start justify-between">
-          <View>
-            <Text className="text-xs text-muted-foreground" accessibilityRole="header">{t.fees.outstandingHeader(shownYear ?? t.fees.thisYear)}</Text>
-            <Text className="text-3xl font-bold text-foreground" testID="fees-outstanding">{inr(s.total_outstanding)}</Text>
+      <View className="gap-3">
+        <View style={CARD_SHADOW} className="rounded-2xl bg-primary">
+          <View className="overflow-hidden rounded-2xl p-5">
+            {/* Decorative rings, like a bank card. */}
+            <View className="absolute -right-12 -top-16 size-44 rounded-full bg-white/[0.07]" />
+            <View className="absolute -bottom-20 right-10 size-36 rounded-full bg-white/[0.04]" />
+            <View className="flex-row items-start justify-between">
+              <View>
+                <Text className="text-xs font-medium text-white/85" accessibilityRole="header">{t.fees.outstandingHeader(shownYear ?? t.fees.thisYear)}</Text>
+                <Text className="mt-0.5 text-4xl font-extrabold tracking-tight text-white" testID="fees-outstanding">{inr(s.total_outstanding)}</Text>
+              </View>
+              {s.overdue_count > 0 ? <Chip tone="red">{t.fees.overdueChip(s.overdue_count)}</Chip> : s.total_outstanding === 0 ? <Chip tone="green">{t.allClear}</Chip> : null}
+            </View>
+            {num(s.carried_outstanding) > 0 && <Text className="text-[11px] text-amber-100" testID="fees-carried">{t.fees.carriedIncl(inr(s.carried_outstanding))}</Text>}
+            <View className="mt-4 h-2 overflow-hidden rounded-full bg-white/25">
+              <View className="h-full rounded-full bg-white" style={{ width: `${paidPct}%` }} />
+            </View>
+            <Text className="mt-2 text-xs text-white/85">{t.fees.paidSummary(inr(s.total_paid), s.total_waived > 0 ? t.fees.concessionSuffix(inr(s.total_waived)) : '', inr(s.total_due))}</Text>
+            {!online && s.total_outstanding > 0 && <Text className="mt-3 text-xs font-medium text-white" testID="fees-pay-at-office">{t.fees.payAtOffice}</Text>}
           </View>
-          {s.overdue_count > 0 ? <Chip tone="red">{t.fees.overdueChip(s.overdue_count)}</Chip> : s.total_outstanding === 0 ? <Chip tone="green">{t.allClear}</Chip> : null}
         </View>
-        {num(s.carried_outstanding) > 0 && <Text className="text-[11px] text-amber-700" testID="fees-carried">{t.fees.carriedIncl(inr(s.carried_outstanding))}</Text>}
-        <View className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-          <View className="h-full rounded-full bg-emerald-500" style={{ width: `${paidPct}%` }} />
-        </View>
-        <Text className="mt-1.5 text-[11px] text-muted-foreground">{t.fees.paidSummary(inr(s.total_paid), s.total_waived > 0 ? t.fees.concessionSuffix(inr(s.total_waived)) : '', inr(s.total_due))}</Text>
-        {pending.length > 0 && <View className="mt-3"><Button label={t.fees.payByUpi(inr(sum(pending)))} onPress={() => setPaying(pending)} testID="pay-now-btn" /></View>}
-        {!online && s.total_outstanding > 0 && <Text className="mt-3 text-xs text-sky-700" testID="fees-pay-at-office">{t.fees.payAtOffice}</Text>}
-      </Panel>
+        {pending.length > 0 && <Button label={t.fees.payByUpi(inr(sum(pending)))} onPress={() => setPaying(pending)} testID="pay-now-btn" />}
+      </View>
 
       {prior && num(prior.total) > 0 && (
         <View className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3" testID="fees-prior-dues">
@@ -149,7 +156,7 @@ export default function FeesScreen() {
         </View>
       )}
 
-      <View className="flex-row rounded-xl bg-muted p-1">
+      <View className="flex-row rounded-xl bg-slate-200/70 p-1">
         {(['dues', 'payments', 'all'] as const).map((k) => (
           <Pressable key={k} onPress={() => setTab(k)} testID={`fees-tab-${k}`} accessibilityRole="tab" accessibilityState={{ selected: tab === k }} className={`flex-1 items-center justify-center rounded-lg py-1.5 ${tab === k ? 'bg-card shadow-sm' : ''}`}>
              <Text className={`text-sm font-medium ${tab === k ? 'text-foreground' : 'text-muted-foreground'}`}>
