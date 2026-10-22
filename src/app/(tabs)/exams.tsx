@@ -6,7 +6,7 @@ import { CalendarDays, ChevronRight, GraduationCap, Inbox } from 'lucide-react-n
 import { useSession } from '@/stores/session'
 import { day, hhmm, longDay, type CalendarExam, type MarkSheet } from '@/lib/api'
 import { useApi } from '@/lib/use-api'
-import { Screen, Loading, Panel, Empty, Chip, Alert, Ring, Section, Row, Divider } from '@/components/ui'
+import { Screen, Loading, Panel, Empty, Chip, Alert, Ring, Section, Row, Divider, useChildColor } from '@/components/ui'
 import { MonthCalendar, monthRange, shiftMonth, todayISO } from '@/components/month-calendar'
 import { useT, type Strings } from '@/lib/i18n'
 
@@ -280,6 +280,7 @@ function ExamCalendar({ schoolId, studentId, nearby }: { schoolId: number; stude
 export default function ExamsScreen() {
   const { student } = useSession()
   const t = useT()
+  const color = useChildColor()
   // Notifications open a tab directly: /exams?tab=upcoming|results. A later param wins over a tab picked by hand.
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>()
   const [picked, setPicked] = useState<{ tab: string; param?: string } | null>(null)
@@ -314,7 +315,8 @@ export default function ExamsScreen() {
           accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'upcoming' }}
           onPress={() => setTab('upcoming')}
-          className={`flex-1 items-center justify-center p-3 border-b-2 ${activeTab === 'upcoming' ? 'border-primary' : 'border-transparent'}`}
+          className={`flex-1 items-center justify-center p-3 border-b-2 ${activeTab === 'upcoming' ? '' : 'border-transparent'}`}
+          style={activeTab === 'upcoming' ? { borderBottomColor: color } : undefined}
         >
           <Text className={`text-sm font-semibold ${activeTab === 'upcoming' ? 'text-foreground' : 'text-muted-foreground'}`}>
             {t.exams.tabUpcoming}
@@ -325,7 +327,8 @@ export default function ExamsScreen() {
           accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'results' }}
           onPress={() => setTab('results')}
-          className={`flex-1 flex-row items-center justify-center p-3 border-b-2 gap-1 ${activeTab === 'results' ? 'border-primary' : 'border-transparent'}`}
+          className={`flex-1 flex-row items-center justify-center p-3 border-b-2 gap-1 ${activeTab === 'results' ? '' : 'border-transparent'}`}
+          style={activeTab === 'results' ? { borderBottomColor: color } : undefined}
         >
           <Text className={`text-sm font-semibold ${activeTab === 'results' ? 'text-foreground' : 'text-muted-foreground'}`}>
             {t.exams.tabResults}

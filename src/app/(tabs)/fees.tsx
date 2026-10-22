@@ -6,7 +6,7 @@ import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { day, inr, num, type AcademicYear, type Fees, type FeeRow, type Payment } from '@/lib/api'
 import { receiptHtml, shareReceipt } from '@/lib/receipt'
-import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Button, COLORS } from '@/components/ui'
+import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Button, useChildColor } from '@/components/ui'
 import { useT, type Strings } from '@/lib/i18n'
 
 const STATUS: Record<string, { tone: 'green' | 'red' | 'amber' | 'muted' | 'blue'; label: (t: Strings) => string }> = {
@@ -28,6 +28,7 @@ const sum = (rows: FeeRow[]) => rows.reduce((s, r) => s + num(r.balance), 0)
 export default function FeesScreen() {
   const { student, year, has, me } = useSession()
   const t = useT()
+  const color = useChildColor()
   // null = the school's current year; that path is shared (and cached) with Home's fee tile.
   const [picked, setPicked] = useState<string | null>(null)
   const shownYear = picked ?? year
@@ -53,7 +54,8 @@ export default function FeesScreen() {
           return (
             <Pressable key={y.id} onPress={() => pickYear(y.label)} testID={`fees-year-${y.label}`}
               accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${t.fees.yearLabel} ${y.label}`}
-              className={`rounded-full border px-3 py-1 ${on ? 'border-primary bg-primary' : 'border-border bg-card'}`}>
+              style={on ? { backgroundColor: color, borderColor: color } : undefined}
+              className={`rounded-full border px-3 py-1 ${on ? '' : 'border-border bg-card'}`}>
               <Text className={`text-xs font-medium ${on ? 'text-primary-foreground' : 'text-foreground'}`}>{y.label}</Text>
             </Pressable>
           )
@@ -239,6 +241,7 @@ function Ledger({ rows, online, selected, onToggle, onPay }: {
   rows: FeeRow[]; online: boolean; selected: Set<number>; onToggle: (id: number) => void; onPay: (r: FeeRow) => void
 }) {
   const t = useT()
+  const color = useChildColor()
   return (
     <Panel className="overflow-hidden">
       {rows.map((r, i) => {
@@ -252,7 +255,7 @@ function Ledger({ rows, online, selected, onToggle, onPay }: {
                 {canPay && (
                   <Pressable onPress={() => onToggle(r.id)} hitSlop={10} testID={`fee-select-${r.id}`}
                     accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={t.fees.selectRow(`${r.category_name} ${r.period_label}`)}>
-                    {on ? <SquareCheck size={20} color={COLORS.primary} /> : <Square size={20} color="#9ca3af" />}
+                    {on ? <SquareCheck size={20} color={color} /> : <Square size={20} color="#9ca3af" />}
                   </Pressable>
                 )}
                 <View className="flex-1">
@@ -267,7 +270,7 @@ function Ledger({ rows, online, selected, onToggle, onPay }: {
                 {num(r.balance) > 0 && <Text textBreakStrategy="simple" className="shrink-0 text-xs font-semibold text-amber-700">{t.fees.toPay(inr(r.balance))}</Text>}
                 {canPay && selected.size === 0 && (
                   <Pressable onPress={() => onPay(r)} testID={`fee-pay-${r.id}`} accessibilityRole="button" accessibilityLabel={`${t.fees.pay} ${r.category_name} ${r.period_label}`}
-                    className="shrink-0 rounded-lg bg-primary px-3 py-1 active:opacity-90">
+                    style={{ backgroundColor: color }} className="shrink-0 rounded-lg px-3 py-1 active:opacity-90">
                     <Text className="text-xs font-semibold text-primary-foreground">{t.fees.pay}</Text>
                   </Pressable>
                 )}
