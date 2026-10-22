@@ -5,7 +5,6 @@ import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context'
 import { withUniwind } from 'uniwind'
 import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native'
 import { initials } from '@/lib/api'
-import { childColor } from '@/lib/child-colors'
 import { useT } from '@/lib/i18n'
 import { useSession, type Lang } from '@/stores/session'
 
@@ -19,24 +18,16 @@ export const SafeAreaView = withUniwind(RNSafeAreaView)
 
 export const COLORS = { primary: '#0d7d76', muted: '#e5e7eb', green: '#10b981', amber: '#f59e0b', red: '#dc2626' }
 
-// The selected child's colour (teal before sign-in), used for accents so each child's screens look their own (#10).
-export function useChildColor(): string {
-  const children = useSession(s => s.children)
-  const id = useSession(s => s.student?.id)
-  return childColor(children, id)
-}
-
 // Scrollable page body with pull-to-refresh.
 export function Screen({ children, refreshing = false, onRefresh, testID }: {
   children: ReactNode; refreshing?: boolean; onRefresh?: () => void; testID?: string
 }) {
-  const color = useChildColor()
   return (
     <ScrollView
       testID={testID}
       className="flex-1 bg-background"
       contentContainerClassName="gap-5 px-4 pb-10 pt-4"
-      refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={color} colors={[color]} /> : undefined}>
+      refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} /> : undefined}>
       {children}
     </ScrollView>
   )
@@ -44,10 +35,9 @@ export function Screen({ children, refreshing = false, onRefresh, testID }: {
 
 export function Loading({ label }: { label?: string }) {
   const t = useT()
-  const color = useChildColor()
   return (
     <View className="items-center py-12" accessibilityLabel={label ?? t.ui.loading}>
-      <ActivityIndicator color={color} />
+      <ActivityIndicator color={COLORS.primary} />
     </View>
   )
 }
@@ -155,15 +145,13 @@ export function Button({ label, onPress, loading = false, disabled = false, vari
   label: string; onPress: () => void; loading?: boolean; disabled?: boolean; variant?: 'primary' | 'outline'; testID: string
 }) {
   const off = disabled || loading
-  const color = useChildColor()
-  const primary = variant === 'primary'
-  const base = primary ? 'active:opacity-90' : 'border border-border bg-card active:bg-muted'
+  const base = variant === 'primary' ? 'bg-primary active:opacity-90' : 'border border-border bg-card active:bg-muted'
   return (
     <Pressable onPress={onPress} disabled={off} testID={testID} accessibilityRole="button" accessibilityState={{ disabled: off, busy: loading }}
-      style={primary ? { backgroundColor: color } : undefined} className={`h-12 flex-row items-center justify-center rounded-xl px-4 ${base} ${off ? 'opacity-60' : ''}`}>
+      className={`h-12 flex-row items-center justify-center rounded-xl px-4 ${base} ${off ? 'opacity-60' : ''}`}>
       {loading
-        ? <ActivityIndicator color={primary ? '#fff' : color} />
-        : <Text className={`text-base font-semibold ${primary ? 'text-primary-foreground' : 'text-foreground'}`}>{label}</Text>}
+        ? <ActivityIndicator color={variant === 'primary' ? '#fff' : COLORS.primary} />
+        : <Text className={`text-base font-semibold ${variant === 'primary' ? 'text-primary-foreground' : 'text-foreground'}`}>{label}</Text>}
     </Pressable>
   )
 }

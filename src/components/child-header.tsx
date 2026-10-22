@@ -5,7 +5,7 @@ import { LogOut } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { num, type Fees, type Summary } from '@/lib/api'
-import { Avatar, useChildColor } from '@/components/ui'
+import { Avatar } from '@/components/ui'
 import { childColor } from '@/lib/child-colors'
 import { useT, type Strings } from '@/lib/i18n'
 
@@ -14,16 +14,14 @@ function greeting(t: Strings) {
   return h < 12 ? t.header.goodMorning : h < 17 ? t.header.goodAfternoon : t.header.goodEvening
 }
 
-// Header on every tab, in the selected child's colour: greeting, school, logout,
-// and the selected child (or chips, each in that child's colour, to switch).
-// Ported from the web app's AppShell.
+// Teal header on every tab: greeting, school, logout, and the selected child
+// (or chips, each in that child's own colour, to switch). Ported from the web app's AppShell.
 export function ChildHeader() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { me, children, student, year, selectChild, logout, has } = useSession()
   const firstName = me?.name?.split(' ')[0]
   const t = useT()
-  const color = useChildColor()
 
   // Same requests as Home, Exams and Fees, so these come from the request cache.
   const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
@@ -38,7 +36,7 @@ export function ChildHeader() {
   }
 
   return (
-    <View style={{ paddingTop: insets.top + 12, backgroundColor: color }} className="rounded-b-[28px] px-4 pb-4">
+    <View style={{ paddingTop: insets.top + 12 }} className="rounded-b-[28px] bg-primary px-4 pb-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-xs text-white/75">{greeting(t)}{firstName ? t.header.greetingSuffix(firstName) : ''}</Text>
@@ -60,15 +58,17 @@ export function ChildHeader() {
           accessibilityRole="tablist" accessibilityLabel={t.header.childrenList}>
           {children.map(k => {
             const active = k.id === student.id
-            const own = childColor(children, k.id)
+            const { solid, tint } = childColor(children, k.id)
+            // Each child's card in their own colour: solid when selected, light tint otherwise.
             return (
               <Pressable key={k.id} onPress={() => selectChild(k)} testID={`child-chip-${k.id}`}
                 accessibilityRole="tab" accessibilityState={{ selected: active }}
-                className={`flex-row items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 ${active ? 'bg-white' : 'bg-white/15'}`}>
-                <Avatar name={k.name} color={own} className="size-7 border border-white/70" textClassName="text-xs text-white" />
+                style={{ backgroundColor: active ? solid : tint, borderColor: active ? '#fff' : tint }}
+                className="flex-row items-center gap-2 rounded-full border-2 py-1 pl-1 pr-3 active:opacity-90">
+                <Avatar name={k.name} color={active ? 'rgba(255,255,255,0.25)' : solid} className="size-7" textClassName="text-xs text-white" />
                 <View>
-                  <Text style={active ? { color: own } : undefined} className={`text-sm font-semibold ${active ? '' : 'text-white'}`}>{k.name.split(' ')[0]}</Text>
-                  <Text style={active ? { color: own } : undefined} className={`text-[10px] ${active ? '' : 'text-white/75'}`}>{t.header.classShort(k.grade, k.section)}</Text>
+                  <Text style={{ color: active ? '#fff' : solid }} className="text-sm font-semibold">{k.name.split(' ')[0]}</Text>
+                  <Text style={{ color: active ? 'rgba(255,255,255,0.85)' : solid }} className="text-[10px]">{t.header.classShort(k.grade, k.section)}</Text>
                 </View>
               </Pressable>
             )

@@ -3,7 +3,7 @@ import { AppState, View } from 'react-native'
 import { Redirect, Tabs, usePathname, useRouter } from 'expo-router'
 import { CalendarCheck, GraduationCap, Home, IndianRupee, Menu } from 'lucide-react-native'
 import { navKeyFor, useSession } from '@/stores/session'
-import { Alert, Button, Loading, useChildColor } from '@/components/ui'
+import { Alert, Button, COLORS, Loading } from '@/components/ui'
 import { ChildHeader } from '@/components/child-header'
 import { registerForPush, useNotificationTap } from '@/lib/push'
 import { useT } from '@/lib/i18n'
@@ -31,7 +31,6 @@ export default function TabsLayout() {
   const router = useRouter()
   const pathname = usePathname()
   const t = useT()
-  const color = useChildColor()
 
   useEffect(() => { void load() }, [load])
 
@@ -74,7 +73,7 @@ export default function TabsLayout() {
 
   const hide = (feature: string) => (has(feature) ? {} : { href: null })
   return (
-    <Tabs screenOptions={{ header: () => <ChildHeader />, tabBarActiveTintColor: color, tabBarLabelStyle: { fontSize: 11 } }}>
+    <Tabs screenOptions={{ header: () => <ChildHeader />, tabBarActiveTintColor: COLORS.primary, tabBarLabelStyle: { fontSize: 11 } }}>
       <Tabs.Screen name="index" options={{ title: t.tabs.home, tabBarButtonTestID: 'tab-home', tabBarIcon: ({ color }) => <Home size={22} color={color} /> }} />
       <Tabs.Screen name="attendance" options={{ title: t.tabs.attendance, tabBarButtonTestID: 'tab-attendance', ...hide('attendance'), tabBarIcon: ({ color }) => <CalendarCheck size={22} color={color} /> }} />
       <Tabs.Screen name="fees" options={{ title: t.tabs.fees, tabBarButtonTestID: 'tab-fees', ...hide('fee-management'), tabBarIcon: ({ color }) => <IndianRupee size={22} color={color} /> }} />

@@ -15,7 +15,7 @@
 
 ### Changed
 - No more "Coming soon" (#9): Home quick links and the More tab only show features the app has; the unbuilt screens stay unlinked and notification taps for them open Notifications.
-- A colour per child (#10): the header band, child chips, tab bar tint, spinners and primary buttons use the selected child's colour (teal, violet, orange, blue, rose, emerald; white text passes WCAG AA). Status colours are unchanged.
+- A colour per child (#10): each child's card in the teal header has its own colour (violet, orange, sky, rose, indigo, amber): solid when selected, a light tint otherwise; text passes WCAG AA. The rest of the app stays teal.
 - Profile matches the web: name, email, phone and school are read-only (the platform has no `PUT /api/parent/auth/me`), plus birthday and a Change password entry.
 
 ## [1.0.3] — 2026-10-18
