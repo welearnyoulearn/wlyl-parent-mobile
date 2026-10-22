@@ -2,7 +2,7 @@ import { Linking, Text, View } from 'react-native'
 import { router, type Href } from 'expo-router'
 import Constants from 'expo-constants'
 import { Bell, User, Shield, LogOut, ChevronRight, Languages, type LucideIcon } from 'lucide-react-native'
-import { CHILD_LINKS, SCHOOL_LINKS, COMING_SOON } from '@/components/quick-links'
+import { CHILD_LINKS, SCHOOL_LINKS } from '@/components/quick-links'
 
 import { PRIVACY_URL } from '@/lib/api'
 import { useSession } from '@/stores/session'
@@ -74,21 +74,6 @@ export default function MoreScreen() {
 
       <Section title={t.more.school}>
         <MenuPanel items={schoolItems} />
-      </Section>
-
-      <Section title={t.more.comingSoon}>
-        <Panel className="overflow-hidden opacity-60" testID="more-coming-soon">
-          {COMING_SOON.map((it, i) => (
-            <View key={it.id} accessible accessibilityLabel={t.quickLinks.accessibilityComingSoon(it.label(t))}>
-              {i > 0 && <Divider />}
-              <Row testID={`more-soon-${it.id}`}>
-                <it.icon size={18} color="#9ca3af" />
-                <Text className="flex-1 text-sm text-muted-foreground">{it.label(t)}</Text>
-                <Text className="text-[10px] font-semibold uppercase text-muted-foreground">{t.quickLinks.soonBadge}</Text>
-              </Row>
-            </View>
-          ))}
-        </Panel>
       </Section>
 
       <Section title={t.more.account}>

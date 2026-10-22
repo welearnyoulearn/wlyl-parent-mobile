@@ -6,7 +6,7 @@
 - Bearer-token auth on the platform for mobile
 - App Store (iOS) build and submission — the Play Store path is in progress (#13)
 
-## Shown as "Soon" on Home (#10)
+## Not built yet (hidden in the app)
 - Fee receipts
 - Report card
 - Child photos

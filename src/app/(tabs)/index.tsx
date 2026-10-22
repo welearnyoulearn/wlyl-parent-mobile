@@ -2,18 +2,15 @@ import { ClassLoading } from '@/components/class-loading'
 import { useState } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
 import { useIsFocused, useRouter } from 'expo-router'
-import { AlertTriangle, CalendarDays, ChevronRight, PartyPopper, Phone } from 'lucide-react-native'
+import { AlertTriangle, CalendarDays, ChevronRight, Phone } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
-import { day, longDay, hhmm, inr, telHref, type SchoolCalendar, type SchoolContacts, type Fees, type Summary, type Timetable } from '@/lib/api'
+import { day, longDay, inr, telHref, type SchoolCalendar, type SchoolContacts, type Fees, type Summary } from '@/lib/api'
 import { localised, needsPopup } from '@/lib/notices'
 import { NoticeModal, NoticeRow, useNotices } from '@/components/notices'
 import { QuickLinks } from '@/components/quick-links'
 import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring } from '@/components/ui'
 import { useT } from '@/lib/i18n'
-
-// Timetable stays "Coming soon" until /api/parent/timetable ships on the platform (#129).
-const TIMETABLE_READY = false
 
 // One Contact & Support row: who, their role, and a call button when there is a number.
 function Contact({ id, name, role, phone }: { id: string; name: string; role: string; phone: string | null }) {
@@ -35,8 +32,6 @@ function Contact({ id, name, role, phone }: { id: string; name: string; role: st
   )
 }
 
-function nowHHMM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
-
 export default function HomePage() {
   const { student, has, lang } = useSession()
   const router = useRouter()
@@ -47,10 +42,6 @@ export default function HomePage() {
 
   const { data: summary, error: er1, refreshing: r1, refresh: ref1 } = useApi<Summary>(q ? `/api/parent/child-summary?${q}` : null)
   const { data: feesData, error: er2, refreshing: r2, refresh: ref2 } = useApi<Fees>(student ? `/api/parent/fees?school_id=${student.school_id}&student_id=${student.id}` : null)
-  const { data: today, error: ttError, status: ttStatus, refreshing: r3, refresh: ref3 } = useApi<Timetable>(q && TIMETABLE_READY && has('timetable') ? `/api/parent/timetable?${q}` : null)
-  // 404/405: this platform has no timetable route — hide the card instead of erroring.
-  const noTimetable = ttStatus === 404 || ttStatus === 405
-  const er3 = noTimetable ? null : ttError
   const notices = useNotices(student ? `/api/announcements?school_id=${student.school_id}` : null)
   const { error: er4, refreshing: r4, refresh: ref4 } = notices
   const { data: eventsObj, error: er5, refreshing: r5, refresh: ref5 } = useApi<SchoolCalendar>(
@@ -64,9 +55,9 @@ export default function HomePage() {
   const popupId = focused ? notices.items?.find(needsPopup)?.id : undefined
   if (popupId !== undefined && openId === null) setOpenId(popupId)
 
-  const refreshing = r1 || r2 || r3 || r4 || r5 || r6
-  const error = er1 || er2 || er3 || er4 || er5
-  const onRefresh = () => { ref1(); ref2(); ref3(); ref4(); ref5(); ref6() }
+  const refreshing = r1 || r2 || r4 || r5 || r6
+  const error = er1 || er2 || er4 || er5
+  const onRefresh = () => { ref1(); ref2(); ref4(); ref5(); ref6() }
 
   if (!student) {
     return (
@@ -88,7 +79,6 @@ export default function HomePage() {
 
   const pending = summary?.released_results.filter(r => !r.parent_acknowledged) ?? []
   const latest = summary?.released_results[0]
-  const now = nowHHMM()
 
   const attention: { key: string; text: string; onPress?: () => void }[] = []
   if (fees && fees.overdue_count > 0) {
@@ -160,30 +150,6 @@ export default function HomePage() {
             {contact.school && <Contact id="administration" name={contact.school.name} role={t.home.schoolAdmin} phone={contact.school.phone} />}
             {contact.school?.address && <Text className="px-4 pb-3 text-xs text-muted-foreground">{contact.school.address}</Text>}
           </Panel>
-        </Section>
-      )}
-
-      {TIMETABLE_READY && has('timetable') && !noTimetable && (
-        <Section title={t.home.todaysClasses}>
-          {today === null ? <Loading /> : today.periods.length === 0 ? (
-            <Empty icon={PartyPopper} title={t.home.noClassesTitle} hint={t.home.noClassesHint} />
-          ) : (
-            <Panel className="overflow-hidden">
-              {today.periods.filter(p => !p.is_break).map((p, i, arr) => {
-                const live = now >= p.time_from.slice(0, 5) && now < p.time_to.slice(0, 5)
-                return (
-                  <View key={p.period_number}>
-                    <Row className={live ? 'bg-teal-50/60' : ''}>
-                      <Text className="w-16 shrink-0 text-[11px] leading-tight text-muted-foreground">{hhmm(p.time_from)}</Text>
-                      <Text className="flex-1 text-sm font-medium text-foreground">{p.subject_name ?? t.home.freePeriod}</Text>
-                      {live ? <Chip tone="teal">{t.home.now}</Chip> : p.teacher_name ? <Text className="text-xs text-muted-foreground">{p.teacher_name.split(' ')[0]}</Text> : null}
-                    </Row>
-                    {i < arr.length - 1 && <Divider />}
-                  </View>
-                )
-              })}
-            </Panel>
-          )}
         </Section>
       )}
 

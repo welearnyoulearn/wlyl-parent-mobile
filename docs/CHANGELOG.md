@@ -14,6 +14,8 @@
 - Attendance (#6): month switcher, four summary cards (incl. full-days streak), band message, tap-a-day detail, full legend, trend with 90/75 lines from two months, upcoming holidays. Notifications grouped by feature with "Mark all read" / "Mark these read"; taps open the exam calendar, mark sheet, fees or attendance.
 
 ### Changed
+- No more "Coming soon" (#9): Home quick links and the More tab only show features the app has; the unbuilt screens stay unlinked and notification taps for them open Notifications.
+- A colour per child (#10): the header band, child chips, tab bar tint, spinners and primary buttons use the selected child's colour (teal, violet, orange, blue, rose, emerald; white text passes WCAG AA). Status colours are unchanged.
 - Profile matches the web: name, email, phone and school are read-only (the platform has no `PUT /api/parent/auth/me`), plus birthday and a Change password entry.
 
 ## [1.0.3] — 2026-10-18

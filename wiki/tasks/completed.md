@@ -1,5 +1,8 @@
 # Completed
 
+### 2026-10-22 — No "Coming soon" + a colour per child (#9, #10)
+**Summary:** Home and More only show built features (no "Soon" tiles or section; unused strings removed). Each child gets their own colour on the header, chips, tab tint, spinners and primary buttons. Typecheck, lint, tests and Android export pass; not yet checked on a device.
+
 ### 2026-09-19 — UPI fee payment in the mobile app (#11)
 **Summary:** Pay by UPI is back on the Fees tab. Opens the phone's UPI app with the school's UPI ID and amount, then records the UTR for verification. Checked on the emulator up to the UTR step; nothing submitted to the shared dev database.
 
