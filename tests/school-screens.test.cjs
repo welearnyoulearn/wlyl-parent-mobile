@@ -33,8 +33,7 @@ const responses = {
 function Primitive({ children, title, hint }) {
   return React.createElement('div', null, title, hint, children)
 }
-// Hooks from @/components/ui need a value, not a component.
-const primitives = new Proxy({}, { get: (_, key) => key === 'useChildColor' ? () => '#0d7d76' : Primitive })
+const primitives = new Proxy({}, { get: () => Primitive })
 function compile(relative, overrides = {}) {
   const filename = path.join(root, relative)
   const source = process.env.SCREEN_TEST_REF
