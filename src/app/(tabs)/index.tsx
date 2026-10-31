@@ -1,10 +1,13 @@
 import { ClassLoading } from '@/components/class-loading'
-import { Pressable, Text, View } from 'react-native'
-import { Href, useRouter } from 'expo-router'
-import { AlertTriangle, CalendarDays, ChevronRight, Megaphone, PartyPopper } from 'lucide-react-native'
+import { useState } from 'react'
+import { Linking, Pressable, Text, View } from 'react-native'
+import { useIsFocused, useRouter } from 'expo-router'
+import { AlertTriangle, CalendarDays, ChevronRight, PartyPopper, Phone } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
-import { day, longDay, hhmm, inr, type Announcement, type SchoolCalendar, type Fees, type Summary, type Timetable } from '@/lib/api'
+import { day, longDay, hhmm, inr, telHref, type SchoolCalendar, type SchoolContacts, type Fees, type Summary, type Timetable } from '@/lib/api'
+import { localised, needsPopup } from '@/lib/notices'
+import { NoticeModal, NoticeRow, useNotices } from '@/components/notices'
 import { QuickLinks } from '@/components/quick-links'
 import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring } from '@/components/ui'
 import { useT } from '@/lib/i18n'
@@ -12,11 +15,32 @@ import { useT } from '@/lib/i18n'
 // Timetable stays "Coming soon" until /api/parent/timetable ships on the platform (#129).
 const TIMETABLE_READY = false
 
+// One Contact & Support row: who, their role, and a call button when there is a number.
+function Contact({ id, name, role, phone }: { id: string; name: string; role: string; phone: string | null }) {
+  const t = useT()
+  return (
+    <Row>
+      <View className="flex-1">
+        <Text className="text-sm font-medium text-foreground" numberOfLines={1}>{name}</Text>
+        <Text className="text-xs text-muted-foreground">{role}</Text>
+      </View>
+      {phone && (
+        <Pressable onPress={() => void Linking.openURL(telHref(phone)).catch(() => null)} testID={`call-${id}`}
+          accessibilityRole="button" accessibilityLabel={t.home.call(name)} hitSlop={6}
+          className="size-10 items-center justify-center rounded-full bg-teal-50 active:bg-teal-100">
+          <Phone size={17} color="#0f766e" />
+        </Pressable>
+      )}
+    </Row>
+  )
+}
+
 function nowHHMM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
 
 export default function HomePage() {
-  const { student, has } = useSession()
+  const { student, has, lang } = useSession()
   const router = useRouter()
+  const focused = useIsFocused()
   const t = useT()
 
   const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
@@ -27,16 +51,22 @@ export default function HomePage() {
   // 404/405: this platform has no timetable route — hide the card instead of erroring.
   const noTimetable = ttStatus === 404 || ttStatus === 405
   const er3 = noTimetable ? null : ttError
-  const { data: newsObj, error: er4, refreshing: r4, refresh: ref4 } = useApi<Announcement[] | { data: Announcement[] }>(
-    student ? `/api/announcements?school_id=${student.school_id}&audience=parents` : null
-  )
+  const notices = useNotices(student ? `/api/announcements?school_id=${student.school_id}` : null)
+  const { error: er4, refreshing: r4, refresh: ref4 } = notices
   const { data: eventsObj, error: er5, refreshing: r5, refresh: ref5 } = useApi<SchoolCalendar>(
     student ? `/api/school-calendar?school_id=${student.school_id}&year=${new Date().getFullYear()}` : null
   )
+  // Same request as the Syllabus screen; contact details are optional, so failures just hide the card.
+  const { data: contact, refreshing: r6, refresh: ref6 } = useApi<SchoolContacts>(student ? `/api/parent/subjects?student_id=${student.id}` : null)
+  const [openId, setOpenId] = useState<number | null>(null)
+  // Unseen urgent / action-needed / greeting notices open by themselves, one at a time
+  // (opening marks it seen, so closing it brings up the next).
+  const popupId = focused ? notices.items?.find(needsPopup)?.id : undefined
+  if (popupId !== undefined && openId === null) setOpenId(popupId)
 
-  const refreshing = r1 || r2 || r3 || r4 || r5
+  const refreshing = r1 || r2 || r3 || r4 || r5 || r6
   const error = er1 || er2 || er3 || er4 || er5
-  const onRefresh = () => { ref1(); ref2(); ref3(); ref4(); ref5() }
+  const onRefresh = () => { ref1(); ref2(); ref3(); ref4(); ref5(); ref6() }
 
   if (!student) {
     return (
@@ -47,8 +77,8 @@ export default function HomePage() {
   }
 
   const fees = feesData?.summary ?? null
-  const newsRaw = Array.isArray(newsObj) ? newsObj : (newsObj?.data ?? [])
-  const news = newsRaw.slice(0, 3)
+  const news = notices.items ?? []
+  const openNotice = news.find(n => n.id === openId) ?? null
 
   const todayIso = new Date().toISOString().slice(0, 10)
   const events = (eventsObj?.events ?? [])
@@ -60,15 +90,15 @@ export default function HomePage() {
   const latest = summary?.released_results[0]
   const now = nowHHMM()
 
-  const attention: { key: string; text: string; href?: string }[] = []
+  const attention: { key: string; text: string; onPress?: () => void }[] = []
   if (fees && fees.overdue_count > 0) {
-    attention.push({ key: 'overdue', text: t.home.feesOverdue(fees.overdue_count, inr(fees.total_outstanding)), href: '/fees' })
+    attention.push({ key: 'overdue', text: t.home.feesOverdue(fees.overdue_count, inr(fees.total_outstanding)), onPress: () => router.push('/fees') })
   }
   if (pending.length > 0) {
-    attention.push({ key: 'ack', text: t.home.resultsWaiting(pending.length), href: '/exams' })
+    attention.push({ key: 'ack', text: t.home.resultsWaiting(pending.length), onPress: () => router.push('/exams') })
   }
   news.filter(n => n.priority === 'urgent').forEach(n => {
-    attention.push({ key: `news-${n.id}`, text: n.title })
+    attention.push({ key: `news-${n.id}`, text: localised(n, lang).title, onPress: () => setOpenId(n.id) })
   })
 
   return (
@@ -81,13 +111,13 @@ export default function HomePage() {
             <Pressable
               key={a.key}
               testID={`attention-${a.key}`}
-              onPress={() => { if (a.href) router.push(a.href as Href) }}
-              accessibilityRole={a.href ? 'button' : 'none'}
+              onPress={a.onPress}
+              accessibilityRole={a.onPress ? 'button' : 'none'}
               className="flex-row items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
             >
               <AlertTriangle size={16} color="#f59e0b" />
               <Text className="flex-1 text-sm text-amber-900">{a.text}</Text>
-              {a.href && <ChevronRight size={16} color="#fbbf24" />}
+              {a.onPress && <ChevronRight size={16} color="#fbbf24" />}
             </Pressable>
           ))}
         </View>
@@ -121,6 +151,17 @@ export default function HomePage() {
       </View>
 
       <QuickLinks />
+
+      {(contact?.class_teacher || contact?.school) && (
+        <Section title={t.home.contactTitle}>
+          <Panel className="overflow-hidden">
+            {contact.class_teacher && <Contact id="class-teacher" name={contact.class_teacher.name} role={t.home.classTeacher} phone={contact.class_teacher.phone} />}
+            {contact.class_teacher && contact.school && <Divider />}
+            {contact.school && <Contact id="administration" name={contact.school.name} role={t.home.schoolAdmin} phone={contact.school.phone} />}
+            {contact.school?.address && <Text className="px-4 pb-3 text-xs text-muted-foreground">{contact.school.address}</Text>}
+          </Panel>
+        </Section>
+      )}
 
       {TIMETABLE_READY && has('timetable') && !noTimetable && (
         <Section title={t.home.todaysClasses}>
@@ -191,26 +232,15 @@ export default function HomePage() {
       )}
 
       {news.length > 0 && (
-        <Section title={t.home.fromSchool}>
-          <View className="gap-2">
-            {news.map(n => (
-              <Panel key={n.id} className="p-3.5">
-                <View className="flex-row items-start gap-3">
-                  <View className="size-9 shrink-0 items-center justify-center rounded-xl bg-teal-50">
-                    <Megaphone size={16} color="#0f766e" />
-                  </View>
-                  <View className="flex-1">
-                    <View className="flex-row items-center gap-2 flex-wrap">
-                      <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{n.title}</Text>
-                      {n.priority === 'urgent' ? <Chip tone="red">{t.urgent}</Chip> : n.priority === 'high' ? <Chip tone="amber">{t.home.important}</Chip> : null}
-                    </View>
-                    <Text className="mt-0.5 text-xs text-muted-foreground" numberOfLines={3}>{n.content}</Text>
-                    <Text className="mt-1 text-[11px] text-muted-foreground/80">{n.created_by_name ? `${n.created_by_name} · ` : ''}{day(n.created_at)}</Text>
-                  </View>
-                </View>
-              </Panel>
+        <Section title={t.notices.title} action={{ label: t.notices.viewAll(news.length), testID: 'notice-viewall', onPress: () => router.push('/notices') }}>
+          <Panel className="overflow-hidden">
+            {news.slice(0, 4).map((n, i, arr) => (
+              <View key={n.id}>
+                <NoticeRow notice={n} onPress={() => setOpenId(n.id)} />
+                {i < arr.length - 1 && <Divider />}
+              </View>
             ))}
-          </View>
+          </Panel>
         </Section>
       )}
 
@@ -231,6 +261,7 @@ export default function HomePage() {
         </Section>
       )}
 
+      {openNotice && <NoticeModal notice={openNotice} onClose={() => setOpenId(null)} />}
     </Screen>
   )
 }

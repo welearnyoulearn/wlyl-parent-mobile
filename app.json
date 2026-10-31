@@ -2,7 +2,7 @@
   "expo": {
     "name": "WLYL Parent",
     "slug": "wlyl-parent-mobile",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wlylparent",
@@ -51,7 +51,8 @@
           ]
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

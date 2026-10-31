@@ -6,6 +6,14 @@ import { Alert, Button, Field, Loading } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 type UpiInfo = { upi_id: string; school_name: string }
+type Submitted = { receipt_number: string; total_amount: number; entries_count: number }
+
+// One key per sheet opening, reused on retries, so a double tap or flaky network can't
+// report the same payment twice (the platform replays the first response).
+const newKey = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+  const r = Math.floor(Math.random() * 16)
+  return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+})
 
 // Same upi:// link the platform puts in its QR code (/api/fees/upi-qr).
 const upiLink = (upi: UpiInfo, amount: number) =>
@@ -13,6 +21,7 @@ const upiLink = (upi: UpiInfo, amount: number) =>
 
 // Pay fees by UPI (#11): opens the phone's UPI app with the school's UPI ID and
 // amount filled in, then records the transaction ID for the school to verify.
+// `rows` are the bills being paid: one bill, the selected ones, or every pending one.
 export function PaySheet({ rows, student, onClose, onPaid }: {
   rows: FeeRow[]; student: { id: number; school_id: number }; onClose: () => void; onPaid: () => void
 }) {
@@ -25,6 +34,8 @@ export function PaySheet({ rows, student, onClose, onPaid }: {
   const [ref, setRef] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState<Submitted | null>(null)
+  const [key] = useState(newKey)
 
   useEffect(() => {
     api<UpiInfo>(`/api/fees/upi-qr/info?school_id=${student.school_id}`)
@@ -51,13 +62,17 @@ export function PaySheet({ rows, student, onClose, onPaid }: {
     setBusy(true)
     setError('')
     try {
-      await api('/api/parent/fees', {
+      // Same body as the web: one bill is ledger_id + amount, several are ledger_ids + total_amount (FIFO on the server).
+      const txn = ref.trim()
+      const bills = due.length === 1 ? { ledger_id: due[0].id, amount: amt } : { ledger_ids: due.map(r => r.id), total_amount: amt }
+      const res = await api<Submitted>('/api/parent/fees', {
         method: 'POST',
         body: JSON.stringify({
-          school_id: student.school_id, student_id: student.id, ledger_ids: due.map(r => r.id),
-          total_amount: amt, transaction_ref: ref.trim(), upi_id: upi?.upi_id,
+          school_id: student.school_id, student_id: student.id, ...bills,
+          transaction_ref: txn, upi_id: txn, idempotency_key: key,
         }),
       })
+      setDone(res)
       setStep('done')
       onPaid()
     } catch (e) {
@@ -80,6 +95,27 @@ export function PaySheet({ rows, student, onClose, onPaid }: {
               <X size={22} color="#6b7280" />
             </Pressable>
           </View>
+
+          {step !== 'done' && (
+            <View className="rounded-xl bg-muted px-3 py-2" testID="pay-bills">
+              {due.length === 1 ? (
+                <>
+                  <Text className="text-sm font-medium text-foreground">{due[0].category_name} · {due[0].period_label}</Text>
+                  <Text className="text-[11px] text-muted-foreground">{t.paySheet.balanceDue(inr(due[0].balance))}</Text>
+                </>
+              ) : (
+                <>
+                  <Text className="text-sm font-medium text-foreground">{t.paySheet.entries(due.length)}</Text>
+                  {due.map(r => (
+                    <View key={r.id} className="flex-row justify-between gap-2">
+                      <Text className="flex-shrink text-[11px] text-muted-foreground">{r.category_name} · {r.period_label}</Text>
+                      <Text className="text-[11px] text-muted-foreground">{inr(r.balance)}</Text>
+                    </View>
+                  ))}
+                </>
+              )}
+            </View>
+          )}
 
           {upi === undefined && <Loading />}
           {upi === null && <Alert>{t.paySheet.noUpi}</Alert>}
@@ -111,6 +147,19 @@ export function PaySheet({ rows, student, onClose, onPaid }: {
             <View className="items-center gap-2 py-4">
               <CheckCircle2 size={48} color="#10b981" />
               <Text className="text-base font-semibold text-foreground">{t.paySheet.doneTitle}</Text>
+              {done && (
+                <View className="w-full flex-row justify-between rounded-xl bg-muted px-3 py-2">
+                  <View>
+                    <Text className="text-[11px] text-muted-foreground">{t.paySheet.receiptNumber}</Text>
+                    <Text selectable className="font-mono text-sm font-semibold text-foreground" testID="pay-receipt-number">{done.receipt_number}</Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-[11px] text-muted-foreground">{t.paySheet.amountPaid}</Text>
+                    <Text className="text-sm font-semibold text-foreground" testID="pay-receipt-amount">{inr(done.total_amount)}</Text>
+                    {done.entries_count > 1 && <Text className="text-[11px] text-muted-foreground">{t.paySheet.entriesCount(done.entries_count)}</Text>}
+                  </View>
+                </View>
+              )}
               <Text className="text-center text-sm text-muted-foreground">{t.paySheet.doneHint(t.fees.statusAwaitingVerification)}</Text>
               <View className="mt-2 w-full"><Button variant="outline" label={t.done} onPress={onClose} testID="pay-done-btn" /></View>
             </View>

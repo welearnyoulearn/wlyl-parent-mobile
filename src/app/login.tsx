@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { Text, View, KeyboardAvoidingView, ScrollView, Linking } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSession } from '@/stores/session'
 import { api, ApiError, PRIVACY_URL } from '@/lib/api'
 import { Button, Field, Alert, SafeAreaView, LangToggle } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
-type LoginResponse = { success: boolean; passwordChanged: boolean; name: string | null; schoolName: string | null }
+type LoginResponse = { success: boolean; passwordChanged: boolean; name: string | null; schoolName: string | null; usageSessionId: number | null }
 
 export default function LoginScreen() {
   const router = useRouter()
   const t = useT()
+  // Set by screens that sign the parent out (e.g. the school turned parent access off).
+  const { notice } = useLocalSearchParams<{ notice?: string }>()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -27,9 +29,11 @@ export default function LoginScreen() {
       })
       // Clear the signed-out gate synchronously; the shell shows account loading
       // while school metadata continues in the background.
+      useSession.getState().setUsageSessionId(r.usageSessionId ?? null)
       void useSession.getState().load()
       router.replace(r.passwordChanged ? '/' : '/change-password')
     } catch (err) {
+      // 403 (portal off, plan expired) and 429 carry a message meant for the parent; show it as-is.
       setError(err instanceof ApiError ? err.message : (err instanceof Error ? err.message : t.login.error))
     } finally {
       setBusy(false)
@@ -57,6 +61,7 @@ export default function LoginScreen() {
           </View>
 
           <View className="gap-4">
+            {notice ? <Alert>{notice}</Alert> : null}
             <Field
               label={t.login.identifierLabel}
               testID="login-identifier-input"
@@ -74,6 +79,14 @@ export default function LoginScreen() {
               password
               autoComplete="current-password"
             />
+            <Text
+              accessibilityRole="link"
+              testID="login-forgot-password-link"
+              onPress={() => router.push('/forgot-password')}
+              className="self-end py-1 text-sm font-medium text-primary"
+            >
+              {t.login.forgot}
+            </Text>
             {error ? <Alert>{error}</Alert> : null}
             <Button
               label={busy ? t.login.signingIn : t.login.signIn}

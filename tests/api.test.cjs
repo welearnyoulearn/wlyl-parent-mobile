@@ -36,3 +36,37 @@ test('Writes invalidate screen data; account changes also reset the session gene
     assert.equal(cache.accountGeneration(), generation + 3)
   } finally { global.fetch = originalFetch }
 })
+test('Birthday input formats digits as YYYY-MM-DD and only accepts real dates', () => {
+  const { dobInput, isoDate } = compile('src/lib/api.ts', { './request-cache': { clearRequestCache() {} } })
+  assert.equal(dobInput('19850815'), '1985-08-15')
+  assert.equal(dobInput('1985-0'), '1985-0')
+  assert.equal(dobInput('1985-'), '1985')
+  assert.equal(dobInput('1985/08/15 extra 9'), '1985-08-15')
+  assert.equal(isoDate('1985-08-15'), true)
+  assert.equal(isoDate('2024-02-29'), true)
+  assert.equal(isoDate('2023-02-29'), false)
+  assert.equal(isoDate('1985-13-01'), false)
+  assert.equal(isoDate('1985-8-15'), false)
+})
+test('Error codes reach ApiError and the listener; access_revoked carries the message; usage pings keep the cache', async () => {
+  const cache = compile('src/lib/request-cache.ts')
+  const mod = compile('src/lib/api.ts', { './request-cache': cache })
+  const seen = []
+  mod.onApiError(e => seen.push(e.code))
+  const originalFetch = global.fetch, originalWarn = console.warn
+  console.warn = () => {}
+  const reply = (status, body) => { global.fetch = async () => ({ ok: status < 400, status, json: async () => body }) }
+  try {
+    reply(403, { error: 'Paused', code: 'PLAN_EXPIRED' })
+    await assert.rejects(mod.api('/api/parent/fees'), e => e instanceof mod.ApiError && e.code === 'PLAN_EXPIRED' && e.message === 'Paused')
+    reply(401, { error: 'access_revoked', message: 'Portal disabled' })
+    await assert.rejects(mod.api('/api/parent/auth/me'), e => e.code === 'access_revoked' && e.message === 'Portal disabled')
+    reply(401, { error: 'Invalid credentials' })
+    await assert.rejects(mod.api('/api/parent/auth/login', { method: 'POST' }), e => e.code === undefined)
+    assert.deepEqual(seen, ['PLAN_EXPIRED', 'access_revoked'])
+    await cache.loadCached('/books', async () => ['kept'])
+    reply(200, { success: true })
+    await mod.api('/api/usage/heartbeat', { method: 'POST', body: '{}' })
+    assert.deepEqual(cache.cachedResult('/books'), { data: ['kept'] })
+  } finally { global.fetch = originalFetch; console.warn = originalWarn }
+})

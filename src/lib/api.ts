@@ -16,7 +16,7 @@ export const PRIVACY_URL = 'https://wlyl.varchas.store/privacy/'
 export type Child = { id: number; name: string; grade: string; section: string; roll_number: string; school_id: number; has_photo?: boolean }
 export type Me = {
   id: number; name: string | null; email: string | null; phone: string | null
-  school_id: number; school_name: string | null; password_changed: boolean; children: Child[]
+  school_id: number; school_name: string | null; password_changed: boolean; date_of_birth?: string | null; children: Child[]
 }
 export type Exam = { id: number; exam_name: string; exam_type: string; exam_date: string; subjects: string[]; total_subjects: number }
 export type Result = {
@@ -53,32 +53,54 @@ export type Attendance = {
   trend: { month: string; summary: AttendanceSummary }[]
   upcomingHolidays: { title: string; event_date: string; end_date: string | null }[]
 }
+// "Full days in a row" (guide §6.2): over the month's marked days, count back from the latest
+// while the day is exactly present; a late, half or absent day ends the streak.
+export function attendanceStreak(days: AttendanceDay[]): number {
+  const marked = days.filter(d => ['present', 'late', 'absent', 'half'].includes(d.status))
+  let n = 0
+  for (let i = marked.length - 1; i >= 0 && marked[i].status === 'present'; i--) n++
+  return n
+}
 
 // NUMERIC columns arrive as strings from pg; use num() before doing maths.
 export type FeeRow = {
   id: number; category_name: string; frequency: string; period_label: string
   amount_due: number | string; amount_paid: number | string; waiver_amount: number | string; balance: number | string
   due_date: string | null; status: 'pending' | 'paid' | 'partial' | 'overdue' | 'waived'
+  source_academic_year: string | null // set when the bill was carried in from an earlier year
 }
 export type Payment = {
   id: number; receipt_number: string; amount: number | string; payment_mode: string
-  payment_status: 'completed' | 'pending_verification' | 'rejected'; paid_date: string
+  payment_status: 'completed' | 'pending_verification' | 'rejected' | 'cancelled'; paid_date: string
   transaction_ref: string | null; rejection_reason: string | null; category_name: string; period_label: string
 }
 export type Waiver = { id: number; waiver_type: string; waiver_amount: number | string; reason: string; category_name: string; period_label: string }
+// Unpaid bills from earlier years (or 'passout'): shown only, not in the totals, paid at the school office.
+export type PriorDues = { total: number; items: { id: number; academic_year: string; category_name: string; period_label: string; balance: number | string }[] }
 export type Fees = {
-  ledger: FeeRow[]; payments: Payment[]; waivers: Waiver[]
-  summary: { total_due: number; total_paid: number; total_outstanding: number; total_waived: number; overdue_count: number }
+  ledger: FeeRow[]; payments: Payment[]; waivers: Waiver[]; prior_dues?: PriorDues
+  summary: { total_due: number; total_paid: number; total_outstanding: number; carried_outstanding?: number; total_waived: number; overdue_count: number }
 }
+export type AcademicYear = { id: number; label: string; is_current: boolean }
 
+// /api/announcements — notices addressed to this parent; seen/acked are this parent's own marks.
 export type Announcement = {
-  id: number; title: string; content: string; announcement_type: string
+  id: number; title: string; content: string; announcement_type: 'general' | 'circular' | 'event' | 'alert' | string
   priority: 'urgent' | 'high' | 'normal' | string; created_by_name: string | null; created_at: string
+  published_at?: string; expires_at: string | null; pinned: boolean; requires_ack: boolean
+  template_key: string | null; card_data: { headline?: string } | null
+  translations: Partial<Record<'te' | 'hi', { title?: string; content?: string }>> | null
+  seen?: boolean; acked?: boolean
 }
 export type CalendarEvent = { id: number; title: string; event_date: string; end_date: string | null; event_type: string; description: string | null }
 export type SchoolCalendar = { events: CalendarEvent[]; weeklyOff: number[]; today: string; canEdit: boolean }
-// /api/exams/calendar — class exams for the current calendar year; exam_date can be null for an undated exam.
-export type CalendarExam = { id: number; exam_name: string; exam_type: string; exam_date: string | null; status: string; subjects: string[]; total_subjects: number }
+// /api/exams/calendar — class exams in from..to; exam_date can be null for an undated exam.
+// Times are "HH:MM:SS". The platform strips syllabus/instructions for parents today, so they are optional.
+export type CalendarExam = {
+  id: number; exam_name: string; exam_type: string; exam_date: string | null; status: string; subjects: string[]; total_subjects: number
+  start_time: string | null; end_time: string | null; duration_minutes: number | null; room: string | null
+  syllabus?: string | null; instructions?: string | null
+}
 
 export type SyllabusTopic = {
   id: number; topic_name: string; topic_order: number; status: 'covered' | 'pending' | string
@@ -98,6 +120,11 @@ export type SyllabusSubject = {
 export type Syllabus = { subjects: SyllabusSubject[] }
 // /api/parent/subjects?student_id= — one child's class subjects with each subject's teacher.
 export type ClassSubject = { subject_name: string; teacher_name: string | null }
+export type SchoolContacts = {
+  subjects: ClassSubject[]
+  class_teacher: { name: string; phone: string | null } | null
+  school: { name: string; phone: string | null; email: string | null; address: string | null } | null
+}
 
 // /api/school/library — parents only ever get 'textbook' rows for the child's grade.
 export type LibraryItem = {
@@ -131,11 +158,21 @@ export type Transport = {
   stop_id: number | null
   stops: { id: number; name: string; stop_order: number; pickup_time: string | null; drop_time: string | null }[]
 }
-export type Notification = { id: number; type: string; title: string | null; message: string | null; is_read: boolean; created_at: string }
-
-export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message) }
+// `data` is a JSONB column (exam_id, class_id, student_id); parse it if it ever arrives as a string.
+export type Notification = {
+  id: number; type: string; title: string | null; message: string | null; is_read: boolean; created_at: string
+  sender_name?: string | null; data?: string | Record<string, unknown> | null
 }
+
+// code: the platform's machine-readable reason — PLAN_EXPIRED, FEATURE_DISABLED or access_revoked.
+export class ApiError extends Error {
+  constructor(public status: number, message: string, public code?: string) { super(message) }
+}
+
+// The session store reacts to account-wide failures (access revoked, plan expired, feature
+// switched off) whichever screen's call hit them.
+let errorListener: ((error: ApiError) => void) | null = null
+export function onApiError(listener: (error: ApiError) => void) { errorListener = listener }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController()
@@ -160,10 +197,16 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       if (res.status === 401) clearRequestCache(false)
       // Keep the failing route in Android logs without query strings or login data.
       console.warn(`WLYL API: ${init?.method ?? 'GET'} ${path.split('?')[0]} failed (${res.status})`)
-      const msg = (data as { error?: string }).error ?? `Request failed (${res.status})`
-      throw new ApiError(res.status, msg)
+      const body = data as { error?: string; code?: string; message?: string }
+      // access_revoked arrives as the error key, with the text to show in message.
+      const code = body.code ?? (body.error === 'access_revoked' ? body.error : undefined)
+      const msg = (code === 'access_revoked' ? body.message : body.error) ?? `Request failed (${res.status})`
+      const error = new ApiError(res.status, msg, code)
+      if (code) try { errorListener?.(error) } catch { /* the caller still gets the error */ }
+      throw error
     }
-    if (init?.method && init.method.toUpperCase() !== 'GET') {
+    // Usage pings are not data writes; they must not wipe the screens' cache every minute.
+    if (init?.method && init.method.toUpperCase() !== 'GET' && !path.startsWith('/api/usage/')) {
       clearRequestCache(path.startsWith('/api/parent/auth/'))
     }
     return data as T
@@ -181,10 +224,19 @@ export const inr = (v: number | string | null | undefined) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num(v))
 export const day = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 export const longDay = (d: string) => new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })
+// Birthday entry: digits only, dashes added as the parent types (YYYY-MM-DD), so the number pad works on Android.
+export const dobInput = (v: string) =>
+  v.replace(/\D/g, '').slice(0, 8).replace(/^(\d{4})(\d)/, '$1-$2').replace(/^(\d{4}-\d{2})(\d)/, '$1-$2')
+// A real calendar date in YYYY-MM-DD (rejects 2020-02-30); age rules are the server's.
+export const isoDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s)) && new Date(s).toISOString().startsWith(s)
+// "14 May", as the web profile shows a birthday.
+export const birthday = (d: string) => new Date(`${d.slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'long' })
 export const hhmm = (t: string) => {
   const [h, m] = t.split(':').map(Number)
   return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
 }
+// tel: wants only digits and a leading + (stored numbers may have spaces or dashes).
+export const telHref = (phone: string) => `tel:${phone.trim().replace(/(?!^\+)\D/g, '')}`
 export const initials = (name: string) => name.split(/\s+/).slice(0, 2).map(s => s[0]?.toUpperCase() ?? '').join('')
 export const PAY_MODE: Record<string, string> = { cash: 'Cash', cheque: 'Cheque', dd: 'Demand draft', online: 'UPI (app)', upi: 'UPI' }
 export const EXAM_TYPE: Record<string, string> ={ unit_test: 'Unit Test', mid_term: 'Mid Term', final_exam: 'Final Exam', practical: 'Practical' }

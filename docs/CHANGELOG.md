@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+- Forgot password on the login screen (#2): sends the web reset link; the parent resets on the web and signs in here. Login shows a `?notice=` message above the form.
+- Birthday: asked once after the first-login password change (optional), and Add/Edit on Profile (`PUT /api/parent/auth/date-of-birth`).
+- Session, plan and usage (#3): the app keeps the session alive while open (`/me` every 60 s and on return from background) and returns to sign-in on a 401; "access revoked" signs out with the school's message (`/login?notice=`). A school whose plan has ended shows a full-screen "Portal access is paused" (Retry, Sign out), checked every 10 min (45 s while paused). Usage heartbeat every 60 s, section opens tracked, and the usage session closed on logout. `ApiError.code` exposes `PLAN_EXPIRED` / `FEATURE_DISABLED` / `access_revoked`; a `FEATURE_DISABLED` reply refreshes the enabled features.
+- Home: Contact & Support card (class teacher and school administration with Call buttons, school address) and School notices (latest 4, NEW / Urgent / Action needed / Pinned badges, Telugu text when the school gave one). Unseen urgent, action-needed and greeting notices pop up one at a time; "I have read this" acknowledges (#4).
+- School notices screen with search and All / Unread / Pinned / Action needed / Past filters; the section hides when the school has notices switched off (403).
+- Header chips: red "N results to sign" → Exams, amber "N fee overdue" → Fees (#4).
+- Fees parity with the web (#5): academic-year switcher, earlier-year dues banner and "carried from" tags, pay one / selected / all pending bills, payment history with Confirmed / Pending verification / Rejected (reason) / Cancelled, receipt number and amount after paying, and a PDF receipt for confirmed payments (one per receipt number). Payments send an `idempotency_key` per sheet opening so a double tap can't report twice. Adds `expo-print` and `expo-sharing`: needs a new native build.
+- Exams (#6): today's exams banner with a live "Starts in N minutes / In progress / Done" countdown, next-60-days and completed (last 60 days) lists, day detail with time, duration and room, web exam-type colours; results show Pass/Fail and sign-off asks Confirm / Cancel.
+- Attendance (#6): month switcher, four summary cards (incl. full-days streak), band message, tap-a-day detail, full legend, trend with 90/75 lines from two months, upcoming holidays. Notifications grouped by feature with "Mark all read" / "Mark these read"; taps open the exam calendar, mark sheet, fees or attendance.
+
+### Changed
+- Profile matches the web: name, email, phone and school are read-only (the platform has no `PUT /api/parent/auth/me`), plus birthday and a Change password entry.
+
 ## [1.0.3] — 2026-10-18
 
 ### Fixed

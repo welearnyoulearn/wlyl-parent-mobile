@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LogOut } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
+import { useApi } from '@/lib/use-api'
+import { num, type Fees, type Summary } from '@/lib/api'
 import { Avatar } from '@/components/ui'
 import { useT, type Strings } from '@/lib/i18n'
 
@@ -16,9 +18,16 @@ function greeting(t: Strings) {
 export function ChildHeader() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { me, children, student, year, selectChild, logout } = useSession()
+  const { me, children, student, year, selectChild, logout, has } = useSession()
   const firstName = me?.name?.split(' ')[0]
   const t = useT()
+
+  // Same requests as Home, Exams and Fees, so these come from the request cache.
+  const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
+  const { data: summary } = useApi<Summary>(q && has('exam-marks') ? `/api/parent/child-summary?${q}` : null)
+  const { data: fees } = useApi<Fees>(student && has('fee-management') ? `/api/parent/fees?school_id=${student.school_id}&student_id=${student.id}` : null)
+  const toSign = num(summary?.unacknowledged_count)
+  const overdue = num(fees?.summary.overdue_count)
 
   async function onLogout() {
     await logout()
@@ -70,6 +79,23 @@ export function ChildHeader() {
           </View>
         </View>
       ) : null}
+
+      {(toSign > 0 || overdue > 0) && (
+        <View className="mt-3 flex-row flex-wrap gap-2">
+          {toSign > 0 && (
+            <Pressable onPress={() => router.push('/exams')} testID="header-chip-results" accessibilityRole="button"
+              className="rounded-full bg-rose-500 px-3 py-1 active:opacity-80">
+              <Text className="text-xs font-semibold text-white">{t.header.resultsToSign(toSign)}</Text>
+            </Pressable>
+          )}
+          {overdue > 0 && (
+            <Pressable onPress={() => router.push('/fees')} testID="header-chip-fees" accessibilityRole="button"
+              className="rounded-full bg-amber-400 px-3 py-1 active:opacity-80">
+              <Text className="text-xs font-semibold text-amber-950">{t.header.feeOverdue(overdue)}</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
     </View>
   )
 }

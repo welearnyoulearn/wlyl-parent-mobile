@@ -3,6 +3,7 @@ import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { COLORS } from '@/components/ui'
+import { PlanLocked } from '@/components/plan-locked'
 
 // Start on the tabs (home). Without this, the first declared Stack.Screen
 // (the mark sheet) became the initial route.
@@ -18,9 +19,12 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="change-password" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+        <Stack.Screen name="birthday" options={{ headerShown: false }} />
         <Stack.Screen name="exam/[id]" options={{ title: 'Mark sheet' }} />
         <Stack.Screen name="book/[id]" options={{ title: 'Book' }} />
       </Stack>
+      <PlanLocked />
     </SafeAreaProvider>
   )
 }
