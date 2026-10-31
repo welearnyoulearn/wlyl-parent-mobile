@@ -2,7 +2,7 @@
   "expo": {
     "name": "WLYL Parent",
     "slug": "wlyl-parent-mobile",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wlylparent",
@@ -52,7 +52,8 @@
         }
       ],
       "expo-asset",
-      "expo-sharing"
+      "expo-sharing",
+      ["expo-build-properties", { "android": { "enableMinifyInReleaseBuilds": true, "enableShrinkResourcesInReleaseBuilds": true } }]
     ],
     "experiments": {
       "typedRoutes": true,

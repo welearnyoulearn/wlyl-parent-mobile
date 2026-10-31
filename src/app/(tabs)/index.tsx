@@ -1,25 +1,23 @@
 import { ClassLoading } from '@/components/class-loading'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
 import { useIsFocused, useRouter } from 'expo-router'
-import { AlertTriangle, CalendarDays, ChevronRight, PartyPopper, Phone } from 'lucide-react-native'
+import { AlertTriangle, CalendarCheck, CalendarDays, ChevronRight, GraduationCap, Headset, Megaphone, Phone, School, Wallet } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
-import { day, longDay, hhmm, inr, telHref, type SchoolCalendar, type SchoolContacts, type Fees, type Summary, type Timetable } from '@/lib/api'
+import { day, longDay, inr, telHref, type SchoolCalendar, type SchoolContacts, type Fees, type Summary } from '@/lib/api'
 import { localised, needsPopup } from '@/lib/notices'
 import { NoticeModal, NoticeRow, useNotices } from '@/components/notices'
 import { QuickLinks } from '@/components/quick-links'
-import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring } from '@/components/ui'
+import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring, Avatar, IconBadge, DateBadge, CARD_SHADOW } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
-// Timetable stays "Coming soon" until /api/parent/timetable ships on the platform (#129).
-const TIMETABLE_READY = false
-
-// One Contact & Support row: who, their role, and a call button when there is a number.
-function Contact({ id, name, role, phone }: { id: string; name: string; role: string; phone: string | null }) {
+// One Contact & Support row: avatar, who, their role, and a call button when there is a number.
+function Contact({ id, name, role, phone, lead }: { id: string; name: string; role: string; phone: string | null; lead: ReactNode }) {
   const t = useT()
   return (
-    <Row>
+    <Row className="py-3.5">
+      {lead}
       <View className="flex-1">
         <Text className="text-sm font-medium text-foreground" numberOfLines={1}>{name}</Text>
         <Text className="text-xs text-muted-foreground">{role}</Text>
@@ -27,15 +25,13 @@ function Contact({ id, name, role, phone }: { id: string; name: string; role: st
       {phone && (
         <Pressable onPress={() => void Linking.openURL(telHref(phone)).catch(() => null)} testID={`call-${id}`}
           accessibilityRole="button" accessibilityLabel={t.home.call(name)} hitSlop={6}
-          className="size-10 items-center justify-center rounded-full bg-teal-50 active:bg-teal-100">
-          <Phone size={17} color="#0f766e" />
+          className="size-11 items-center justify-center rounded-full bg-emerald-600 active:bg-emerald-700">
+          <Phone size={18} color="#fff" />
         </Pressable>
       )}
     </Row>
   )
 }
-
-function nowHHMM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
 
 export default function HomePage() {
   const { student, has, lang } = useSession()
@@ -47,10 +43,6 @@ export default function HomePage() {
 
   const { data: summary, error: er1, refreshing: r1, refresh: ref1 } = useApi<Summary>(q ? `/api/parent/child-summary?${q}` : null)
   const { data: feesData, error: er2, refreshing: r2, refresh: ref2 } = useApi<Fees>(student ? `/api/parent/fees?school_id=${student.school_id}&student_id=${student.id}` : null)
-  const { data: today, error: ttError, status: ttStatus, refreshing: r3, refresh: ref3 } = useApi<Timetable>(q && TIMETABLE_READY && has('timetable') ? `/api/parent/timetable?${q}` : null)
-  // 404/405: this platform has no timetable route — hide the card instead of erroring.
-  const noTimetable = ttStatus === 404 || ttStatus === 405
-  const er3 = noTimetable ? null : ttError
   const notices = useNotices(student ? `/api/announcements?school_id=${student.school_id}` : null)
   const { error: er4, refreshing: r4, refresh: ref4 } = notices
   const { data: eventsObj, error: er5, refreshing: r5, refresh: ref5 } = useApi<SchoolCalendar>(
@@ -64,9 +56,9 @@ export default function HomePage() {
   const popupId = focused ? notices.items?.find(needsPopup)?.id : undefined
   if (popupId !== undefined && openId === null) setOpenId(popupId)
 
-  const refreshing = r1 || r2 || r3 || r4 || r5 || r6
-  const error = er1 || er2 || er3 || er4 || er5
-  const onRefresh = () => { ref1(); ref2(); ref3(); ref4(); ref5(); ref6() }
+  const refreshing = r1 || r2 || r4 || r5 || r6
+  const error = er1 || er2 || er4 || er5
+  const onRefresh = () => { ref1(); ref2(); ref4(); ref5(); ref6() }
 
   if (!student) {
     return (
@@ -88,18 +80,21 @@ export default function HomePage() {
 
   const pending = summary?.released_results.filter(r => !r.parent_acknowledged) ?? []
   const latest = summary?.released_results[0]
-  const now = nowHHMM()
 
-  const attention: { key: string; text: string; onPress?: () => void }[] = []
+  const attention: { key: string; text: string; hint: string; onPress?: () => void }[] = []
   if (fees && fees.overdue_count > 0) {
-    attention.push({ key: 'overdue', text: t.home.feesOverdue(fees.overdue_count, inr(fees.total_outstanding)), onPress: () => router.push('/fees') })
+    attention.push({ key: 'overdue', text: t.home.feesOverdue(fees.overdue_count, inr(fees.total_outstanding)), hint: t.home.tapToPay, onPress: () => router.push('/fees') })
   }
   if (pending.length > 0) {
-    attention.push({ key: 'ack', text: t.home.resultsWaiting(pending.length), onPress: () => router.push('/exams') })
+    attention.push({ key: 'ack', text: t.home.resultsWaiting(pending.length), hint: t.home.tapToViewMarkSheet, onPress: () => router.push('/exams') })
   }
   news.filter(n => n.priority === 'urgent').forEach(n => {
-    attention.push({ key: `news-${n.id}`, text: localised(n, lang).title, onPress: () => setOpenId(n.id) })
+    attention.push({ key: `news-${n.id}`, text: localised(n, lang).title, hint: t.notices.title, onPress: () => setOpenId(n.id) })
   })
+  const due = fees ? fees.total_outstanding > 0 : null
+  const feeTone = due === null ? 'border-border bg-card' : !due ? 'border-emerald-100 bg-emerald-50' : fees!.overdue_count > 0 ? 'border-rose-100 bg-rose-50' : 'border-amber-100 bg-amber-50'
+  const feeFg = due === null ? ['text-foreground', 'text-muted-foreground', '#6b7280'] : !due ? ['text-emerald-900', 'text-emerald-700', '#047857']
+    : fees!.overdue_count > 0 ? ['text-rose-900', 'text-rose-700', '#be123c'] : ['text-amber-900', 'text-amber-700', '#b45309']
 
   return (
     <Screen testID="home-screen" refreshing={refreshing} onRefresh={onRefresh}>
@@ -113,11 +108,15 @@ export default function HomePage() {
               testID={`attention-${a.key}`}
               onPress={a.onPress}
               accessibilityRole={a.onPress ? 'button' : 'none'}
-              className="flex-row items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
+              style={CARD_SHADOW}
+              className="flex-row items-center gap-3 rounded-2xl border border-amber-200 bg-card px-4 py-3.5 active:bg-muted"
             >
-              <AlertTriangle size={16} color="#f59e0b" />
-              <Text className="flex-1 text-sm text-amber-900">{a.text}</Text>
-              {a.onPress && <ChevronRight size={16} color="#fbbf24" />}
+              <IconBadge icon={AlertTriangle} tint="amber" size={40} round />
+              <View className="flex-1 gap-0.5">
+                <Text className="text-sm font-semibold text-foreground">{a.text}</Text>
+                <Text className="text-xs text-muted-foreground">{a.hint}</Text>
+              </View>
+              {a.onPress && <ChevronRight size={18} color="#9ca3af" />}
             </Pressable>
           ))}
         </View>
@@ -125,27 +124,36 @@ export default function HomePage() {
 
       <View className="flex-row gap-3">
         {has('attendance') && (
-          <Pressable className="flex-1" testID="tile-attendance" onPress={() => router.push('/attendance')}>
-            <Panel className="flex-row h-24 items-center gap-3 p-3.5">
-              <Ring pct={summary ? summary.attendance_pct : null} size={58} stroke={6}>
-                {summary ? <Text className="text-xs font-bold">{summary.attendance_pct === null ? '—' : `${Math.round(summary.attendance_pct)}%`}</Text> : null}
-                {!summary && <Text className="text-xs font-bold">…</Text>}
+          <Pressable className="flex-1 gap-2 rounded-2xl border border-teal-100 bg-teal-50 p-4 active:opacity-90" testID="tile-attendance"
+            accessibilityRole="button" onPress={() => router.push('/attendance')}>
+            <View className="flex-row items-center gap-2.5">
+              <Ring pct={summary ? summary.attendance_pct : null} size={40} stroke={4}>
+                <CalendarCheck size={16} color="#0f766e" />
               </Ring>
               <View className="flex-1">
-                <Text className="text-xs text-muted-foreground">{t.home.attendance}</Text>
-                <Text className="text-sm font-semibold text-foreground">{t.thisMonth}</Text>
+                <Text className="text-xs font-semibold text-teal-900" numberOfLines={1}>{t.home.attendance}</Text>
+                <Text className="text-[11px] text-teal-700" numberOfLines={1}>{t.thisMonth}</Text>
               </View>
-            </Panel>
+            </View>
+            <Text className="text-3xl font-extrabold tracking-tight text-teal-900">
+              {summary ? (summary.attendance_pct === null ? '—' : `${Math.round(summary.attendance_pct)}%`) : '…'}
+            </Text>
           </Pressable>
         )}
 
         {has('fee-management') && (
-          <Pressable className="flex-1" testID="tile-fees" onPress={() => router.push('/fees')}>
-            <Panel className={`h-24 justify-center p-3.5 ${fees && fees.total_outstanding > 0 ? 'bg-amber-50' : ''}`}>
-              <Text className="text-xs text-muted-foreground">{t.home.feesDue}</Text>
-              <Text className="text-2xl font-bold tracking-tight text-foreground">{fees ? inr(fees.total_outstanding) : '—'}</Text>
-              <Text className="text-[11px] text-muted-foreground">{fees === null ? ' ' : fees.total_outstanding > 0 ? t.home.tapToPay : t.allClear}</Text>
-            </Panel>
+          <Pressable className={`flex-1 gap-2 rounded-2xl border p-4 active:opacity-90 ${feeTone}`} testID="tile-fees"
+            accessibilityRole="button" onPress={() => router.push('/fees')}>
+            <View className="flex-row items-center gap-2.5">
+              <View className="size-10 items-center justify-center rounded-full bg-white">
+                <Wallet size={18} color={feeFg[2]} />
+              </View>
+              <View className="flex-1">
+                <Text className={`text-xs font-semibold ${feeFg[0]}`} numberOfLines={1}>{t.home.feesDue}</Text>
+                <Text className={`text-[11px] ${feeFg[1]}`} numberOfLines={1}>{fees === null ? ' ' : fees.total_outstanding > 0 ? t.home.tapToPay : t.allClear}</Text>
+              </View>
+            </View>
+            <Text className={`text-3xl font-extrabold tracking-tight ${feeFg[0]}`} numberOfLines={1} adjustsFontSizeToFit>{fees ? inr(fees.total_outstanding) : '—'}</Text>
           </Pressable>
         )}
       </View>
@@ -153,42 +161,20 @@ export default function HomePage() {
       <QuickLinks />
 
       {(contact?.class_teacher || contact?.school) && (
-        <Section title={t.home.contactTitle}>
+        <Section title={t.home.contactTitle} icon={Headset}>
           <Panel className="overflow-hidden">
-            {contact.class_teacher && <Contact id="class-teacher" name={contact.class_teacher.name} role={t.home.classTeacher} phone={contact.class_teacher.phone} />}
+            {contact.class_teacher && <Contact id="class-teacher" name={contact.class_teacher.name} role={t.home.classTeacher} phone={contact.class_teacher.phone}
+              lead={<Avatar name={contact.class_teacher.name} className="size-11 bg-violet-100" textClassName="text-sm text-violet-800" />} />}
             {contact.class_teacher && contact.school && <Divider />}
-            {contact.school && <Contact id="administration" name={contact.school.name} role={t.home.schoolAdmin} phone={contact.school.phone} />}
-            {contact.school?.address && <Text className="px-4 pb-3 text-xs text-muted-foreground">{contact.school.address}</Text>}
+            {contact.school && <Contact id="administration" name={contact.school.name} role={t.home.schoolAdmin} phone={contact.school.phone}
+              lead={<IconBadge icon={School} tint="blue" size={44} round />} />}
+            {contact.school?.address && <Text className="-mt-1.5 pb-3.5 pl-[72px] pr-4 text-xs text-muted-foreground">{contact.school.address}</Text>}
           </Panel>
         </Section>
       )}
 
-      {TIMETABLE_READY && has('timetable') && !noTimetable && (
-        <Section title={t.home.todaysClasses}>
-          {today === null ? <Loading /> : today.periods.length === 0 ? (
-            <Empty icon={PartyPopper} title={t.home.noClassesTitle} hint={t.home.noClassesHint} />
-          ) : (
-            <Panel className="overflow-hidden">
-              {today.periods.filter(p => !p.is_break).map((p, i, arr) => {
-                const live = now >= p.time_from.slice(0, 5) && now < p.time_to.slice(0, 5)
-                return (
-                  <View key={p.period_number}>
-                    <Row className={live ? 'bg-teal-50/60' : ''}>
-                      <Text className="w-16 shrink-0 text-[11px] leading-tight text-muted-foreground">{hhmm(p.time_from)}</Text>
-                      <Text className="flex-1 text-sm font-medium text-foreground">{p.subject_name ?? t.home.freePeriod}</Text>
-                      {live ? <Chip tone="teal">{t.home.now}</Chip> : p.teacher_name ? <Text className="text-xs text-muted-foreground">{p.teacher_name.split(' ')[0]}</Text> : null}
-                    </Row>
-                    {i < arr.length - 1 && <Divider />}
-                  </View>
-                )
-              })}
-            </Panel>
-          )}
-        </Section>
-      )}
-
       {has('exam-marks') && (
-        <Section title={t.home.examsTitle} action={{ label: t.seeAll, testID: 'see-all-exams', onPress: () => router.push('/exams') }}>
+        <Section title={t.home.examsTitle} icon={GraduationCap} action={{ label: t.seeAll, testID: 'see-all-exams', onPress: () => router.push('/exams') }}>
           {summary === null ? (student.class_id === 0 ? <ClassLoading /> : <Loading />) : (
             <View className="gap-2">
               {latest && (
@@ -214,10 +200,7 @@ export default function HomePage() {
 
               {summary.upcoming_exams.slice(0, 2).map((e) => (
                 <Panel key={e.id} className="flex-row items-center gap-3 p-3.5">
-                  <View className="size-11 shrink-0 items-center justify-center rounded-xl bg-violet-50">
-                    <Text className="text-[10px] font-medium uppercase text-violet-700">{new Date(e.exam_date).toLocaleString('en-IN', { month: 'short' })}</Text>
-                    <Text className="text-base font-bold text-violet-700">{new Date(e.exam_date).getDate()}</Text>
-                  </View>
+                  <DateBadge date={e.exam_date} tint="violet" />
                   <View className="flex-1">
                     <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{e.exam_name}</Text>
                     <Text className="text-[11px] text-muted-foreground">{t.examType[e.exam_type] ?? e.exam_type} · {t.home.subjectsCount(e.total_subjects)}</Text>
@@ -232,7 +215,7 @@ export default function HomePage() {
       )}
 
       {news.length > 0 && (
-        <Section title={t.notices.title} action={{ label: t.notices.viewAll(news.length), testID: 'notice-viewall', onPress: () => router.push('/notices') }}>
+        <Section title={t.notices.title} icon={Megaphone} action={{ label: t.notices.viewAll(news.length), testID: 'notice-viewall', onPress: () => router.push('/notices') }}>
           <Panel className="overflow-hidden">
             {news.slice(0, 4).map((n, i, arr) => (
               <View key={n.id}>
@@ -245,14 +228,16 @@ export default function HomePage() {
       )}
 
       {events.length > 0 && (
-        <Section title={t.home.comingUp}>
+        <Section title={t.home.comingUp} icon={CalendarDays}>
           <Panel className="overflow-hidden">
             {events.map((e, i, arr) => (
               <View key={e.id}>
                 <Row>
-                  <View className={`size-2 shrink-0 rounded-full ${e.event_type === 'holiday' ? 'bg-emerald-500' : e.event_type === 'exam' ? 'bg-rose-500' : 'bg-sky-500'}`} />
-                  <Text className="flex-1 text-sm text-foreground">{e.title}</Text>
-                  <Text className="text-xs text-muted-foreground">{longDay(e.event_date)}{e.end_date ? ` – ${day(e.end_date)}` : ''}</Text>
+                  <DateBadge date={e.event_date} tint={e.event_type === 'holiday' ? 'green' : e.event_type === 'exam' ? 'rose' : 'blue'} />
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-foreground">{e.title}</Text>
+                    <Text className="text-xs text-muted-foreground">{longDay(e.event_date)}{e.end_date ? ` – ${day(e.end_date)}` : ''}</Text>
+                  </View>
                 </Row>
                 {i < arr.length - 1 && <Divider />}
               </View>

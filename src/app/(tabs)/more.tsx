@@ -2,20 +2,20 @@ import { Linking, Text, View } from 'react-native'
 import { router, type Href } from 'expo-router'
 import Constants from 'expo-constants'
 import { Bell, User, Shield, LogOut, ChevronRight, Languages, type LucideIcon } from 'lucide-react-native'
-import { CHILD_LINKS, SCHOOL_LINKS, COMING_SOON } from '@/components/quick-links'
+import { CHILD_LINKS, SCHOOL_LINKS } from '@/components/quick-links'
 
 import { PRIVACY_URL } from '@/lib/api'
 import { useSession } from '@/stores/session'
-import { Screen, Section, Panel, Row, Divider, LangToggle } from '@/components/ui'
+import { Screen, Section, Panel, Row, Divider, LangToggle, IconBadge, type Tint } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 type MenuItem = {
   id: string
   label: string
   icon: LucideIcon
+  tint: Tint
   route?: Href
   feature?: string
-  color?: string
   onPress?: () => void
 }
 
@@ -34,11 +34,9 @@ function MenuPanel({ items }: { items: MenuItem[] }) {
             onPress={it.onPress || (it.route ? () => { if (it.route) router.push(it.route) } : undefined)}
             testID={it.id === 'logout' ? 'logout-btn' : `more-${it.id}-link`}
           >
-            <it.icon size={18} color={it.color || "#6b7280"} />
-            <Text className={`flex-1 text-sm ${it.color ? 'text-rose-600' : 'text-foreground'}`}>
-              {it.label}
-            </Text>
-            {!it.color && <ChevronRight size={18} color="#6b7280" />}
+            <IconBadge icon={it.icon} tint={it.tint} />
+            <Text className="flex-1 text-sm font-medium text-foreground">{it.label}</Text>
+            <ChevronRight size={18} color="#9ca3af" />
           </Row>
         </View>
       ))}
@@ -59,9 +57,9 @@ export default function MoreScreen() {
   const schoolItems: MenuItem[] = SCHOOL_LINKS.map(l => ({ ...l, label: l.label(t) }))
 
   const accountItems: MenuItem[] = [
-    { id: 'notifications', label: t.screenTitles.notifications, icon: Bell, route: '/notifications' },
-    { id: 'profile', label: t.screenTitles.profile, icon: User, route: '/profile' },
-    { id: 'privacy', label: t.privacyPolicy, icon: Shield, onPress: () => Linking.openURL(PRIVACY_URL) },
+    { id: 'notifications', label: t.screenTitles.notifications, icon: Bell, tint: 'amber', route: '/notifications' },
+    { id: 'profile', label: t.screenTitles.profile, icon: User, tint: 'blue', route: '/profile' },
+    { id: 'privacy', label: t.privacyPolicy, icon: Shield, tint: 'green', onPress: () => Linking.openURL(PRIVACY_URL) },
   ]
 
   return (
@@ -76,26 +74,11 @@ export default function MoreScreen() {
         <MenuPanel items={schoolItems} />
       </Section>
 
-      <Section title={t.more.comingSoon}>
-        <Panel className="overflow-hidden opacity-60" testID="more-coming-soon">
-          {COMING_SOON.map((it, i) => (
-            <View key={it.id} accessible accessibilityLabel={t.quickLinks.accessibilityComingSoon(it.label(t))}>
-              {i > 0 && <Divider />}
-              <Row testID={`more-soon-${it.id}`}>
-                <it.icon size={18} color="#9ca3af" />
-                <Text className="flex-1 text-sm text-muted-foreground">{it.label(t)}</Text>
-                <Text className="text-[10px] font-semibold uppercase text-muted-foreground">{t.quickLinks.soonBadge}</Text>
-              </Row>
-            </View>
-          ))}
-        </Panel>
-      </Section>
-
       <Section title={t.more.account}>
         <Panel className="overflow-hidden">
           <Row>
-            <Languages size={18} color="#6b7280" />
-            <Text className="flex-1 text-sm text-foreground">{t.language}</Text>
+            <IconBadge icon={Languages} tint="violet" />
+            <Text className="flex-1 text-sm font-medium text-foreground">{t.language}</Text>
             <LangToggle />
           </Row>
         </Panel>
@@ -105,8 +88,8 @@ export default function MoreScreen() {
       <View className="mt-2">
         <Panel className="overflow-hidden">
           <Row onPress={handleLogout} testID="logout-btn">
-            <LogOut size={18} color="#e11d48" />
-            <Text className="flex-1 text-sm text-rose-600">{t.more.signOut}</Text>
+            <IconBadge icon={LogOut} tint="rose" />
+            <Text className="flex-1 text-sm font-semibold text-rose-700">{t.more.signOut}</Text>
           </Row>
         </Panel>
       </View>

@@ -107,7 +107,7 @@ export function routeForPush(url: unknown): Href {
   if (typeof url !== 'string') return '/notifications'
 
   const routes = [
-    // Homework, leave, bus, rewards, activity and timetable are "Coming soon", so taps never open them.
+    // Only screens the app links to; anything else opens Notifications.
     '/', '/attendance', '/fees', '/exams', '/more',
     '/calendar', '/notifications', '/profile', '/syllabus', '/library',
   ]

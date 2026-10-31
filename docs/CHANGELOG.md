@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.0.5] — 2026-10-31
+
+### Fixed
+- Release builds use R8 shrinking and obfuscation (#13), for Play's DEX code optimisation check.
+
 ### Added
 - Forgot password on the login screen (#2): sends the web reset link; the parent resets on the web and signs in here. Login shows a `?notice=` message above the form.
 - Birthday: asked once after the first-login password change (optional), and Add/Edit on Profile (`PUT /api/parent/auth/date-of-birth`).
@@ -14,6 +19,8 @@
 - Attendance (#6): month switcher, four summary cards (incl. full-days streak), band message, tap-a-day detail, full legend, trend with 90/75 lines from two months, upcoming holidays. Notifications grouped by feature with "Mark all read" / "Mark these read"; taps open the exam calendar, mark sheet, fees or attendance.
 
 ### Changed
+- No more "Coming soon" (#9): Home quick links and the More tab only show features the app has; the unbuilt screens stay unlinked and notification taps for them open Notifications.
+- A colour per child (#10): each child's card in the teal header has its own colour (violet, orange, sky, rose, indigo, amber): solid when selected, a light tint otherwise; text passes WCAG AA. The rest of the app stays teal.
 - Profile matches the web: name, email, phone and school are read-only (the platform has no `PUT /api/parent/auth/me`), plus birthday and a Change password entry.
 
 ## [1.0.3] — 2026-10-18

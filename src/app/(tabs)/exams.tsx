@@ -348,14 +348,14 @@ export default function ExamsScreen() {
             sheets?.map(r => (
               <Link key={r.exam_id} href={{ pathname: '/exam/[id]', params: { id: String(r.exam_id) } }} asChild>
                 <Pressable testID={`result-${r.exam_id}`} accessibilityRole="button" accessibilityLabel={r.exam_name}>
-                  <Panel className="flex-row items-center gap-3 p-3.5">
-                    <Ring pct={r.percentage} size={56} stroke={6}>
-                      <Text className="text-xs font-bold text-foreground">
+                  <Panel className="flex-row items-center gap-3.5 p-4">
+                    <Ring pct={r.percentage} size={60} stroke={6}>
+                      <Text className="text-sm font-extrabold text-foreground">
                         {r.percentage === null ? '—' : `${Math.round(r.percentage)}%`}
                       </Text>
                     </Ring>
                     <View className="flex-1">
-                      <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{r.exam_name}</Text>
+                      <Text className="text-base font-bold text-foreground" numberOfLines={1}>{r.exam_name}</Text>
                       <Text className="text-[11px] text-muted-foreground">
                         {t.examType[r.exam_type] ?? r.exam_type} · {day(r.exam_date)}
                         {r.total_obtained !== null ? ` · ${r.total_obtained}/${r.total_max}` : ''}

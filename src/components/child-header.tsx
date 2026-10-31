@@ -6,6 +6,7 @@ import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { num, type Fees, type Summary } from '@/lib/api'
 import { Avatar } from '@/components/ui'
+import { childColor } from '@/lib/child-colors'
 import { useT, type Strings } from '@/lib/i18n'
 
 function greeting(t: Strings) {
@@ -14,7 +15,7 @@ function greeting(t: Strings) {
 }
 
 // Teal header on every tab: greeting, school, logout, and the selected child
-// (or chips to switch between children). Ported from the web app's AppShell.
+// (or chips, each in that child's own colour, to switch). Ported from the web app's AppShell.
 export function ChildHeader() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
@@ -57,14 +58,17 @@ export function ChildHeader() {
           accessibilityRole="tablist" accessibilityLabel={t.header.childrenList}>
           {children.map(k => {
             const active = k.id === student.id
+            const { solid, tint } = childColor(children, k.id)
+            // Each child's card in their own colour: solid when selected, light tint otherwise.
             return (
               <Pressable key={k.id} onPress={() => selectChild(k)} testID={`child-chip-${k.id}`}
                 accessibilityRole="tab" accessibilityState={{ selected: active }}
-                className={`flex-row items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 ${active ? 'bg-white' : 'bg-white/15'}`}>
-                <Avatar name={k.name} className={`size-7 ${active ? 'bg-teal-600' : 'bg-white/25'}`} textClassName="text-xs text-white" />
+                style={{ backgroundColor: active ? solid : tint, borderColor: active ? '#fff' : tint }}
+                className="flex-row items-center gap-2 rounded-full border-2 py-1 pl-1 pr-3 active:opacity-90">
+                <Avatar name={k.name} color={active ? 'rgba(255,255,255,0.25)' : solid} className="size-7" textClassName="text-xs text-white" />
                 <View>
-                  <Text className={`text-sm font-semibold ${active ? 'text-teal-800' : 'text-white'}`}>{k.name.split(' ')[0]}</Text>
-                  <Text className={`text-[10px] ${active ? 'text-teal-700' : 'text-white/75'}`}>{t.header.classShort(k.grade, k.section)}</Text>
+                  <Text style={{ color: active ? '#fff' : solid }} className="text-sm font-semibold">{k.name.split(' ')[0]}</Text>
+                  <Text style={{ color: active ? 'rgba(255,255,255,0.85)' : solid }} className="text-[10px]">{t.header.classShort(k.grade, k.section)}</Text>
                 </View>
               </Pressable>
             )

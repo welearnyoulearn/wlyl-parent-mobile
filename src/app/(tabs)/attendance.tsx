@@ -1,10 +1,10 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Text, View } from 'react-native'
-import { CalendarCheck, Flame } from 'lucide-react-native'
+import { CalendarCheck, CalendarRange, Flame, UserX, type LucideIcon } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { type Attendance, type AttendanceDay, attendanceStreak, day, longDay } from '@/lib/api'
-import { Screen, Loading, Section, Panel, Empty, Row, Chip, Alert, type Tone, Divider, COLORS } from '@/components/ui'
+import { Screen, Loading, Section, Panel, Empty, Row, Chip, Alert, type Tone, type Tint, Divider, DateBadge, IconBadge } from '@/components/ui'
 import { MonthCalendar, shiftMonth, todayISO } from '@/components/month-calendar'
 import { useT, type Strings } from '@/lib/i18n'
 
@@ -24,10 +24,10 @@ const LEGEND = ['present', 'late', 'absent', 'half', 'holiday', 'weekly_off', 'n
 
 // Bands from guide §14.1: good ≥ 90, watch 75–89, low < 75, none when nothing is marked.
 function band(pct: number | null, t: Strings) {
-  if (pct === null) return { text: t.attendance.bandNone, bg: 'bg-muted', fg: 'text-muted-foreground', value: 'text-foreground' }
-  if (pct >= 90) return { text: t.attendance.bandGood, bg: 'bg-emerald-50', fg: 'text-emerald-700', value: 'text-emerald-600' }
-  if (pct >= 75) return { text: t.attendance.bandWatch, bg: 'bg-amber-50', fg: 'text-amber-700', value: 'text-amber-600' }
-  return { text: t.attendance.bandLow, bg: 'bg-rose-50', fg: 'text-rose-700', value: 'text-rose-600' }
+  if (pct === null) return { text: t.attendance.bandNone, bg: 'bg-muted', fg: 'text-muted-foreground', value: 'text-foreground', tint: 'muted' as const }
+  if (pct >= 90) return { text: t.attendance.bandGood, bg: 'bg-emerald-50', fg: 'text-emerald-700', value: 'text-emerald-700', tint: 'green' as const }
+  if (pct >= 75) return { text: t.attendance.bandWatch, bg: 'bg-amber-50', fg: 'text-amber-700', value: 'text-amber-700', tint: 'amber' as const }
+  return { text: t.attendance.bandLow, bg: 'bg-rose-50', fg: 'text-rose-700', value: 'text-rose-700', tint: 'rose' as const }
 }
 
 function dayDetail(d: AttendanceDay, t: Strings) {
@@ -43,18 +43,24 @@ function dayDetail(d: AttendanceDay, t: Strings) {
   }
 }
 
-function Stat({ value, label, hint, valueClass = 'text-foreground', icon, testID }: {
-  value: string | number; label: string; hint?: string; valueClass?: string; icon?: ReactNode; testID: string
+// Stat card on a soft tint of its tone (white when neutral), with an icon chip.
+const STAT_BG: Record<Tint, string> = {
+  teal: 'border-teal-100 bg-teal-50', green: 'border-emerald-100 bg-emerald-50', amber: 'border-amber-100 bg-amber-50',
+  rose: 'border-rose-100 bg-rose-50', blue: 'border-sky-100 bg-sky-50', violet: 'border-violet-100 bg-violet-50', muted: 'border-border bg-card',
+}
+
+function Stat({ value, label, hint, valueClass = 'text-foreground', icon, tint = 'muted', testID }: {
+  value: string | number; label: string; hint?: string; valueClass?: string; icon: LucideIcon; tint?: Tint; testID: string
 }) {
   return (
-    <Panel className="flex-1 items-center p-3">
-      <View className="flex-row items-center gap-1">
-        {icon}
-        <Text testID={testID} className={`text-2xl font-bold ${valueClass}`}>{value}</Text>
+    <View className={`flex-1 gap-1 rounded-2xl border p-4 ${STAT_BG[tint]}`}>
+      <View className="mb-1 flex-row items-center gap-2">
+        <IconBadge icon={icon} tint={tint} size={32} round onTint />
+        <Text className="flex-1 text-xs font-semibold text-foreground" numberOfLines={1}>{label}</Text>
       </View>
-      <Text className="text-xs text-muted-foreground">{label}</Text>
-      {hint ? <Text className="text-center text-[11px] text-muted-foreground">{hint}</Text> : null}
-    </Panel>
+      <Text testID={testID} className={`text-3xl font-extrabold tracking-tight ${valueClass}`}>{value}</Text>
+      {hint ? <Text className="text-[11px] text-muted-foreground">{hint}</Text> : null}
+    </View>
   )
 }
 
@@ -108,23 +114,23 @@ export default function AttendanceScreen() {
     <Screen refreshing={refreshing} onRefresh={refresh} testID="attendance-screen">
       <View className="gap-3">
         <View className="flex-row gap-3">
-          <Stat testID="att-summary-month-pct" value={s.pct === null ? '—' : `${s.pct}%`} valueClass={b.value}
+          <Stat testID="att-summary-month-pct" value={s.pct === null ? '—' : `${s.pct}%`} valueClass={b.value} icon={CalendarCheck} tint={b.tint}
             label={t.thisMonth} hint={t.attendance.attendedOf(s.attended, s.marked)} />
           <Stat testID="att-summary-year-pct" value={data.yearToDate.summary.pct === null ? '—' : `${data.yearToDate.summary.pct}%`}
-            valueClass={band(data.yearToDate.summary.pct, t).value}
+            valueClass="text-teal-800" icon={CalendarRange} tint="teal"
             label={t.attendance.thisYear} hint={t.attendance.since(day(data.yearToDate.from))} />
         </View>
         <View className="flex-row gap-3">
-          <Stat testID="att-summary-absent-days" value={data.month.absentDays} valueClass={data.month.absentDays > 0 ? 'text-rose-600' : 'text-foreground'}
-            label={t.attendance.daysAbsent} hint={data.month.halfDays > 0 ? t.attendance.plusHalfDays(data.month.halfDays) : undefined} />
+          <Stat testID="att-summary-absent-days" value={data.month.absentDays} valueClass={data.month.absentDays > 0 ? 'text-rose-700' : 'text-foreground'}
+            icon={UserX} tint={data.month.absentDays > 0 ? 'rose' : 'muted'} label={t.attendance.daysAbsent} hint={data.month.halfDays > 0 ? t.attendance.plusHalfDays(data.month.halfDays) : undefined} />
           <Stat testID="att-summary-streak"
-            value={streak} icon={streak >= 5 ? <Flame size={18} color={COLORS.green} /> : undefined}
-            valueClass={streak >= 5 ? 'text-emerald-700' : 'text-foreground'}
+            value={streak} icon={Flame} tint={streak >= 5 ? 'amber' : 'muted'}
+            valueClass={streak >= 5 ? 'text-amber-700' : 'text-foreground'}
             label={t.attendance.streakTitle} hint={s.late > 0 ? t.attendance.lateThisMonth(s.late) : t.attendance.noLate} />
         </View>
       </View>
 
-      <View testID="att-summary-message" accessibilityRole="text" className={`rounded-xl px-4 py-3 ${b.bg}`}>
+      <View testID="att-summary-message" accessibilityRole="text" className={`rounded-2xl px-4 py-3 ${b.bg}`}>
         <Text className={`text-sm ${b.fg}`}>{b.text}</Text>
       </View>
 
@@ -194,8 +200,11 @@ export default function AttendanceScreen() {
               <View key={`${h.title}-${h.event_date}`}>
                 {index > 0 && <Divider />}
                 <Row>
-                  <Text className="flex-1 text-sm text-foreground">{h.title}</Text>
-                  <Text className="text-xs text-muted-foreground">{day(h.event_date)}{h.end_date ? ` – ${day(h.end_date)}` : ''}</Text>
+                  <DateBadge date={h.event_date} tint="green" />
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-foreground">{h.title}</Text>
+                    <Text className="text-xs text-muted-foreground">{day(h.event_date)}{h.end_date ? ` – ${day(h.end_date)}` : ''}</Text>
+                  </View>
                 </Row>
               </View>
             ))}
@@ -215,8 +224,9 @@ export default function AttendanceScreen() {
                 <View key={d.date}>
                   {index > 0 && <Divider />}
                   <Row testID={`absence-row-${d.date}`}>
-                    <Text className="flex-1 text-sm text-foreground">{day(d.date)}</Text>
-                    <Chip tone={TONE[d.status]?.chip ?? 'muted'}>{TONE[d.status]?.label(t) ?? d.status}</Chip>
+                    <DateBadge date={d.date} tint={d.status === 'absent' ? 'rose' : 'amber'} />
+                    <Text className="flex-1 text-sm font-medium text-foreground">{longDay(d.date)}</Text>
+                    <View><Chip tone={TONE[d.status]?.chip ?? 'muted'}>{TONE[d.status]?.label(t) ?? d.status}</Chip></View>
                   </Row>
                 </View>
               ))}
