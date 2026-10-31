@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.0.5] — 2026-10-31
+
+### Fixed
+- Release builds use R8 shrinking and obfuscation (#13), for Play's DEX code optimisation check.
+
 ### Added
 - Forgot password on the login screen (#2): sends the web reset link; the parent resets on the web and signs in here. Login shows a `?notice=` message above the form.
 - Birthday: asked once after the first-login password change (optional), and Add/Edit on Profile (`PUT /api/parent/auth/date-of-birth`).
