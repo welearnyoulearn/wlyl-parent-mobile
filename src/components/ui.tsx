@@ -574,7 +574,7 @@ export function Field({ label, password = false, required = false, hint, error, 
       <Text className="text-[13px] font-semibold text-foreground">
         {label}{required ? <Text className="text-danger" accessibilityLabel={t.ui.required}> *</Text> : null}
       </Text>
-      <View className={`h-[50px] flex-row items-center gap-3 rounded-xl border-[1.5px] px-4 ${border}`}>
+      <View className={`h-[54px] flex-row items-center gap-3 rounded-2xl border-[1.5px] px-4 ${border}`}>
         {Icon && <Icon size={19} color={error ? c.danger : focused ? c.primary : c.mutedForeground} />}
         <TextInput
           autoCapitalize="none"

@@ -12,7 +12,7 @@ export default function BirthdayScreen() {
   const home = () => router.replace('/')
 
   return (
-    <AuthShell icon={Cake} title={t.birthday.title} subtitle={t.birthday.subtitle} testID="birthday-screen">
+    <AuthShell icon={Cake} title={t.birthday.title} subtitle={t.birthday.subtitle} step={{ n: 2, of: 2 }} testID="birthday-screen">
       <BirthdayField value={null} onSaved={home} onSkip={home} />
     </AuthShell>
   )

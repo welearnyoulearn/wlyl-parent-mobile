@@ -374,6 +374,14 @@ const en = {
     passwordPlaceholder: 'Your password',
     identifierRequired: 'Enter your email or phone number',
     passwordRequired: 'Enter your password',
+    welcomeName: (name: string) => `Welcome back, ${name}`,
+    signingInAs: 'Signing in as',
+    notYou: 'Not you?',
+  },
+
+  // Shared by the sign-in screens: src/components/auth-shell.tsx
+  auth: {
+    stepOf: (n: number, of: number) => `Step ${n} of ${of}`,
   },
 
   // Forgot password: src/app/forgot-password.tsx
@@ -396,6 +404,14 @@ const en = {
     sentToLead: "We've sent a reset link to",
     expires: "It expires in 1 hour. Check your spam folder if you don't see it.",
     notYours: 'Not your email? Ask your school office to update it.',
+    nextSteps: 'What to do next',
+    step1: 'Open the email from the school',
+    step2: 'Tap the reset link and choose a new password',
+    step3: 'Come back here and sign in',
+    resend: 'Resend link',
+    resent: 'Sent again. It can take a minute to arrive.',
+    tryAnother: 'Use a different email or phone',
+    backToSignIn: 'Back to sign in',
   },
 
   // Exam detail: src/app/exam/[id].tsx
@@ -1001,6 +1017,13 @@ const te: typeof en = {
     passwordPlaceholder: 'మీ పాస్‌వర్డ్',
     identifierRequired: 'మీ ఇమెయిల్ లేదా ఫోన్ నంబర్ నమోదు చేయండి',
     passwordRequired: 'మీ పాస్‌వర్డ్ నమోదు చేయండి',
+    welcomeName: (name) => `మళ్లీ స్వాగతం, ${name}`,
+    signingInAs: 'సైన్ ఇన్ అవుతున్న ఖాతా',
+    notYou: 'మీరు కాదా?',
+  },
+
+  auth: {
+    stepOf: (n, of) => `దశ ${n} / ${of}`,
   },
 
   forgotPassword: {
@@ -1022,6 +1045,14 @@ const te: typeof en = {
     sentToLead: 'రీసెట్ లింక్ పంపాము:',
     expires: 'ఇది 1 గంటలో ముగుస్తుంది. కనిపించకపోతే స్పామ్ ఫోల్డర్ చూడండి.',
     notYours: 'ఇది మీ ఇమెయిల్ కాదా? దాన్ని మార్చమని పాఠశాల కార్యాలయాన్ని అడగండి.',
+    nextSteps: 'తర్వాత ఏమి చేయాలి',
+    step1: 'పాఠశాల నుండి వచ్చిన ఇమెయిల్ తెరవండి',
+    step2: 'రీసెట్ లింక్ నొక్కి కొత్త పాస్‌వర్డ్ ఎంచుకోండి',
+    step3: 'ఇక్కడికి తిరిగి వచ్చి సైన్ ఇన్ చేయండి',
+    resend: 'లింక్ మళ్లీ పంపండి',
+    resent: 'మళ్లీ పంపాము. రావడానికి ఒక నిమిషం పట్టవచ్చు.',
+    tryAnother: 'వేరే ఇమెయిల్ లేదా ఫోన్ వాడండి',
+    backToSignIn: 'సైన్ ఇన్‌కు తిరిగి వెళ్లండి',
   },
 
   examDetail: {

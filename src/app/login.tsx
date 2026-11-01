@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
-import { View, KeyboardAvoidingView, ScrollView, Linking, Pressable, type TextInput } from 'react-native'
+import { View, Linking, Pressable, type TextInput } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { StatusBar } from 'expo-status-bar'
 import { LockKeyhole, UserRound } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { api, ApiError, PRIVACY_URL } from '@/lib/api'
-import { Button, Field, Alert, SafeAreaView, LangToggle, BrandBackdrop, BrandMark, Text } from '@/components/ui'
+import { AuthShell } from '@/components/auth-shell'
+import { Avatar, Button, Field, Alert, haptic, Text } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 type LoginResponse = { success: boolean; passwordChanged: boolean; name: string | null; schoolName: string | null; usageSessionId: number | null }
@@ -15,8 +15,10 @@ export default function LoginScreen() {
   const t = useT()
   // Set by screens that sign the parent out (e.g. the school turned parent access off).
   const { notice } = useLocalSearchParams<{ notice?: string }>()
+  // The account last signed in on this phone: the parent only types the password.
+  const [last, setLast] = useState(() => useSession.getState().lastLogin)
   const passwordRef = useRef<TextInput>(null)
-  const [identifier, setIdentifier] = useState('')
+  const [identifier, setIdentifier] = useState(last?.identifier ?? '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [tried, setTried] = useState(false)
@@ -25,6 +27,16 @@ export default function LoginScreen() {
   // Field errors appear only after the first attempt, then update as the parent types.
   const idError = tried && !identifier.trim() ? t.login.identifierRequired : undefined
   const pwError = tried && !password ? t.login.passwordRequired : undefined
+
+  function switchAccount() {
+    haptic.select()
+    setLast(null)
+    setIdentifier('')
+    setPassword('')
+    setError('')
+    setTried(false)
+    useSession.getState().setLastLogin(null)
+  }
 
   async function submit() {
     setTried(true)
@@ -36,12 +48,16 @@ export default function LoginScreen() {
         method: 'POST',
         body: JSON.stringify({ identifier: identifier.trim(), password }),
       })
-      useSession.getState().setUsageSessionId(r.usageSessionId ?? null)
+      haptic.success()
+      const s = useSession.getState()
+      s.setUsageSessionId(r.usageSessionId ?? null)
+      s.setLastLogin({ identifier: identifier.trim(), name: r.name })
       // Clear the signed-out gate synchronously; the shell shows account loading
       // while school metadata continues in the background.
-      void useSession.getState().load()
+      void s.load()
       router.replace(r.passwordChanged ? '/' : '/change-password')
     } catch (err) {
+      haptic.warn()
       // 403 (portal off, plan expired) and 429 carry a message meant for the parent; show it as-is.
       setError(err instanceof ApiError ? err.message : (err instanceof Error ? err.message : t.login.error))
     } finally {
@@ -49,95 +65,80 @@ export default function LoginScreen() {
     }
   }
 
+  const firstName = last?.name?.split(' ')[0]
+
   return (
-    <View className="flex-1 bg-background">
-      <StatusBar style="light" />
-      <KeyboardAvoidingView
-        // Android 15+ draws edge-to-edge and no longer resizes for the keyboard,
-        // so pad on both platforms or the password field sits under the keyboard.
-        behavior="padding"
-        className="flex-1"
-      >
-        <ScrollView contentContainerClassName="flex-grow" keyboardShouldPersistTaps="handled" bounces={false}>
-          <SafeAreaView edges={['top']}>
-            <BrandBackdrop />
-            <View className="w-full max-w-md self-center px-6 pb-14">
-              <View className="items-end pt-2"><LangToggle /></View>
-              <View className="items-center gap-3 pb-2 pt-6">
-                <BrandMark size={68} />
-                <Text accessibilityRole="header" className="text-2xl font-bold tracking-tight text-on-brand">{t.appName}</Text>
-                <Text className="text-center text-sm text-on-brand/85">{t.login.tagline}</Text>
-              </View>
-            </View>
-          </SafeAreaView>
+    <AuthShell brand title={firstName ? t.login.welcomeName(firstName) : t.appName} subtitle={t.login.tagline} testID="login-screen">
+      {!last && (
+        <View className="gap-1">
+          <Text className="text-[22px] font-bold tracking-tight text-foreground">{t.login.welcome}</Text>
+          <Text className="text-[15px] leading-5 text-muted-foreground">{t.login.subtitle}</Text>
+        </View>
+      )}
 
-          <SafeAreaView edges={['bottom']} className="-mt-7 flex-1 rounded-t-3xl bg-background">
-            <View className="w-full max-w-md flex-1 gap-5 self-center px-6 pb-6 pt-8">
-              <View className="gap-1">
-                <Text className="text-[22px] font-bold tracking-tight text-foreground">{t.login.welcome}</Text>
-                <Text className="text-sm leading-5 text-muted-foreground">{t.login.subtitle}</Text>
-              </View>
+      {notice ? <Alert>{notice}</Alert> : null}
 
-              <View className="gap-4">
-                {notice ? <Alert>{notice}</Alert> : null}
-                <Field
-                  label={t.login.identifierLabel}
-                  testID="login-identifier-input"
-                  icon={UserRound}
-                  value={identifier}
-                  onChangeText={setIdentifier}
-                  placeholder={t.login.identifierPlaceholder}
-                  keyboardType="email-address"
-                  autoComplete="username"
-                  textContentType="username"
-                  returnKeyType="next"
-                  submitBehavior="submit"
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                  error={idError}
-                />
-                <View className="gap-2">
-                  <Field
-                    label={t.password}
-                    testID="login-password-input"
-                    inputRef={passwordRef}
-                    icon={LockKeyhole}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder={t.login.passwordPlaceholder}
-                    password
-                    autoComplete="current-password"
-                    textContentType="password"
-                    returnKeyType="go"
-                    onSubmitEditing={submit}
-                    error={pwError}
-                  />
-                  <Pressable onPress={() => router.push('/forgot-password')} testID="login-forgot-password-link" accessibilityRole="button" hitSlop={8} className="self-end py-1">
-                    <Text className="text-sm font-semibold text-primary">{t.login.forgot}</Text>
-                  </Pressable>
-                </View>
-                {error ? <Alert>{error}</Alert> : null}
-                <Button
-                  label={busy ? t.login.signingIn : t.login.signIn}
-                  testID="login-submit-btn"
-                  onPress={submit}
-                  loading={busy}
-                />
-              </View>
+      {last ? (
+        // Returning parent: who they are, one tap to switch, straight to the password.
+        <View className="flex-row items-center gap-3 rounded-2xl bg-muted px-4 py-3" testID="login-remembered">
+          <Avatar name={last.name ?? last.identifier} className="size-11 bg-primary-soft" textClassName="text-sm text-primary" />
+          <View className="flex-1">
+            <Text className="text-xs text-muted-foreground">{t.login.signingInAs}</Text>
+            <Text className="text-[15px] font-semibold text-foreground" numberOfLines={1}>{last.identifier}</Text>
+          </View>
+          <Pressable onPress={switchAccount} testID="login-use-another" accessibilityRole="button" accessibilityLabel={t.login.notYou} hitSlop={8}
+            className="rounded-full px-2 py-1.5 active:bg-card">
+            <Text className="text-[13px] font-semibold text-primary">{t.login.notYou}</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Field
+          label={t.login.identifierLabel}
+          testID="login-identifier-input"
+          icon={UserRound}
+          value={identifier}
+          onChangeText={setIdentifier}
+          placeholder={t.login.identifierPlaceholder}
+          keyboardType="email-address"
+          autoComplete="username"
+          textContentType="username"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+          error={idError}
+        />
+      )}
 
-              <View className="flex-1" />
-              <Text
-                accessibilityRole="link"
-                testID="login-privacy-link"
-                onPress={() => Linking.openURL(PRIVACY_URL)}
-                className="py-2 text-center text-sm text-muted-foreground underline"
-              >
-                {t.privacyPolicy}
-              </Text>
-            </View>
-          </SafeAreaView>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      <View className="gap-1">
+        <Field
+          label={t.password}
+          testID="login-password-input"
+          inputRef={passwordRef}
+          icon={LockKeyhole}
+          value={password}
+          onChangeText={v => { setPassword(v); if (error) setError('') }}
+          placeholder={t.login.passwordPlaceholder}
+          password
+          autoFocus={!!last}
+          autoComplete="current-password"
+          textContentType="password"
+          returnKeyType="go"
+          onSubmitEditing={submit}
+          error={pwError}
+        />
+        <Pressable onPress={() => router.push('/forgot-password')} testID="login-forgot-password-link" accessibilityRole="button" hitSlop={8} className="self-end py-1.5">
+          <Text className="text-sm font-semibold text-primary">{t.login.forgot}</Text>
+        </Pressable>
+      </View>
 
-    </View>
+      {error ? <Alert>{error}</Alert> : null}
+      <Button label={busy ? t.login.signingIn : t.login.signIn} testID="login-submit-btn" onPress={submit} loading={busy} />
+
+      <View className="flex-1" />
+      <Text accessibilityRole="link" testID="login-privacy-link" onPress={() => Linking.openURL(PRIVACY_URL)}
+        className="py-2 text-center text-[13px] text-muted-foreground underline">
+        {t.privacyPolicy}
+      </Text>
+    </AuthShell>
   )
 }

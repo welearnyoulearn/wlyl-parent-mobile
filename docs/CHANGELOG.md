@@ -10,6 +10,7 @@
 ### Changed
 - New design across the app: Plus Jakarta Sans, light/dark themes on semantic tokens (`src/global.css`), a teal header with a child switcher, flat surfaces without gradients or shadows, colour used for meaning (tinted icon tiles per feature, tinted Home glance tiles, status colours), animated rings and bars, haptics, skeleton loading and retry states, and an Appearance setting (Auto / Light / Dark) in More. All #2–#13 features are kept.
 - Sign-out asks for confirmation.
+- Sign-in screens share one frame (sign in, forgot password, first-login password, birthday) with a gentle entrance and a "Step 1 of 2" marker through first login. Sign-in remembers the last account on this phone, so a returning parent only types the password ("Not you?" switches). After a reset link is sent, the screen lists the three next steps and offers Resend and "Use a different email or phone".
 
 ### Fixed
 - The web build no longer crashes on push set-up or the Library screen.
