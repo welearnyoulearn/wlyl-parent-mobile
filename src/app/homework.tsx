@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Text, View, Pressable } from 'react-native'
+import { View, Pressable } from 'react-native'
 import { Stack } from 'expo-router'
 import { CheckCircle2, NotebookPen, Clock } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { longDay, titleCase, type Homework } from '@/lib/api'
 import { useApi } from '@/lib/use-api'
-import { Screen, Panel, Empty, Chip, Alert, Loading } from '@/components/ui'
+import { Screen, Panel, Empty, Chip, Alert, Loading, Text } from '@/components/ui'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const done = (h: Homework) => !h.resubmission_requested && (h.submission_status === 'submitted' || h.submission_status === 'reviewed')
@@ -25,7 +25,7 @@ function Card({ h }: { h: Homework }) {
     <Panel className="p-4" testID={`homework-${h.id}`}>
       <View className="flex-row items-start justify-between gap-2">
         <View className="flex-1 shrink">
-          <Text className="text-[11px] font-medium uppercase tracking-wide text-teal-700">
+          <Text className="text-[11px] font-medium text-primary">
             {h.subject} · {titleCase(h.task_type)}
           </Text>
           <Text className="text-sm font-semibold text-foreground">{h.title}</Text>
@@ -88,11 +88,11 @@ export default function HomeworkPage() {
                 <Text className="text-[11px] text-muted-foreground">To do</Text>
               </View>
               <View className="flex-1 items-center">
-                <Text className={`text-2xl font-bold ${overdue ? 'text-rose-600' : 'text-foreground'}`}>{overdue}</Text>
+                <Text className={`text-2xl font-bold ${overdue ? 'text-danger' : 'text-foreground'}`}>{overdue}</Text>
                 <Text className="text-[11px] text-muted-foreground">Overdue</Text>
               </View>
               <View className="flex-1 items-center">
-                <Text className="text-2xl font-bold text-emerald-700">{finished.length}</Text>
+                <Text className="text-2xl font-bold text-success">{finished.length}</Text>
                 <Text className="text-[11px] text-muted-foreground">Done</Text>
               </View>
             </Panel>

@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Modal, Text, View } from 'react-native'
+import { Modal, View } from 'react-native'
 import { router } from 'expo-router'
 import { useSession } from '@/stores/session'
-import { Button, Panel, SafeAreaView } from '@/components/ui'
+import { Button, Panel, SafeAreaView, Text } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 // Covers the whole app once the school's plan has ended (web: components/PlanNotice.tsx

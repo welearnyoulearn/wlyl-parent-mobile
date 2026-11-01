@@ -7,3 +7,5 @@
 - Push notifications: EAS project, Firebase (FCM V1) key and a development build to receive them (#8)
 
 - Web parity from the Parent Portal integration guide, on branch `feature/2-6-parent-parity`: forgot password + birthday + profile (#2), plan-expired / access-revoked / usage tracking (#3), contact card + school notices + header chips (#4), fees receipt PDF + year switcher + prior-year dues (#5), exams / attendance / notifications (#6). Typecheck, lint and tests pass; needs a new native build (expo-print, expo-sharing) and a device check against wlyl-dev before release
+
+- Redesign + Daily Report / Daily Quiz / Rewards / Doubts, on branch `feature/premium-redesign` (rebased on main after #2–#13). Typecheck, lint and tests pass; checked on the web build against a local mock. Needs a device check on a dev build (fonts, haptics, iOS large titles) and against wlyl-dev once `daily-quiz` / `student-doubts` are switched on for a test school

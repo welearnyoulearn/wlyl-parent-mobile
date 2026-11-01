@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import { Stack } from 'expo-router'
 import { CalendarX2, Clock } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { api, longDay, type LeaveRequest, ApiError } from '@/lib/api'
 import { useApi } from '@/lib/use-api'
-import { Screen, Panel, Empty, Chip, Alert, Loading, Button, Field, type Tone } from '@/components/ui'
+import { Screen, Panel, Empty, Chip, Alert, Loading, Button, Field, type Tone, Text } from '@/components/ui'
 
 const TONE: Record<string, Tone> = { pending: 'amber', approved: 'green', rejected: 'red', cancelled: 'muted' }
 const iso = (d: Date) => d.toISOString().slice(0, 10)

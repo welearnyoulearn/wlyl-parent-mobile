@@ -9,6 +9,8 @@ import { clearRequestCache, accountGeneration } from '@/lib/request-cache'
 
 export type Student = Child & { class_id: number }
 export type Lang = 'en' | 'te'
+// 'system' follows the phone's light/dark setting.
+export type ThemePref = 'system' | 'light' | 'dark'
 
 type SessionState = {
   me: Me | null
@@ -18,6 +20,7 @@ type SessionState = {
   features: Set<string> | null // enabled parent-portal feature keys; null = unknown (show all)
   childId: number | null
   lang: Lang
+  theme: ThemePref
   loading: boolean
   error: string | null
   classError: string | null
@@ -29,6 +32,7 @@ type SessionState = {
   selectChild: (child: Child) => void
   has: (feature: string) => boolean
   setLang: (lang: Lang) => void
+  setTheme: (theme: ThemePref) => void
   logout: () => Promise<void>
   setUsageSessionId: (id: number | null) => void
   keepAlive: () => Promise<void>
@@ -58,7 +62,7 @@ const ping = (path: string, body: object) => { void api(path, { method: 'POST', 
 export const useSession = create<SessionState>()(
   persist(
     (set, get) => ({
-      me: null, children: [], student: null, year: null, features: null, childId: null, lang: 'en', loading: true, error: null, classError: null, unauthorized: false, notice: null, locked: false, usageSessionId: null,
+      me: null, children: [], student: null, year: null, features: null, childId: null, lang: 'en', theme: 'system', loading: true, error: null, classError: null, unauthorized: false, notice: null, locked: false, usageSessionId: null,
 
       load(force = false) {
         const generation = accountGeneration()
@@ -121,6 +125,10 @@ export const useSession = create<SessionState>()(
         set({ lang })
       },
 
+      setTheme(theme) {
+        set({ theme })
+      },
+
       async logout() {
         const usageSessionId = get().usageSessionId
         clearRequestCache()
@@ -178,7 +186,7 @@ export const useSession = create<SessionState>()(
       },
     }),
     // Only the selected child and language survive an app restart; everything else reloads from the API.
-    { name: 'wlyl-parent', storage: createJSONStorage(() => AsyncStorage), partialize: s => ({ childId: s.childId, lang: s.lang }) },
+    { name: 'wlyl-parent', storage: createJSONStorage(() => AsyncStorage), partialize: s => ({ childId: s.childId, lang: s.lang, theme: s.theme }) },
   ),
 )
 

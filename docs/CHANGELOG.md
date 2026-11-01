@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+- Daily Report (#450, web parity): pick a day (up to 30 back), then see attendance, Daily Quiz done or not, doubts still open, the last 7 quiz days and topics taught (`GET /api/parent/daily-report`).
+- Home shows the child's day as on the web (Daily Quiz done or not, doubts not clarified), opening the Daily Report; Daily report is a shortcut where the school has `daily-quiz` on. Parents follow the quiz only: there is no quiz-taking, Rewards or Doubts screen, matching the web parent portal on `dev`. Quiz and doubt notifications open the Daily Report for that child.
+- Forgot password shows where the link went (masked email) or why it couldn't be sent: not registered, no email on file, several matches, too many tries (#451).
+
+### Changed
+- New design across the app: Plus Jakarta Sans, light/dark themes on semantic tokens (`src/global.css`), a teal header with a child switcher, flat surfaces without gradients or shadows, colour used for meaning (tinted icon tiles per feature, tinted Home glance tiles, status colours), animated rings and bars, haptics, skeleton loading and retry states, and an Appearance setting (Auto / Light / Dark) in More. All #2–#13 features are kept.
+- Sign-out asks for confirmation.
+
+### Fixed
+- The web build no longer crashes on push set-up or the Library screen.
+
 ## [1.0.5] — 2026-10-31
 
 ### Fixed

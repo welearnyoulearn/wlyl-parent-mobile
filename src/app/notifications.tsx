@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Fragment, useEffect, useState } from 'react'
+import { Pressable, View } from 'react-native'
 import { Stack, useRouter, type Href } from 'expo-router'
-import { BellOff } from 'lucide-react-native'
+import { Bell, BellOff, Brain, CalendarCheck, Cake, CheckCheck, GraduationCap, IndianRupee, Megaphone, NotebookPen, type LucideIcon } from 'lucide-react-native'
 import { onNotificationReceived } from '@/lib/push'
 import { useSession } from '@/stores/session'
 import { api, longDay, type Notification } from '@/lib/api'
-import { Screen, Panel, Empty, Alert, Loading, Row, Section } from '@/components/ui'
+import { Screen, Panel, Empty, Alert, ErrorState, ScreenSkeleton, Section, Divider, IconTile, type Tone, Text, useColors } from '@/components/ui'
 import { useT, type Strings } from '@/lib/i18n'
 
 // Feature groups, as in the platform's app/components/notificationGroups.ts (guide §8).
 type GroupId = keyof Strings['notifications']['groups']
-const ORDER: GroupId[] = ['exams', 'marks', 'messages', 'attendance', 'birthdays', 'fees', 'other']
+const ORDER: GroupId[] = ['exams', 'marks', 'learning', 'messages', 'attendance', 'birthdays', 'fees', 'other']
 const GROUP: Record<string, GroupId> = {
   exam_scheduled: 'exams', exam_updated: 'exams', exam_cancelled: 'exams',
   exam_reminder_7day: 'exams', exam_reminder_1day: 'exams', exam_reminder_today: 'exams',
@@ -20,7 +20,13 @@ const GROUP: Record<string, GroupId> = {
   birthday: 'birthdays',
   fee_year_end_reminder: 'fees', fee_writeoff_request: 'fees', fee_writeoff_decided: 'fees',
 }
-const groupOf = (type: string): GroupId => GROUP[type] ?? 'other'
+// Daily Quiz and Student Doubts (#430) send many kinds (daily_quiz_results, doubt_answered, ...).
+const groupOf = (type: string): GroupId => GROUP[type] ?? (/^(daily_quiz|doubt)/.test(type) ? 'learning' : 'other')
+const LOOK: Record<GroupId, { icon: LucideIcon; tone: Tone }> = {
+  exams: { icon: NotebookPen, tone: 'violet' }, marks: { icon: GraduationCap, tone: 'teal' }, learning: { icon: Brain, tone: 'violet' },
+  messages: { icon: Megaphone, tone: 'blue' }, attendance: { icon: CalendarCheck, tone: 'red' }, birthdays: { icon: Cake, tone: 'amber' },
+  fees: { icon: IndianRupee, tone: 'green' }, other: { icon: Bell, tone: 'muted' },
+}
 
 // `data` is JSONB (an object), but older rows or proxies may send it as a JSON string.
 function dataOf(n: Notification): Record<string, unknown> {
@@ -34,7 +40,8 @@ function dataOf(n: Notification): Record<string, unknown> {
   }
 }
 
-// Where a tap goes: exam notices → exam calendar; results and sign-off reminders → that mark sheet.
+// Where a tap goes: exam notices → exam calendar; results and sign-off reminders → that mark sheet;
+// quiz and doubt news → that child's Daily Report.
 function routeFor(n: Notification): Href | null {
   switch (groupOf(n.type)) {
     case 'exams': return { pathname: '/exams', params: { tab: 'upcoming' } }
@@ -42,6 +49,7 @@ function routeFor(n: Notification): Href | null {
       const examId = Number(dataOf(n).exam_id)
       return examId > 0 ? { pathname: '/exam/[id]', params: { id: String(examId) } } : { pathname: '/exams', params: { tab: 'results' } }
     }
+    case 'learning': return '/daily-report'
     case 'fees': return '/fees'
     case 'attendance': return '/attendance'
     default: return null
@@ -51,31 +59,33 @@ function routeFor(n: Notification): Href | null {
 export default function NotificationsScreen() {
   const { me, children, student, selectChild } = useSession()
   const t = useT()
+  const c = useColors()
   const router = useRouter()
   const [items, setItems] = useState<Notification[] | null>(null)
   const [error, setError] = useState('')
   const [markError, setMarkError] = useState('')
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     if (!me) return
 
     function load() {
       api<Notification[]>('/api/notifications')
-        .then(setItems)
+        .then(list => { setItems(list); setError('') })
         .catch((e) => setError(e.message))
     }
 
     load()
     // Real time: a push that arrives while this screen is open shows up at once.
     return onNotificationReceived(load)
-  }, [me])
+  }, [me, tick])
 
   async function open(n: Notification) {
     const href = routeFor(n)
     if (href) {
-      // Notifications are per parent; open the result for the child it is about.
+      // Notifications are per parent; open the screen for the child it is about.
       const childId = Number(dataOf(n).student_id)
-      const child = children.find(c => c.id === childId)
+      const child = children.find(k => k.id === childId)
       if (child && child.id !== student?.id) selectChild(child)
       router.push(href)
     }
@@ -99,48 +109,55 @@ export default function NotificationsScreen() {
   const groups = ORDER
     .map((id) => ({ id, items: items?.filter((n) => groupOf(n.type) === id) ?? [] }))
     .filter((g) => g.items.length > 0)
-  const anyUnread = items?.some((n) => !n.is_read) ?? false
+  const unreadTotal = items?.filter((n) => !n.is_read).length ?? 0
 
   return (
     <>
       <Stack.Screen options={{ title: t.screenTitles.notifications }} />
       <Screen testID="notifications-screen">
-        {error ? (
-          <Alert>{error}</Alert>
+        {error && !items ? (
+          <ErrorState message={error} onRetry={() => setTick(n => n + 1)} />
         ) : !items ? (
-          <Loading />
+          <ScreenSkeleton rows={5} />
         ) : items.length === 0 ? (
-          <Empty icon={BellOff} title={t.notifications.empty} />
+          <Empty icon={BellOff} title={t.notifications.empty} hint={t.notifications.emptyHint} />
         ) : (
           <>
             {markError ? <Alert>{markError}</Alert> : null}
-            {anyUnread && (
-              <Pressable onPress={() => markRead()} testID="notifications-mark-all" accessibilityRole="button" hitSlop={8} className="self-end">
-                <Text className="text-xs font-medium text-primary">{t.notifications.markAllRead}</Text>
-              </Pressable>
+            {unreadTotal > 0 && (
+              <View className="flex-row items-center justify-between">
+                <Text className="text-sm font-bold text-primary" accessibilityLiveRegion="polite">{t.notifications.unreadCount(unreadTotal)}</Text>
+                <Pressable onPress={() => markRead()} testID="notifications-mark-all" accessibilityRole="button" hitSlop={8}
+                  className="flex-row items-center gap-1.5 rounded-full bg-primary-soft px-3.5 py-1.5 active:opacity-70">
+                  <CheckCheck size={15} color={c.primary} strokeWidth={2.4} />
+                  <Text className="text-xs font-bold text-primary">{t.notifications.markAllRead}</Text>
+                </Pressable>
+              </View>
             )}
             {groups.map((g) => {
               const unread = g.items.filter((n) => !n.is_read).map((n) => n.id)
+              const look = LOOK[g.id]
               return (
                 <Section
                   key={g.id}
                   title={unread.length ? `${t.notifications.groups[g.id]} · ${unread.length}` : t.notifications.groups[g.id]}
                   action={unread.length ? { label: t.notifications.markGroupRead, onPress: () => markRead(unread), testID: `notifications-mark-${g.id}` } : undefined}
                 >
-                  <Panel className="divide-y divide-black/5" testID={`notification-group-${g.id}`}>
-                    {g.items.map((n) => (
-                      <Row key={n.id} onPress={() => open(n)} testID={`notification-${n.id}`} className="items-start">
-                        <View className={`mt-1.5 size-2 shrink-0 rounded-full ${n.is_read ? 'bg-transparent' : 'bg-teal-500'}`} />
-                        <View className="flex-1">
-                          <Text className={`text-sm text-foreground ${n.is_read ? '' : 'font-semibold'}`}>
-                            {n.title ?? n.type}
-                          </Text>
-                          {n.message ? <Text className="mt-0.5 text-xs text-muted-foreground">{n.message}</Text> : null}
-                          <Text className="mt-1 text-[11px] text-muted-foreground">
-                            {n.sender_name ? `${n.sender_name} · ` : ''}{longDay(n.created_at)}
-                          </Text>
-                        </View>
-                      </Row>
+                  <Panel className="overflow-hidden" testID={`notification-group-${g.id}`}>
+                    {g.items.map((n, i) => (
+                      <Fragment key={n.id}>
+                        {i > 0 && <Divider inset />}
+                        <Pressable onPress={() => open(n)} testID={`notification-${n.id}`} accessibilityRole="button"
+                          className={`flex-row items-start gap-3.5 px-4 py-3.5 active:bg-muted ${n.is_read ? '' : 'bg-primary-soft'}`}>
+                          <IconTile icon={look.icon} tone={look.tone} size="sm" />
+                          <View className="flex-1 gap-0.5">
+                            <Text className={`text-[15px] leading-5 text-foreground ${n.is_read ? 'font-medium' : 'font-bold'}`}>{n.title ?? n.type}</Text>
+                            {n.message ? <Text className="text-sm leading-5 text-muted-foreground">{n.message}</Text> : null}
+                            <Text className="mt-0.5 text-xs text-muted-foreground">{n.sender_name ? `${n.sender_name} · ` : ''}{longDay(n.created_at)}</Text>
+                          </View>
+                          {!n.is_read && <View className="mt-1.5 size-2.5 rounded-full bg-primary" accessibilityElementsHidden />}
+                        </Pressable>
+                      </Fragment>
                     ))}
                   </Panel>
                 </Section>

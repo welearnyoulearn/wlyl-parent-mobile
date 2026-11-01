@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Pressable, Text, TextInput, View } from 'react-native'
+import { Pressable, TextInput, View } from 'react-native'
 import { Stack } from 'expo-router'
 import { Megaphone, Search } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { filterNotices, type NoticeFilter } from '@/lib/notices'
 import { NoticeModal, NoticeRow, useNotices } from '@/components/notices'
-import { Screen, Panel, Empty, Alert, Loading, Divider } from '@/components/ui'
+import { Screen, Panel, Empty, Alert, Loading, Divider, Text, useColors } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 const FILTERS: NoticeFilter[] = ['all', 'unread', 'pinned', 'action', 'past']
@@ -14,6 +14,7 @@ const FILTERS: NoticeFilter[] = ['all', 'unread', 'pinned', 'action', 'past']
 export default function NoticesScreen() {
   const { student, lang } = useSession()
   const t = useT()
+  const c = useColors()
   const [filter, setFilter] = useState<NoticeFilter>('all')
   const [query, setQuery] = useState('')
   const [openId, setOpenId] = useState<number | null>(null)
@@ -31,8 +32,8 @@ export default function NoticesScreen() {
       <Stack.Screen options={{ title: t.screenTitles.notices }} />
       <Screen testID="notices-screen" refreshing={source.refreshing} onRefresh={source.refresh}>
         <View className="h-11 flex-row items-center gap-2 rounded-xl border border-border bg-card px-3">
-          <Search size={16} color="#9ca3af" />
-          <TextInput value={query} onChangeText={setQuery} placeholder={t.notices.search} placeholderTextColor="#9ca3af"
+          <Search size={16} color={c.subtle} />
+          <TextInput value={query} onChangeText={setQuery} placeholder={t.notices.search} placeholderTextColor={c.subtle}
             testID="notices-search" accessibilityLabel={t.notices.search} autoCorrect={false} className="flex-1 text-sm text-foreground" />
         </View>
 

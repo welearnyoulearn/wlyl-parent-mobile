@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { ChevronLeft, ChevronRight } from 'lucide-react-native'
-import { Panel } from '@/components/ui'
+import { Panel, useColors, Text } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 // Shared month grid for the School Calendar and Exam Calendar screens, ported
@@ -54,40 +54,43 @@ export function MonthCalendar({
   accessibilityLabelFor?: (date: string) => string
 }) {
   const t = useT()
+  const c = useColors()
   const today = todayISO()
   const [y, m] = month.split('-').map(Number)
   const lead = new Date(y, m - 1, 1).getDay()
   const days = monthDays(month)
+  const isCurrent = today.slice(0, 7) === month
 
   return (
     <Panel className="p-3">
-      <View className="flex-row items-center justify-between pb-2">
+      <View className="flex-row items-center justify-between pb-3">
         <Pressable
-          testID={`${testIDPrefix}-prev`} onPress={onPrev} hitSlop={8}
+          testID={`${testIDPrefix}-prev`} onPress={onPrev} hitSlop={6}
           accessibilityRole="button" accessibilityLabel={t.monthCalendar.prevMonth}
-          className="h-9 w-9 items-center justify-center rounded-full active:bg-muted"
+          className="size-11 items-center justify-center rounded-full active:bg-muted"
         >
-          <ChevronLeft size={18} color="#6b7280" />
+          <ChevronLeft size={20} color={c.foreground} />
         </Pressable>
-        <Text testID={`${testIDPrefix}-month-label`} className="text-sm font-semibold text-foreground">
+        <Text testID={`${testIDPrefix}-month-label`} accessibilityRole="header" accessibilityLiveRegion="polite"
+          className={`text-base font-semibold ${isCurrent ? 'text-primary' : 'text-foreground'}`}>
           {monthLabel(month, t.monthCalendar.monthNames)}
         </Text>
         <Pressable
-          testID={`${testIDPrefix}-next`} onPress={onNext} hitSlop={8} disabled={nextDisabled}
+          testID={`${testIDPrefix}-next`} onPress={onNext} hitSlop={6} disabled={nextDisabled}
           accessibilityRole="button" accessibilityLabel={t.monthCalendar.nextMonth} accessibilityState={{ disabled: nextDisabled }}
-          className={`h-9 w-9 items-center justify-center rounded-full active:bg-muted ${nextDisabled ? 'opacity-30' : ''}`}
+          className={`size-11 items-center justify-center rounded-full active:bg-muted ${nextDisabled ? 'opacity-30' : ''}`}
         >
-          <ChevronRight size={18} color="#6b7280" />
+          <ChevronRight size={20} color={c.foreground} />
         </Pressable>
       </View>
 
       <View className="flex-row">
         {t.monthCalendar.weekdayShort.map(d => (
-          <Text key={d} style={{ width: CELL_WIDTH }} className="text-center text-[10px] text-muted-foreground">{d}</Text>
+          <Text key={d} style={{ width: CELL_WIDTH }} className="text-center text-[11px] font-medium text-muted-foreground">{d}</Text>
         ))}
       </View>
 
-      <View className="mt-1 flex-row flex-wrap">
+      <View className="mt-1.5 flex-row flex-wrap">
         {Array.from({ length: lead }, (_, i) => <View key={`lead-${i}`} style={{ width: CELL_WIDTH }} className="h-12" />)}
         {days.map(d => {
           const isToday = d === today
@@ -104,11 +107,11 @@ export function MonthCalendar({
               className="h-12 items-center gap-0.5 pt-0.5"
             >
               <View
-                className={`h-7 w-7 items-center justify-center rounded-full ${
-                  isToday ? 'bg-primary' : isSelected ? 'border border-foreground' : dayBg?.(d) ?? ''
+                className={`size-8 items-center justify-center rounded-full ${
+                  isSelected ? 'bg-primary' : isToday ? 'border-[1.5px] border-primary' : dayBg?.(d) ?? ''
                 }`}
               >
-                <Text className={`text-xs font-medium ${isToday ? 'text-primary-foreground' : 'text-foreground'}`}>
+                <Text className={`text-[13px] font-semibold ${isSelected ? 'text-primary-foreground' : isToday ? 'text-primary' : 'text-foreground'}`}>
                   {Number(d.slice(8))}
                 </Text>
               </View>

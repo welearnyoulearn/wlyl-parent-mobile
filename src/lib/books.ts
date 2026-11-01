@@ -8,7 +8,10 @@ const dir = () => new Directory(Paths.document, 'library')
 
 export const bookFile = (id: number) => new File(dir(), `${id}.pdf`)
 
-export const isDownloaded = (id: number) => bookFile(id).exists
+// The web build has no app file system, so nothing is ever downloaded there.
+export const isDownloaded = (id: number) => {
+  try { return bookFile(id).exists } catch { return false }
+}
 
 /** Library file_url is either a path on the school server or an absolute Cloudinary/R2 URL. */
 export function resolveBookUrl(fileUrl: string): string | null {

@@ -1,15 +1,145 @@
 @import 'tailwindcss';
 @import 'uniwind';
 
-/* Same palette as the web parent app (teal primary, soft grey ground). */
+/* WLYL design tokens.
+   Screens use only these semantic names (bg-card, text-success, bg-warning-soft ...),
+   never raw palette classes, so light and dark both come from this file.
+   @theme registers the names for Tailwind; the @variant blocks give each theme its values.
+   Identity: a calm, airy neutral canvas; the school teal as the one brand colour;
+   deep "ink" for money and emphasis; violet for exams; warm, readable status colours. */
 @theme {
+  --color-brand: #0d7d76;
+  --color-brand-deep: #08524d;
+  --color-on-brand: #ffffff;
+  --color-ink: #13233a;
+  --color-ink-deep: #0a1424;
+  --color-on-ink: #f4f7fb;
   --color-primary: #0d7d76;
   --color-primary-foreground: #ffffff;
-  --color-background: #f4f6f6;
+  --color-primary-soft: #e3f3f1;
+  --color-accent: #6544d6;
+  --color-accent-soft: #efeafd;
+
+  --color-background: #f4f6f9;
   --color-card: #ffffff;
-  --color-foreground: #171717;
-  --color-muted: #f1f3f5;
-  --color-muted-foreground: #6b7280;
-  --color-border: #e5e7eb;
-  --color-destructive: #dc2626;
+  --color-elevated: #ffffff;
+  --color-foreground: #0e1726;
+  --color-muted: #eceff3;
+  --color-muted-foreground: #556070;
+  --color-subtle-foreground: #949daa;
+  --color-border: #e4e8ed;
+  --color-input: #d5dae1;
+  --color-overlay: rgb(10 18 30 / 0.5);
+
+  --color-success: #0d7a4c;
+  --color-success-soft: #e1f5ea;
+  --color-success-graphic: #18a66b;
+  --color-warning: #8a5000;
+  --color-warning-soft: #fdf1dc;
+  --color-warning-border: #f0d29a;
+  --color-warning-graphic: #f2a227;
+  --color-danger: #be2537;
+  --color-danger-soft: #fde7ea;
+  --color-danger-graphic: #e4485b;
+  --color-info: #1b64ab;
+  --color-info-soft: #e3eefa;
+  --color-info-graphic: #3a88d6;
+  --color-destructive: #be2537;
+}
+
+@layer theme {
+  :root {
+    @variant light {
+      --color-brand: #0d7d76;
+      --color-brand-deep: #08524d;
+      --color-on-brand: #ffffff;
+      --color-ink: #13233a;
+      --color-ink-deep: #0a1424;
+      --color-on-ink: #f4f7fb;
+      --color-primary: #0d7d76;
+      --color-primary-foreground: #ffffff;
+      --color-primary-soft: #e3f3f1;
+      --color-accent: #6544d6;
+      --color-accent-soft: #efeafd;
+
+      --color-background: #f4f6f9;
+      --color-card: #ffffff;
+      --color-elevated: #ffffff;
+      --color-foreground: #0e1726;
+      --color-muted: #eceff3;
+      --color-muted-foreground: #556070;
+      --color-subtle-foreground: #949daa;
+      --color-border: #e4e8ed;
+      --color-input: #d5dae1;
+      --color-overlay: rgb(10 18 30 / 0.5);
+
+      --color-success: #0d7a4c;
+      --color-success-soft: #e1f5ea;
+      --color-success-graphic: #18a66b;
+      --color-warning: #8a5000;
+      --color-warning-soft: #fdf1dc;
+      --color-warning-border: #f0d29a;
+      --color-warning-graphic: #f2a227;
+      --color-danger: #be2537;
+      --color-danger-soft: #fde7ea;
+      --color-danger-graphic: #e4485b;
+      --color-info: #1b64ab;
+      --color-info-soft: #e3eefa;
+      --color-info-graphic: #3a88d6;
+      --color-destructive: #be2537;
+    }
+
+    /* Deep blue-ink night, never pure black; text and graphics lifted for contrast. */
+    @variant dark {
+      --color-brand: #0f5550;
+      --color-brand-deep: #082a28;
+      --color-on-brand: #effaf8;
+      --color-ink: #1c2a3d;
+      --color-ink-deep: #111b29;
+      --color-on-ink: #f1f5fa;
+      --color-primary: #3fc4b6;
+      --color-primary-foreground: #03201c;
+      --color-primary-soft: #102f2c;
+      --color-accent: #ab95ff;
+      --color-accent-soft: #241f40;
+
+      --color-background: #0a0f15;
+      --color-card: #131a22;
+      --color-elevated: #1a232d;
+      --color-foreground: #edf2f7;
+      --color-muted: #1c2530;
+      --color-muted-foreground: #9ba7b4;
+      --color-subtle-foreground: #6c7886;
+      --color-border: #232d39;
+      --color-input: #334150;
+      --color-overlay: rgb(0 0 0 / 0.62);
+
+      --color-success: #5fd09a;
+      --color-success-soft: #0f2c1f;
+      --color-success-graphic: #3dbd7f;
+      --color-warning: #f4c063;
+      --color-warning-soft: #2e230e;
+      --color-warning-border: #5a4419;
+      --color-warning-graphic: #f2a227;
+      --color-danger: #f5848f;
+      --color-danger-soft: #36171c;
+      --color-danger-graphic: #ee5f70;
+      --color-info: #7cbaf2;
+      --color-info-soft: #11263a;
+      --color-info-graphic: #4c9be3;
+      --color-destructive: #f5848f;
+    }
+  }
+}
+
+/* Elevation. Light mode floats cards on soft shadows; dark mode separates
+   surfaces by tone and a hairline border instead (shadows vanish on dark). */
+@utility shadow-card {
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 4px 14px rgb(16 24 40 / 0.05);
+}
+@utility shadow-float {
+  box-shadow: 0 2px 6px rgb(16 24 40 / 0.06), 0 12px 32px rgb(16 24 40 / 0.12);
+}
+@utility shadow-glow {
+  box-shadow: 0 8px 24px rgb(13 125 118 / 0.28);
 }

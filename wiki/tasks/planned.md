@@ -1,6 +1,6 @@
 # Planned
 
-- Homework, leave, transport, rewards and the other #129 screens once that backend reaches dev
+- Homework, leave, transport and the other #129 screens once that backend reaches dev (Rewards now ships from the Daily Quiz, #434)
 - UPI fee payment
 - Native push notifications through Expo (FCM/APNs)
 - Bearer-token auth on the platform for mobile
