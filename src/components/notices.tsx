@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
-import { AlertTriangle, CalendarDays, FileText, Pin, X, type LucideIcon } from 'lucide-react-native'
+import { Modal, Pressable, ScrollView, View } from 'react-native'
+import { Pin, X } from 'lucide-react-native'
 import { day, type Announcement } from '@/lib/api'
 import { acknowledge, localised, markSeen, needsAck, template, useNoticeMarks, withMarks } from '@/lib/notices'
 import { useApi } from '@/lib/use-api'
 import { useSession } from '@/stores/session'
-import { Alert, Button, Chip, Row } from '@/components/ui'
+import { Alert, Button, Chip, Row, Text, useColors } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
-const TYPE_ICON: Record<string, LucideIcon> = { general: FileText, circular: FileText, event: CalendarDays, alert: AlertTriangle }
 const fullDay = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
 // Notices from `path` with this session's seen/ack marks applied. A 403 (FEATURE_DISABLED)
@@ -20,27 +19,29 @@ export function useNotices(path: string | null) {
   return { ...res, hidden, error: hidden ? null : res.error, items: Array.isArray(res.data) ? withMarks(res.data, marks) : null }
 }
 
-// One notice in a list: type icon (or the greeting emoji), bold title until seen, and its badges.
+// One notice in a list: a dot until it's seen, the title, and one line of meta where the
+// status words (urgent, action needed, new, pinned) are coloured text rather than badges.
+// Festive templates keep their emoji, because that is the content.
 export function NoticeRow({ notice: n, onPress }: { notice: Announcement; onPress: () => void }) {
   const { lang } = useSession()
   const t = useT()
   const tpl = template(n)
-  const Icon = TYPE_ICON[n.announcement_type] ?? FileText
   const { title } = localised(n, lang)
+  const flags: { text: string; cls: string }[] = [
+    ...(n.priority === 'urgent' ? [{ text: t.urgent, cls: 'text-danger' }] : []),
+    ...(needsAck(n) ? [{ text: t.notices.filters.action, cls: 'text-warning' }] : []),
+    ...(!n.seen ? [{ text: t.notices.isNew, cls: 'text-primary' }] : []),
+    ...(n.pinned ? [{ text: t.notices.pinned, cls: 'text-muted-foreground' }] : []),
+  ]
   return (
-    <Row onPress={onPress} testID={`notice-row-${n.id}`} className={`items-start ${n.priority === 'urgent' ? 'bg-rose-50/40' : ''}`}>
-      <View className="size-9 shrink-0 items-center justify-center rounded-xl bg-teal-50">
-        {tpl?.greeting ? <Text className="text-lg">{tpl.emoji}</Text> : <Icon size={16} color="#0f766e" />}
-      </View>
-      <View className="flex-1 gap-1">
-        <Text className={`text-sm ${n.seen ? 'font-medium text-foreground/80' : 'font-bold text-foreground'}`} numberOfLines={2}>{title}</Text>
-        <View className="flex-row flex-wrap gap-1.5">
-          {!n.seen && <Chip tone="blue">{t.notices.isNew}</Chip>}
-          {n.priority === 'urgent' && <Chip tone="red">{t.urgent}</Chip>}
-          {needsAck(n) && <Chip tone="amber">{t.notices.filters.action}</Chip>}
-          {n.pinned && <Chip tone="teal">{t.notices.pinned}</Chip>}
-        </View>
-        <Text className="text-[11px] text-muted-foreground">{n.created_by_name ? `${n.created_by_name} · ` : ''}{day(n.published_at ?? n.created_at)}</Text>
+    <Row onPress={onPress} testID={`notice-row-${n.id}`} className="items-start">
+      <View className="w-2 items-center pt-2">{!n.seen && <View className="size-2 rounded-full bg-primary" />}</View>
+      <View className="flex-1 gap-0.5">
+        <Text className={`text-[15px] leading-5 text-foreground ${n.seen ? '' : 'font-semibold'}`} numberOfLines={2}>{tpl?.greeting ? `${tpl.emoji} ` : ''}{title}</Text>
+        <Text className="text-[13px] text-muted-foreground" numberOfLines={1}>
+          {flags.map(f => <Text key={f.text} className={`font-semibold ${f.cls}`}>{f.text}  ·  </Text>)}
+          {n.created_by_name ? `${n.created_by_name} · ` : ''}{day(n.published_at ?? n.created_at)}
+        </Text>
       </View>
     </Row>
   )
@@ -51,6 +52,7 @@ export function NoticeRow({ notice: n, onPress }: { notice: Announcement; onPres
 export function NoticeModal({ notice: n, onClose }: { notice: Announcement; onClose: () => void }) {
   const { lang } = useSession()
   const t = useT()
+  const c = useColors()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const tpl = template(n)
@@ -72,10 +74,10 @@ export function NoticeModal({ notice: n, onClose }: { notice: Announcement; onCl
   }
 
   const ack = n.requires_ack && (n.acked
-    ? <Text testID="notice-acked" className="py-2 text-center text-sm font-semibold text-emerald-600">{t.acknowledged}</Text>
+    ? <Text testID="notice-acked" className="py-2 text-center text-sm font-semibold text-success">{t.acknowledged}</Text>
     : (
       <View className="gap-2">
-        {error ? <Alert>{error}</Alert> : <Text className="text-center text-xs text-amber-700">{t.notices.needsAck}</Text>}
+        {error ? <Alert>{error}</Alert> : <Text className="text-center text-xs text-warning">{t.notices.needsAck}</Text>}
         <Button label={t.notices.ack} onPress={() => void onAck()} loading={busy} testID="notice-ack" />
       </View>
     ))
@@ -83,7 +85,7 @@ export function NoticeModal({ notice: n, onClose }: { notice: Announcement; onCl
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       <View className="flex-1 justify-center bg-black/55 p-4">
-        <View testID="notice-modal" accessibilityViewIsModal className="max-h-[90%] overflow-hidden rounded-3xl bg-background">
+        <View testID="notice-modal" accessibilityViewIsModal className="max-h-[90%] overflow-hidden rounded-2xl bg-background">
           <ScrollView contentContainerClassName="gap-4 p-5">
             {card ? (
               <View testID="notice-greeting" style={{ backgroundColor: card.bg }} className="items-center gap-3 rounded-2xl px-5 py-8">
@@ -98,10 +100,10 @@ export function NoticeModal({ notice: n, onClose }: { notice: Announcement; onCl
                   <View className="flex-1 flex-row flex-wrap gap-1.5">
                     <Chip>{t.notices.type[n.announcement_type] ?? n.announcement_type}</Chip>
                     {n.priority === 'urgent' ? <Chip tone="red">{t.urgent}</Chip> : n.priority === 'high' ? <Chip tone="amber">{t.home.important}</Chip> : null}
-                    {n.pinned && <Pin size={14} color="#0f766e" accessibilityLabel={t.notices.pinned} />}
+                    {n.pinned && <Pin size={14} color={c.primary} accessibilityLabel={t.notices.pinned} />}
                   </View>
                   <Pressable onPress={onClose} hitSlop={12} testID="notice-close-x" accessibilityRole="button" accessibilityLabel={t.close}>
-                    <X size={22} color="#6b7280" />
+                    <X size={22} color={c.mutedForeground} />
                   </Pressable>
                 </View>
                 <Text accessibilityRole="header" className="text-lg font-extrabold leading-snug text-foreground">{tpl ? `${tpl.emoji} ` : ''}{title}</Text>

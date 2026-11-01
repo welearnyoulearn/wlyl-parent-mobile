@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { KeyboardAvoidingView, Linking, Modal, Pressable, Text, View } from 'react-native'
-import { CheckCircle2, X } from 'lucide-react-native'
+import { Linking, View } from 'react-native'
+import { CheckCircle2, IndianRupee, Smartphone } from 'lucide-react-native'
 import { api, inr, num, type FeeRow } from '@/lib/api'
-import { Alert, Button, Field, Loading } from '@/components/ui'
+import { Alert, Button, Field, Loading, Sheet, haptic, useColors, Text } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 type UpiInfo = { upi_id: string; school_name: string }
@@ -26,6 +26,7 @@ export function PaySheet({ rows, student, onClose, onPaid }: {
   rows: FeeRow[]; student: { id: number; school_id: number }; onClose: () => void; onPaid: () => void
 }) {
   const t = useT()
+  const c = useColors()
   const due = rows.filter(r => num(r.balance) > 0)
   const total = due.reduce((s, r) => s + num(r.balance), 0)
   const [amount, setAmount] = useState(String(total))
@@ -59,6 +60,7 @@ export function PaySheet({ rows, student, onClose, onPaid }: {
   }
 
   async function submit() {
+    if (busy) return
     setBusy(true)
     setError('')
     try {
@@ -73,6 +75,7 @@ export function PaySheet({ rows, student, onClose, onPaid }: {
         }),
       })
       setDone(res)
+      haptic.success()
       setStep('done')
       onPaid()
     } catch (e) {
@@ -83,89 +86,80 @@ export function PaySheet({ rows, student, onClose, onPaid }: {
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView behavior="padding" className="flex-1 justify-end bg-black/40">
-        <View className="gap-4 rounded-t-3xl bg-background px-5 pb-10 pt-5" testID="pay-sheet">
-          <View className="flex-row items-start justify-between">
-            <View className="flex-1">
-              <Text className="text-lg font-semibold text-foreground" accessibilityRole="header">{t.paySheet.title}</Text>
-              <Text className="text-xs text-muted-foreground">{t.paySheet.subtitle}</Text>
-            </View>
-            <Pressable onPress={onClose} hitSlop={12} testID="pay-close-btn" accessibilityRole="button" accessibilityLabel={t.close}>
-              <X size={22} color="#6b7280" />
-            </Pressable>
-          </View>
-
-          {step !== 'done' && (
-            <View className="rounded-xl bg-muted px-3 py-2" testID="pay-bills">
-              {due.length === 1 ? (
-                <>
-                  <Text className="text-sm font-medium text-foreground">{due[0].category_name} · {due[0].period_label}</Text>
-                  <Text className="text-[11px] text-muted-foreground">{t.paySheet.balanceDue(inr(due[0].balance))}</Text>
-                </>
-              ) : (
-                <>
-                  <Text className="text-sm font-medium text-foreground">{t.paySheet.entries(due.length)}</Text>
-                  {due.map(r => (
-                    <View key={r.id} className="flex-row justify-between gap-2">
-                      <Text className="flex-shrink text-[11px] text-muted-foreground">{r.category_name} · {r.period_label}</Text>
-                      <Text className="text-[11px] text-muted-foreground">{inr(r.balance)}</Text>
-                    </View>
-                  ))}
-                </>
-              )}
-            </View>
-          )}
-
-          {upi === undefined && <Loading />}
-          {upi === null && <Alert>{t.paySheet.noUpi}</Alert>}
-
-          {upi && step === 'amount' && (
+    <Sheet title={step === 'done' ? t.paySheet.doneTitle : t.paySheet.title} subtitle={step === 'done' ? undefined : t.paySheet.subtitle} onClose={onClose} testID="pay-sheet">
+      {step !== 'done' && (
+        <View className="gap-1.5 rounded-2xl bg-muted px-4 py-3" testID="pay-bills">
+          {due.length === 1 ? (
             <>
-              <Field label={t.paySheet.amountLabel(inr(total))} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} testID="pay-amount-input" />
-              <View className="rounded-xl bg-muted px-3 py-2">
-                <Text className="text-[11px] text-muted-foreground">{t.paySheet.payingTo(upi.school_name)}</Text>
-                <Text selectable className="font-mono text-sm text-foreground" testID="pay-upi-id">{upi.upi_id}</Text>
-              </View>
-              {error ? <Alert>{error}</Alert> : null}
-              <Button label={amountOk ? t.paySheet.payWithApp(inr(amt)) : t.paySheet.enterValidAmount} disabled={!amountOk} onPress={openUpiApp} testID="pay-open-upi-btn" />
-              <Button variant="outline" label={t.paySheet.alreadyPaid} disabled={!amountOk} onPress={() => { setError(''); setStep('confirm') }} testID="pay-already-paid-btn" />
+              <Text className="text-[15px] font-semibold text-foreground">{due[0].category_name} · {due[0].period_label}</Text>
+              <Text className="text-xs text-muted-foreground">{t.paySheet.balanceDue(inr(due[0].balance))}</Text>
             </>
-          )}
-
-          {upi && step === 'confirm' && (
+          ) : (
             <>
-              <Text className="text-center text-2xl font-bold text-foreground">{inr(amt)}</Text>
-              <Field label={t.paySheet.utrLabel} placeholder={t.paySheet.utrPlaceholder} value={ref} onChangeText={setRef} testID="pay-ref-input" />
-              {error ? <Alert>{error}</Alert> : null}
-              <Button label={t.paySheet.submitVerification} loading={busy} disabled={!refOk} onPress={submit} testID="pay-submit-btn" />
-              <Button variant="outline" label={t.paySheet.back} onPress={() => { setError(''); setStep('amount') }} testID="pay-back-btn" />
-            </>
-          )}
-
-          {step === 'done' && (
-            <View className="items-center gap-2 py-4">
-              <CheckCircle2 size={48} color="#10b981" />
-              <Text className="text-base font-semibold text-foreground">{t.paySheet.doneTitle}</Text>
-              {done && (
-                <View className="w-full flex-row justify-between rounded-xl bg-muted px-3 py-2">
-                  <View>
-                    <Text className="text-[11px] text-muted-foreground">{t.paySheet.receiptNumber}</Text>
-                    <Text selectable className="font-mono text-sm font-semibold text-foreground" testID="pay-receipt-number">{done.receipt_number}</Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="text-[11px] text-muted-foreground">{t.paySheet.amountPaid}</Text>
-                    <Text className="text-sm font-semibold text-foreground" testID="pay-receipt-amount">{inr(done.total_amount)}</Text>
-                    {done.entries_count > 1 && <Text className="text-[11px] text-muted-foreground">{t.paySheet.entriesCount(done.entries_count)}</Text>}
-                  </View>
+              <Text className="text-[15px] font-semibold text-foreground">{t.paySheet.entries(due.length)}</Text>
+              {due.map(r => (
+                <View key={r.id} className="flex-row justify-between gap-2">
+                  <Text className="flex-shrink text-xs text-muted-foreground">{r.category_name} · {r.period_label}</Text>
+                  <Text className="text-xs font-semibold text-muted-foreground">{inr(r.balance)}</Text>
                 </View>
-              )}
-              <Text className="text-center text-sm text-muted-foreground">{t.paySheet.doneHint(t.fees.statusAwaitingVerification)}</Text>
-              <View className="mt-2 w-full"><Button variant="outline" label={t.done} onPress={onClose} testID="pay-done-btn" /></View>
-            </View>
+              ))}
+            </>
           )}
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      )}
+      {upi === undefined && <Loading />}
+      {upi === null && <Alert tone="info">{t.paySheet.noUpi}</Alert>}
+
+      {upi && step === 'amount' && (
+        <>
+          <Field label={t.paySheet.amountLabel(inr(total))} icon={IndianRupee} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} testID="pay-amount-input"
+            error={amount && !amountOk ? t.paySheet.enterValidAmount : undefined} />
+          <View className="gap-0.5 rounded-2xl bg-muted px-4 py-3">
+            <Text className="text-xs text-muted-foreground">{t.paySheet.payingTo(upi.school_name)}</Text>
+            <Text selectable className="font-mono text-[15px] text-foreground" testID="pay-upi-id">{upi.upi_id}</Text>
+          </View>
+          {error ? <Alert tone="warning">{error}</Alert> : null}
+          <Button label={amountOk ? t.paySheet.payWithApp(inr(amt)) : t.paySheet.enterValidAmount} icon={Smartphone} disabled={!amountOk} onPress={openUpiApp} testID="pay-open-upi-btn" />
+          <Button variant="outline" label={t.paySheet.alreadyPaid} disabled={!amountOk} onPress={() => { setError(''); setStep('confirm') }} testID="pay-already-paid-btn" />
+        </>
+      )}
+
+      {upi && step === 'confirm' && (
+        <>
+          <View className="items-center rounded-2xl bg-muted py-4">
+            <Text className="text-[30px] font-bold tracking-tight text-foreground">{inr(amt)}</Text>
+            <Text className="text-xs text-muted-foreground">{t.paySheet.payingTo(upi.school_name)}</Text>
+          </View>
+          <Field label={t.paySheet.utrLabel} placeholder={t.paySheet.utrPlaceholder} value={ref} onChangeText={setRef} testID="pay-ref-input"
+            autoCapitalize="characters" returnKeyType="done" onSubmitEditing={() => { if (refOk) void submit() }} />
+          {error ? <Alert>{error}</Alert> : null}
+          <Button label={t.paySheet.submitVerification} loading={busy} disabled={!refOk} onPress={submit} testID="pay-submit-btn" />
+          <Button variant="ghost" label={t.paySheet.back} onPress={() => { setError(''); setStep('amount') }} testID="pay-back-btn" />
+        </>
+      )}
+
+      {step === 'done' && (
+        <View className="items-center gap-3 py-2">
+          <View className="size-16 items-center justify-center rounded-full bg-success-soft">
+            <CheckCircle2 size={34} color={c.success} />
+          </View>
+          {done && (
+            <View className="w-full flex-row justify-between rounded-2xl bg-muted px-4 py-3">
+              <View className="gap-0.5">
+                <Text className="text-xs text-muted-foreground">{t.paySheet.receiptNumber}</Text>
+                <Text selectable className="font-mono text-[15px] font-bold text-foreground" testID="pay-receipt-number">{done.receipt_number}</Text>
+              </View>
+              <View className="items-end gap-0.5">
+                <Text className="text-xs text-muted-foreground">{t.paySheet.amountPaid}</Text>
+                <Text className="text-[15px] font-bold text-foreground" testID="pay-receipt-amount">{inr(done.total_amount)}</Text>
+                {done.entries_count > 1 && <Text className="text-xs text-muted-foreground">{t.paySheet.entriesCount(done.entries_count)}</Text>}
+              </View>
+            </View>
+          )}
+          <Text className="text-center text-sm leading-5 text-muted-foreground">{t.paySheet.doneHint(t.fees.statusAwaitingVerification)}</Text>
+          <View className="mt-2 w-full"><Button label={t.done} onPress={onClose} testID="pay-done-btn" /></View>
+        </View>
+      )}
+    </Sheet>
   )
 }

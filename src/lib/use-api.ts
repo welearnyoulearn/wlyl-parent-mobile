@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError } from '@/lib/api'
 import { cachedResult, CacheResetError, loadCached } from '@/lib/request-cache'
 
@@ -35,6 +35,9 @@ export function useApi<T>(path: string | null) {
     return () => { live = false }
   }, [path, tick])
 
+  // Stable per path, so callers can put it in effect/focus dependencies.
+  const refresh = useCallback(() => { if (!path) return; forceRefresh.current = true; setRefreshing(true); setTick(t => t + 1) }, [path])
+
   const current = result?.path === path ? result : null
   return {
     data: current?.data ?? null,
@@ -43,6 +46,6 @@ export function useApi<T>(path: string | null) {
     status: current?.status ?? null,
     loading: path !== null && current === null,
     refreshing,
-    refresh: () => { if (!path) return; forceRefresh.current = true; setRefreshing(true); setTick(t => t + 1) },
+    refresh,
   }
 }

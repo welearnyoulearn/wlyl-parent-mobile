@@ -1,7 +1,7 @@
-import { Text, View, KeyboardAvoidingView, ScrollView } from 'react-native'
 import { useRouter } from 'expo-router'
+import { Cake } from 'lucide-react-native'
 import { BirthdayField } from '@/components/birthday-field'
-import { Panel, SafeAreaView } from '@/components/ui'
+import { AuthShell } from '@/components/auth-shell'
 import { useT } from '@/lib/i18n'
 
 // Shown once, right after the first-login password change, when /me has no
@@ -12,18 +12,8 @@ export default function BirthdayScreen() {
   const home = () => router.replace('/')
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
-      <KeyboardAvoidingView behavior="padding" className="flex-1">
-        <ScrollView contentContainerClassName="flex-grow justify-center p-6 gap-6" keyboardShouldPersistTaps="handled">
-          <View className="mb-2">
-            <Text accessibilityRole="header" className="text-2xl font-bold text-foreground text-center">{t.birthday.title}</Text>
-            <Text className="text-muted-foreground mt-2 text-center text-sm">{t.birthday.subtitle}</Text>
-          </View>
-          <Panel testID="birthday-screen">
-            <BirthdayField value={null} onSaved={home} onSkip={home} />
-          </Panel>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <AuthShell icon={Cake} title={t.birthday.title} subtitle={t.birthday.subtitle} step={{ n: 2, of: 2 }} testID="birthday-screen">
+      <BirthdayField value={null} onSaved={home} onSkip={home} />
+    </AuthShell>
   )
 }

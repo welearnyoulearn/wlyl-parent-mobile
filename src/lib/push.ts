@@ -10,8 +10,8 @@ import { useSession } from '@/stores/session'
 // Every use of expo-notifications lives in this file. On Android, Expo Go
 // (SDK 53+) throws as soon as expo-notifications is imported, which took the
 // whole app down; so it is only loaded where push can work (development or
-// store builds, and iOS). In Expo Go on Android the app runs without push.
-const pushSupported = !(Platform.OS === 'android' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient)
+// store builds, and iOS). In Expo Go on Android, and on web (no native module), the app runs without push.
+const pushSupported = Platform.OS !== 'web' && !(Platform.OS === 'android' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient)
 // ponytail: lazy require is the only way to avoid the import-time throw; a static import cannot be skipped.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Notifications: typeof import('expo-notifications') | null = pushSupported ? require('expo-notifications') : null

@@ -1,33 +1,33 @@
 import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import { CalendarCheck, CalendarRange, Flame, UserX, type LucideIcon } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { type Attendance, type AttendanceDay, attendanceStreak, day, longDay } from '@/lib/api'
-import { Screen, Loading, Section, Panel, Empty, Row, Chip, Alert, type Tone, type Tint, Divider, DateBadge, IconBadge } from '@/components/ui'
+import { Screen, Section, Panel, Empty, Row, Chip, ErrorState, ScreenSkeleton, type Tone, type Tint, Divider, DateBadge, Text } from '@/components/ui'
 import { MonthCalendar, shiftMonth, todayISO } from '@/components/month-calendar'
 import { useT, type Strings } from '@/lib/i18n'
 
 // Day colours follow the web AttendanceCalendar: green present, amber late, red absent, slate holiday/weekly off.
 const TONE: Record<string, { chip: Tone; cell: string; label: (t: Strings) => string }> = {
-  present: { chip: 'green', cell: 'bg-emerald-200', label: t => t.present },
-  late: { chip: 'amber', cell: 'bg-amber-200', label: t => t.late },
-  absent: { chip: 'red', cell: 'bg-rose-200', label: t => t.absent },
-  half: { chip: 'amber', cell: 'bg-orange-200', label: t => t.attendance.half },
-  holiday: { chip: 'blue', cell: 'bg-slate-300', label: t => t.attendance.holiday },
-  weekly_off: { chip: 'muted', cell: 'bg-slate-100', label: t => t.attendance.weeklyOff },
-  not_marked: { chip: 'muted', cell: 'border border-dashed border-gray-300', label: t => t.attendance.notMarked },
+  present: { chip: 'green', cell: 'bg-success-graphic/30', label: t => t.present },
+  late: { chip: 'amber', cell: 'bg-warning-graphic/35', label: t => t.late },
+  absent: { chip: 'red', cell: 'bg-danger-graphic/35', label: t => t.absent },
+  half: { chip: 'amber', cell: 'bg-warning-graphic/70', label: t => t.attendance.half },
+  holiday: { chip: 'blue', cell: 'bg-info-graphic/30', label: t => t.attendance.holiday },
+  weekly_off: { chip: 'muted', cell: 'bg-muted', label: t => t.attendance.weeklyOff },
+  not_marked: { chip: 'muted', cell: 'border border-dashed border-input', label: t => t.attendance.notMarked },
   future: { chip: 'muted', cell: '', label: t => t.attendance.upcoming },
-  before_joining: { chip: 'muted', cell: 'bg-gray-100', label: t => t.attendance.beforeJoining },
+  before_joining: { chip: 'muted', cell: 'bg-muted', label: t => t.attendance.beforeJoining },
 }
 const LEGEND = ['present', 'late', 'absent', 'half', 'holiday', 'weekly_off', 'not_marked']
 
 // Bands from guide §14.1: good ≥ 90, watch 75–89, low < 75, none when nothing is marked.
 function band(pct: number | null, t: Strings) {
   if (pct === null) return { text: t.attendance.bandNone, bg: 'bg-muted', fg: 'text-muted-foreground', value: 'text-foreground', tint: 'muted' as const }
-  if (pct >= 90) return { text: t.attendance.bandGood, bg: 'bg-emerald-50', fg: 'text-emerald-700', value: 'text-emerald-700', tint: 'green' as const }
-  if (pct >= 75) return { text: t.attendance.bandWatch, bg: 'bg-amber-50', fg: 'text-amber-700', value: 'text-amber-700', tint: 'amber' as const }
-  return { text: t.attendance.bandLow, bg: 'bg-rose-50', fg: 'text-rose-700', value: 'text-rose-700', tint: 'rose' as const }
+  if (pct >= 90) return { text: t.attendance.bandGood, bg: 'bg-success-soft', fg: 'text-success', value: 'text-success', tint: 'green' as const }
+  if (pct >= 75) return { text: t.attendance.bandWatch, bg: 'bg-warning-soft', fg: 'text-warning', value: 'text-warning', tint: 'amber' as const }
+  return { text: t.attendance.bandLow, bg: 'bg-danger-soft', fg: 'text-danger', value: 'text-danger', tint: 'rose' as const }
 }
 
 function dayDetail(d: AttendanceDay, t: Strings) {
@@ -43,23 +43,15 @@ function dayDetail(d: AttendanceDay, t: Strings) {
   }
 }
 
-// Stat card on a soft tint of its tone (white when neutral), with an icon chip.
-const STAT_BG: Record<Tint, string> = {
-  teal: 'border-teal-100 bg-teal-50', green: 'border-emerald-100 bg-emerald-50', amber: 'border-amber-100 bg-amber-50',
-  rose: 'border-rose-100 bg-rose-50', blue: 'border-sky-100 bg-sky-50', violet: 'border-violet-100 bg-violet-50', muted: 'border-border bg-card',
-}
-
-function Stat({ value, label, hint, valueClass = 'text-foreground', icon, tint = 'muted', testID }: {
-  value: string | number; label: string; hint?: string; valueClass?: string; icon: LucideIcon; tint?: Tint; testID: string
+// One number in the summary grid: what it is, the figure (coloured only for status), and a note.
+function Stat({ value, label, hint, valueClass = 'text-foreground', testID }: {
+  value: string | number; label: string; hint?: string; valueClass?: string; icon?: LucideIcon; tint?: Tint; testID: string
 }) {
   return (
-    <View className={`flex-1 gap-1 rounded-2xl border p-4 ${STAT_BG[tint]}`}>
-      <View className="mb-1 flex-row items-center gap-2">
-        <IconBadge icon={icon} tint={tint} size={32} round onTint />
-        <Text className="flex-1 text-xs font-semibold text-foreground" numberOfLines={1}>{label}</Text>
-      </View>
-      <Text testID={testID} className={`text-3xl font-extrabold tracking-tight ${valueClass}`}>{value}</Text>
-      {hint ? <Text className="text-[11px] text-muted-foreground">{hint}</Text> : null}
+    <View className="flex-1 gap-0.5 px-4 py-3">
+      <Text className="text-[13px] text-muted-foreground" numberOfLines={1}>{label}</Text>
+      <Text testID={testID} className={`text-2xl font-bold tracking-tight ${valueClass}`} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+      {hint ? <Text className="text-xs text-muted-foreground">{hint}</Text> : null}
     </View>
   )
 }
@@ -85,10 +77,10 @@ export default function AttendanceScreen() {
     setSelected(null)
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <Screen refreshing={refreshing} onRefresh={refresh} testID="attendance-screen">
-        <Alert>{error || t.attendance.loadError}</Alert>
+        <ErrorState message={error || t.attendance.loadError} onRetry={refresh} busy={refreshing} />
       </Screen>
     )
   }
@@ -96,7 +88,7 @@ export default function AttendanceScreen() {
   if (loading && !data) {
     return (
       <Screen testID="attendance-screen">
-        <Loading label={t.attendance.loading} />
+        <ScreenSkeleton />
       </Screen>
     )
   }
@@ -112,27 +104,28 @@ export default function AttendanceScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={refresh} testID="attendance-screen">
-      <View className="gap-3">
-        <View className="flex-row gap-3">
+      {/* Four numbers in one surface, split by hairlines, with the band message under them. */}
+      <Panel className="overflow-hidden">
+        <View className="flex-row">
           <Stat testID="att-summary-month-pct" value={s.pct === null ? '—' : `${s.pct}%`} valueClass={b.value} icon={CalendarCheck} tint={b.tint}
             label={t.thisMonth} hint={t.attendance.attendedOf(s.attended, s.marked)} />
           <Stat testID="att-summary-year-pct" value={data.yearToDate.summary.pct === null ? '—' : `${data.yearToDate.summary.pct}%`}
-            valueClass="text-teal-800" icon={CalendarRange} tint="teal"
+            valueClass="text-foreground" icon={CalendarRange} tint="teal"
             label={t.attendance.thisYear} hint={t.attendance.since(day(data.yearToDate.from))} />
         </View>
-        <View className="flex-row gap-3">
-          <Stat testID="att-summary-absent-days" value={data.month.absentDays} valueClass={data.month.absentDays > 0 ? 'text-rose-700' : 'text-foreground'}
+        <View className="h-px bg-border" />
+        <View className="flex-row">
+          <Stat testID="att-summary-absent-days" value={data.month.absentDays} valueClass={data.month.absentDays > 0 ? 'text-danger' : 'text-foreground'}
             icon={UserX} tint={data.month.absentDays > 0 ? 'rose' : 'muted'} label={t.attendance.daysAbsent} hint={data.month.halfDays > 0 ? t.attendance.plusHalfDays(data.month.halfDays) : undefined} />
           <Stat testID="att-summary-streak"
             value={streak} icon={Flame} tint={streak >= 5 ? 'amber' : 'muted'}
-            valueClass={streak >= 5 ? 'text-amber-700' : 'text-foreground'}
+            valueClass={streak >= 5 ? 'text-warning' : 'text-foreground'}
             label={t.attendance.streakTitle} hint={s.late > 0 ? t.attendance.lateThisMonth(s.late) : t.attendance.noLate} />
         </View>
-      </View>
-
-      <View testID="att-summary-message" accessibilityRole="text" className={`rounded-2xl px-4 py-3 ${b.bg}`}>
-        <Text className={`text-sm ${b.fg}`}>{b.text}</Text>
-      </View>
+        <View testID="att-summary-message" accessibilityRole="text" className={`px-4 py-3 ${b.bg}`}>
+          <Text className={`text-sm ${b.fg}`}>{b.text}</Text>
+        </View>
+      </Panel>
 
       <View className="gap-3">
         <MonthCalendar
@@ -174,7 +167,7 @@ export default function AttendanceScreen() {
             <Text className="text-xs text-muted-foreground">{t.attendance.trendHint}</Text>
             {[...data.trend].reverse().map(({ month: m, summary: ms }) => {
               const pct = ms.pct ?? 0
-              const fill = pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-teal-500' : 'bg-amber-500'
+              const fill = pct >= 90 ? 'bg-success-graphic' : pct >= 75 ? 'bg-primary' : 'bg-warning-graphic'
               return (
                 <View key={m} className="gap-1.5">
                   <View className="flex-row items-end justify-between">
@@ -183,8 +176,8 @@ export default function AttendanceScreen() {
                   </View>
                   <View className="relative h-2 w-full rounded-full bg-muted">
                     <View className={`h-full rounded-full ${fill}`} style={{ width: `${pct}%` }} />
-                    <View className="absolute -top-0.5 h-3 w-px bg-rose-500" style={{ left: '75%' }} />
-                    <View className="absolute -top-0.5 h-3 w-px bg-emerald-600" style={{ left: '90%' }} />
+                    <View className="absolute -top-0.5 h-3 w-px bg-danger-graphic" style={{ left: '75%' }} />
+                    <View className="absolute -top-0.5 h-3 w-px bg-success-graphic" style={{ left: '90%' }} />
                   </View>
                 </View>
               )

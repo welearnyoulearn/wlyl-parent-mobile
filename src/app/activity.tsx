@@ -1,20 +1,20 @@
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import { Stack } from 'expo-router'
 import { Activity, CheckCircle2, HelpCircle, LogIn, MonitorSmartphone, type LucideIcon } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { longDay, titleCase, type ActivityFeed } from '@/lib/api'
-import { Screen, Loading, Alert, Empty, Panel, Section, Row } from '@/components/ui'
+import { Screen, Loading, Alert, Empty, Panel, Section, Row, IconTile, type Tone, Text } from '@/components/ui'
 
 const SECTION: Record<string, string> = {
   dashboard: 'Home', timetable: 'Timetable', syllabus: 'Syllabus', library: 'Digital library', tasks: 'Homework',
   doubts: 'Ask a doubt', 'class-circle': 'Class circle', 'my-marks': 'Marks', profile: 'Profile', 'ai-hub': 'AI hub',
 }
 
-const KIND: Record<string, { Icon: LucideIcon, bg: string, text: string, label: string }> = {
-  task_submit: { Icon: CheckCircle2, bg: 'bg-emerald-50', text: '#047857', label: 'Submitted homework' },
-  doubt: { Icon: HelpCircle, bg: 'bg-violet-50', text: '#6d28d9', label: 'Asked a doubt' },
-  login: { Icon: LogIn, bg: 'bg-sky-50', text: '#0369a1', label: 'Opened the student app' },
+const KIND: Record<string, { Icon: LucideIcon, tone: Tone, label: string }> = {
+  task_submit: { Icon: CheckCircle2, tone: 'green', label: 'Submitted homework' },
+  doubt: { Icon: HelpCircle, tone: 'violet', label: 'Asked a doubt' },
+  login: { Icon: LogIn, tone: 'blue', label: 'Opened the student app' },
 }
 
 function duration(sec: number) {
@@ -97,7 +97,7 @@ export default function ActivityPage() {
                       </View>
                       <View className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
                         <View
-                          className="h-full rounded-full bg-teal-500"
+                          className="h-full rounded-full bg-primary"
                           style={{ width: `${Math.round((s.visits / max) * 100)}%` }}
                         />
                       </View>
@@ -109,12 +109,10 @@ export default function ActivityPage() {
             <Section title="Timeline">
               <Panel className="divide-y divide-border">
                 {data.timeline.map((t, i) => {
-                  const k = KIND[t.kind] || { Icon: Activity, bg: 'bg-muted', text: '#6b7280', label: titleCase(t.kind) }
+                  const k = KIND[t.kind] || { Icon: Activity, tone: 'muted', label: titleCase(t.kind) }
                   return (
                     <Row key={i}>
-                      <View className={`h-8 w-8 shrink-0 items-center justify-center rounded-full ${k.bg}`}>
-                        <k.Icon size={16} color={k.text} />
-                      </View>
+                      <IconTile icon={k.Icon} tone={k.tone} size="sm" />
                       <View className="flex-1">
                         <Text className="text-sm text-foreground">
                           {k.label}{t.title ? `: ${t.title}` : ''}

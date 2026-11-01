@@ -9,6 +9,8 @@ import { clearRequestCache, accountGeneration } from '@/lib/request-cache'
 
 export type Student = Child & { class_id: number }
 export type Lang = 'en' | 'te'
+// 'system' follows the phone's light/dark setting.
+export type ThemePref = 'system' | 'light' | 'dark'
 
 type SessionState = {
   me: Me | null
@@ -18,6 +20,8 @@ type SessionState = {
   features: Set<string> | null // enabled parent-portal feature keys; null = unknown (show all)
   childId: number | null
   lang: Lang
+  theme: ThemePref
+  lastLogin: LastLogin | null   // the last account signed in on this phone, to prefill sign-in
   loading: boolean
   error: string | null
   classError: string | null
@@ -29,6 +33,8 @@ type SessionState = {
   selectChild: (child: Child) => void
   has: (feature: string) => boolean
   setLang: (lang: Lang) => void
+  setTheme: (theme: ThemePref) => void
+  setLastLogin: (last: LastLogin | null) => void
   logout: () => Promise<void>
   setUsageSessionId: (id: number | null) => void
   keepAlive: () => Promise<void>
@@ -37,6 +43,8 @@ type SessionState = {
   heartbeat: () => void
   track: (navKey: string | null) => void
 }
+
+export type LastLogin = { identifier: string; name: string | null }
 
 // Usage nav keys the platform's analytics know, by app route.
 const NAV_KEYS: [RegExp, string][] = [
@@ -58,7 +66,7 @@ const ping = (path: string, body: object) => { void api(path, { method: 'POST', 
 export const useSession = create<SessionState>()(
   persist(
     (set, get) => ({
-      me: null, children: [], student: null, year: null, features: null, childId: null, lang: 'en', loading: true, error: null, classError: null, unauthorized: false, notice: null, locked: false, usageSessionId: null,
+      me: null, children: [], student: null, year: null, features: null, childId: null, lang: 'en', theme: 'system', lastLogin: null, loading: true, error: null, classError: null, unauthorized: false, notice: null, locked: false, usageSessionId: null,
 
       load(force = false) {
         const generation = accountGeneration()
@@ -121,6 +129,14 @@ export const useSession = create<SessionState>()(
         set({ lang })
       },
 
+      setTheme(theme) {
+        set({ theme })
+      },
+
+      setLastLogin(lastLogin) {
+        set({ lastLogin })
+      },
+
       async logout() {
         const usageSessionId = get().usageSessionId
         clearRequestCache()
@@ -178,7 +194,7 @@ export const useSession = create<SessionState>()(
       },
     }),
     // Only the selected child and language survive an app restart; everything else reloads from the API.
-    { name: 'wlyl-parent', storage: createJSONStorage(() => AsyncStorage), partialize: s => ({ childId: s.childId, lang: s.lang }) },
+    { name: 'wlyl-parent', storage: createJSONStorage(() => AsyncStorage), partialize: s => ({ childId: s.childId, lang: s.lang, theme: s.theme, lastLogin: s.lastLogin }) },
   ),
 )
 

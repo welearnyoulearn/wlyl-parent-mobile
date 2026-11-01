@@ -165,6 +165,76 @@ export type Notification = {
 }
 
 // code: the platform's machine-readable reason — PLAN_EXPIRED, FEATURE_DISABLED or access_revoked.
+// ── Daily Report, Daily Quiz, Rewards and Doubts (platform epic #430 / #450) ──
+// Shapes mirror lib/parentDailyReport.ts, lib/dailyQuiz.ts, lib/quizRewards.ts and lib/studentDoubts.ts.
+
+export type QuizDayStatus = 'no_quiz' | 'not_open_yet' | 'not_started' | 'in_progress' | 'completed' | 'completed_late' | 'missed'
+export type AttendanceDayWord = 'present' | 'absent' | 'late' | 'not_marked'
+// /api/parent/daily-report?student_id=&date= — a section is null when the school has that feature off.
+export type DailyReport = {
+  date: string; today: string
+  child: { name: string; grade: string; section: string }
+  attendance: AttendanceDayWord | null
+  quiz: { status: QuizDayStatus; subjects: string[]; closesAt: string | null } | null
+  quizWeek: { date: string; status: QuizDayStatus }[] | null
+  doubts: { waiting: number; answered: number; items: { id: number; subject: string; question: string; status: 'open' | 'explained'; askedAt: string }[] } | null
+  taught: { subject: string; topic: string }[] | null
+}
+/** How far back the Daily Report goes (REPORT_MAX_DAYS_BACK on the platform). */
+export const REPORT_MAX_DAYS_BACK = 30
+
+export type QuizAttemptSummary = { id: number; status: 'in_progress' | 'submitted'; isLate: boolean; answered: number; total: number; correct: number | null; answersVisible: boolean }
+export type QuizCard = { quizId: number; date: string; opensAt: string; closesAt: string; phase: 'upcoming' | 'open' | 'closed'; subjects: string[]; attempt: QuizAttemptSummary | null; canStartLate: boolean }
+// /api/parent/quiz/today?student_id=
+export type QuizToday = {
+  studentName: string; today: string
+  status: 'no_class' | 'grade_off' | 'out_of_season' | 'holiday' | 'quiz_day' | 'no_questions' | 'upcoming' | 'ready'
+  opensAt: string | null; closesAt: string | null; seasonStart?: string; seasonEnd?: string; holiday?: string
+  quiz: QuizCard | null
+  /** Missed quizzes of the last 7 days that can still be taken late. */
+  late: QuizCard[]
+  /** Finished quizzes of the last 7 days (today excluded), newest first. */
+  recent: QuizCard[]
+}
+export type QuizQuestion = {
+  itemId: number; position: number; subject: string; topic: string | null; stem: string; options: string[]; language: string
+  chosenIndex: number | null
+  // Only once answers are visible:
+  correctIndex?: number; explanation?: string | null; isCorrect?: boolean | null; questionId?: number
+}
+// /api/parent/quiz/attempts[/id] — the server never sends correct answers before the attempt is finished.
+export type QuizAttempt = {
+  attemptId: number; quizId: number; date: string; status: 'in_progress' | 'submitted'; isLate: boolean
+  closesAt: string; answersVisible: boolean; correct: number | null; total: number; questions: QuizQuestion[]
+}
+// /api/parent/quiz/progress?student_id= — a parent sees their child's place, the class average and the top 3 only.
+export type QuizProgress = {
+  studentName: string; totalPoints: number; weekPoints: number; streak: number
+  badges: { type: string; label: string; emoji: string; desc: string }[]
+  week: { weekStart: string; quizzes: number; finished: number; accuracy: number | null; strongest: { subject: string; pct: number } | null; weakest: { subject: string; pct: number } | null } | null
+  leaderboard: { me: { rank: number; points: number } | null; classSize: number; classAverage?: number; top: { rank: number; name: string; points: number; isMe: boolean }[] } | null
+  improved: { name: string; gain: number; isMe: boolean }[] | null
+  classGoal: { pct: number | null; goal: number; met: boolean; quizzes: number } | null
+}
+// /api/parent/doubts?student_id= — read-only for parents.
+export type Doubt = {
+  id: number; status: 'open' | 'explained' | 'clarified'; subject: string; topic: string | null; stem: string; options: string[]
+  correctIndex: number; chosenIndex: number | null; explanation: string | null; note: string | null
+  reply: string | null; repliedBy: string | null; explainedInClass: boolean; createdAt: string; explainedAt: string | null
+  clarifiedAt: string | null; waitingWorkingDays: number | null
+}
+
+/** A time in India (where every school is), e.g. "8:30 am". */
+export const istTime = (iso: string) => new Date(iso).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit' })
+/** A YYYY-MM-DD school date, e.g. "Mon, 3 Nov" (read as UTC so it never shifts a day). */
+export const istDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
+/** YYYY-MM-DD shifted by whole days. */
+export const shiftDate = (date: string, days: number) => {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 export class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string) { super(message) }
 }

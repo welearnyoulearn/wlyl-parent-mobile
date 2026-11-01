@@ -1,15 +1,16 @@
 import { ClassLoading } from '@/components/class-loading'
 import { useState } from 'react'
-import { ScrollView, View, Text, Pressable } from 'react-native'
+import { ScrollView, View, Pressable } from 'react-native'
 import { Stack } from 'expo-router'
 import { Coffee } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { DAYS, hhmm, type Timetable } from '@/lib/api'
-import { Screen, Loading, Alert, Empty, Panel, Row, Chip, Divider } from '@/components/ui'
+import { Screen, Loading, Alert, Empty, Panel, Row, Chip, Divider, useColors, Text } from '@/components/ui'
 
 export default function TimetableScreen() {
   const { student } = useSession()
+  const c = useColors()
   const [dayName, setDayName] = useState(DAYS[(new Date().getDay() + 6) % 7])
 
   const { data, error, status, loading, refreshing, refresh } = useApi<Timetable>(
@@ -51,9 +52,9 @@ export default function TimetableScreen() {
                   testID={`day-${d.toLowerCase()}`}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: d === dayName }}
-                  className={`rounded-full px-4 py-2 ${d === dayName ? 'bg-teal-700' : 'bg-card border border-border'}`}
+                  className={`rounded-full px-4 py-2 ${d === dayName ? 'bg-primary' : 'bg-card border border-border'}`}
                 >
-                  <Text className={`text-xs font-medium ${d === dayName ? 'text-white' : 'text-muted-foreground'}`}>
+                  <Text className={`text-xs font-medium ${d === dayName ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                     {d.slice(0, 3)}
                   </Text>
                 </Pressable>
@@ -70,7 +71,7 @@ export default function TimetableScreen() {
                   {i > 0 && <Divider />}
                   {p.is_break ? (
                     <Row className="bg-muted/40 py-2">
-                      <Coffee size={16} color="#6b7280" />
+                      <Coffee size={16} color={c.mutedForeground} />
                       <Text className="flex-1 text-xs text-muted-foreground">
                         {p.break_label ?? 'Break'} · {hhmm(p.time_from)}–{hhmm(p.time_to)}
                       </Text>

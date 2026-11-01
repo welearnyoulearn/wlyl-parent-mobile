@@ -1,43 +1,51 @@
+import { Fragment, useState, type ReactNode } from 'react'
 import { ClassLoading } from '@/components/class-loading'
-import { useState, type ReactNode } from 'react'
-import { Linking, Pressable, Text, View } from 'react-native'
+import { Linking, Pressable, View } from 'react-native'
 import { useIsFocused, useRouter } from 'expo-router'
-import { AlertTriangle, CalendarCheck, CalendarDays, ChevronRight, GraduationCap, Headset, Megaphone, Phone, School, Wallet } from 'lucide-react-native'
+import { ChevronRight, GraduationCap, Phone } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
-import { day, longDay, inr, telHref, type SchoolCalendar, type SchoolContacts, type Fees, type Summary } from '@/lib/api'
+import { day, inr, longDay, telHref, type DailyReport, type SchoolCalendar, type SchoolContacts, type Fees, type Summary } from '@/lib/api'
 import { localised, needsPopup } from '@/lib/notices'
 import { NoticeModal, NoticeRow, useNotices } from '@/components/notices'
 import { QuickLinks } from '@/components/quick-links'
-import { Screen, Loading, Panel, Section, Row, Divider, Chip, Alert, Empty, Ring, Avatar, IconBadge, DateBadge, CARD_SHADOW } from '@/components/ui'
-import { useT } from '@/lib/i18n'
+import { Screen, Panel, Section, Divider, Alert, Empty, Ring, Skeleton, ScreenSkeleton, FadeInView, DateBadge, Text, useColors } from '@/components/ui'
+import { useT, type Strings } from '@/lib/i18n'
 
-// One Contact & Support row: avatar, who, their role, and a call button when there is a number.
-function Contact({ id, name, role, phone, lead }: { id: string; name: string; role: string; phone: string | null; lead: ReactNode }) {
-  const t = useT()
+// Home answers one question: what does this child need from me today?
+// Three numbers at a glance, the things to act on, then what's coming. Each fact appears once.
+
+function daysUntil(d: string, t: Strings) {
+  const n = Math.ceil((new Date(d).getTime() - Date.now()) / 86400000)
+  return n <= 0 ? t.today : n === 1 ? t.tomorrow : t.exams.inDays(n)
+}
+
+// One tile of the glance row, tinted in its area's colour: a figure and what it is. Tap to open the detail.
+function Glance({ label, value, hint, tone = 'text-foreground', bg, onPress, testID, children }: {
+  label: string; value: string; hint?: string; tone?: string; bg: string; onPress: () => void; testID: string; children?: ReactNode
+}) {
   return (
-    <Row className="py-3.5">
-      {lead}
-      <View className="flex-1">
-        <Text className="text-sm font-medium text-foreground" numberOfLines={1}>{name}</Text>
-        <Text className="text-xs text-muted-foreground">{role}</Text>
+    <Pressable onPress={onPress} testID={testID} accessibilityRole="button" accessibilityLabel={`${label}: ${value}${hint ? `, ${hint}` : ''}`}
+      className={`flex-1 gap-1 rounded-2xl px-3 py-3.5 active:opacity-75 ${bg}`}>
+      <Text className="text-xs font-medium text-foreground/70" numberOfLines={1}>{label}</Text>
+      <View className="flex-row items-center gap-1.5">
+        {children}
+        <Text className={`shrink text-xl font-bold tracking-tight ${tone}`} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
       </View>
-      {phone && (
-        <Pressable onPress={() => void Linking.openURL(telHref(phone)).catch(() => null)} testID={`call-${id}`}
-          accessibilityRole="button" accessibilityLabel={t.home.call(name)} hitSlop={6}
-          className="size-11 items-center justify-center rounded-full bg-emerald-600 active:bg-emerald-700">
-          <Phone size={18} color="#fff" />
-        </Pressable>
-      )}
-    </Row>
+      {hint ? <Text className="text-xs text-foreground/60" numberOfLines={1}>{hint}</Text> : null}
+    </Pressable>
   )
 }
+
+const DOT = { red: 'bg-danger-graphic', amber: 'bg-warning-graphic', violet: 'bg-accent', teal: 'bg-primary' } as const
+type Task = { key: string; dot: keyof typeof DOT; title: string; hint: string; onPress: () => void }
 
 export default function HomePage() {
   const { student, has, lang } = useSession()
   const router = useRouter()
   const focused = useIsFocused()
   const t = useT()
+  const c = useColors()
 
   const q = student && student.class_id > 0 ? `school_id=${student.school_id}&student_id=${student.id}&class_id=${student.class_id}` : null
 
@@ -48,8 +56,11 @@ export default function HomePage() {
   const { data: eventsObj, error: er5, refreshing: r5, refresh: ref5 } = useApi<SchoolCalendar>(
     student ? `/api/school-calendar?school_id=${student.school_id}&year=${new Date().getFullYear()}` : null
   )
-  // Same request as the Syllabus screen; contact details are optional, so failures just hide the card.
+  // Same request as the Syllabus screen; contact details are optional, so failures just hide them.
   const { data: contact, refreshing: r6, refresh: ref6 } = useApi<SchoolContacts>(student ? `/api/parent/subjects?student_id=${student.id}` : null)
+  // The child's day (#430): quiz done or not and open doubts, as on the web's parent home. Parents
+  // only follow the quiz; the child takes it in the student portal.
+  const { data: report } = useApi<DailyReport>(student && has('daily-quiz') ? `/api/parent/daily-report?student_id=${student.id}` : null)
   const [openId, setOpenId] = useState<number | null>(null)
   // Unseen urgent / action-needed / greeting notices open by themselves, one at a time
   // (opening marks it seen, so closing it brings up the next).
@@ -60,193 +71,198 @@ export default function HomePage() {
   const error = er1 || er2 || er4 || er5
   const onRefresh = () => { ref1(); ref2(); ref4(); ref5(); ref6() }
 
-  if (!student) {
-    return (
-      <Screen testID="home-screen">
-        <Loading />
-      </Screen>
-    )
-  }
+  if (!student) return <Screen testID="home-screen"><ScreenSkeleton /></Screen>
 
   const fees = feesData?.summary ?? null
   const news = notices.items ?? []
   const openNotice = news.find(n => n.id === openId) ?? null
-
   const todayIso = new Date().toISOString().slice(0, 10)
   const events = (eventsObj?.events ?? [])
     .filter(e => (e.end_date ?? e.event_date) >= todayIso)
     .sort((a, b) => a.event_date.localeCompare(b.event_date))
-    .slice(0, 3)
-
+    .slice(0, 4)
   const pending = summary?.released_results.filter(r => !r.parent_acknowledged) ?? []
   const latest = summary?.released_results[0]
+  const upcoming = summary?.upcoming_exams ?? []
+  const nextExam = upcoming[0]
+  const attendancePct = summary?.attendance_pct ?? null
 
-  const attention: { key: string; text: string; hint: string; onPress?: () => void }[] = []
-  if (fees && fees.overdue_count > 0) {
-    attention.push({ key: 'overdue', text: t.home.feesOverdue(fees.overdue_count, inr(fees.total_outstanding)), hint: t.home.tapToPay, onPress: () => router.push('/fees') })
-  }
-  if (pending.length > 0) {
-    attention.push({ key: 'ack', text: t.home.resultsWaiting(pending.length), hint: t.home.tapToViewMarkSheet, onPress: () => router.push('/exams') })
-  }
-  news.filter(n => n.priority === 'urgent').forEach(n => {
-    attention.push({ key: `news-${n.id}`, text: localised(n, lang).title, hint: t.notices.title, onPress: () => setOpenId(n.id) })
+  // The things only the parent can do, most urgent first.
+  const tasks: Task[] = []
+  const quizStatus = report?.quiz && report.quiz.status !== 'no_quiz' ? report.quiz.status : null
+  const openDoubts = report?.doubts ? report.doubts.waiting + report.doubts.answered : 0
+  const dayParts = [quizStatus && `${t.dailyReport.quiz}: ${t.quiz.status[quizStatus]}`, openDoubts > 0 && t.dailyReport.homeDoubts(openDoubts)].filter(Boolean)
+  if (dayParts.length) tasks.push({
+    key: 'day', dot: quizStatus === 'missed' ? 'red' : quizStatus === 'in_progress' || quizStatus === 'not_started' || openDoubts > 0 ? 'amber' : 'teal',
+    title: dayParts.join(' · '), hint: t.dailyReport.open, onPress: () => router.push('/daily-report'),
   })
-  const due = fees ? fees.total_outstanding > 0 : null
-  const feeTone = due === null ? 'border-border bg-card' : !due ? 'border-emerald-100 bg-emerald-50' : fees!.overdue_count > 0 ? 'border-rose-100 bg-rose-50' : 'border-amber-100 bg-amber-50'
-  const feeFg = due === null ? ['text-foreground', 'text-muted-foreground', '#6b7280'] : !due ? ['text-emerald-900', 'text-emerald-700', '#047857']
-    : fees!.overdue_count > 0 ? ['text-rose-900', 'text-rose-700', '#be123c'] : ['text-amber-900', 'text-amber-700', '#b45309']
+  if (fees && fees.overdue_count > 0) tasks.push({ key: 'overdue', dot: 'red', title: t.home.feesOverdue(fees.overdue_count, inr(fees.total_outstanding)), hint: t.home.tapToPay, onPress: () => router.push('/fees') })
+  if (pending.length > 0) tasks.push({ key: 'ack', dot: 'amber', title: t.home.resultsWaiting(pending.length), hint: t.exams.signOffNeeded, onPress: () => router.push('/exams') })
+  news.filter(n => n.priority === 'urgent').forEach(n => tasks.push({ key: `news-${n.id}`, dot: 'red', title: localised(n, lang).title, hint: t.urgent, onPress: () => setOpenId(n.id) }))
+
+  const glance = [has('attendance'), has('fee-management'), has('exam-marks')].filter(Boolean).length
 
   return (
     <Screen testID="home-screen" refreshing={refreshing} onRefresh={onRefresh}>
-      {error && <Alert>{error}</Alert>}
+      {error && <Alert action={{ label: t.tryAgain, onPress: onRefresh, testID: 'home-retry' }}>{error}</Alert>}
 
-      {attention.length > 0 && (
-        <View className="gap-2">
-          {attention.map(a => (
-            <Pressable
-              key={a.key}
-              testID={`attention-${a.key}`}
-              onPress={a.onPress}
-              accessibilityRole={a.onPress ? 'button' : 'none'}
-              style={CARD_SHADOW}
-              className="flex-row items-center gap-3 rounded-2xl border border-amber-200 bg-card px-4 py-3.5 active:bg-muted"
-            >
-              <IconBadge icon={AlertTriangle} tint="amber" size={40} round />
-              <View className="flex-1 gap-0.5">
-                <Text className="text-sm font-semibold text-foreground">{a.text}</Text>
-                <Text className="text-xs text-muted-foreground">{a.hint}</Text>
-              </View>
-              {a.onPress && <ChevronRight size={18} color="#9ca3af" />}
-            </Pressable>
-          ))}
-        </View>
-      )}
-
-      <View className="flex-row gap-3">
-        {has('attendance') && (
-          <Pressable className="flex-1 gap-2 rounded-2xl border border-teal-100 bg-teal-50 p-4 active:opacity-90" testID="tile-attendance"
-            accessibilityRole="button" onPress={() => router.push('/attendance')}>
-            <View className="flex-row items-center gap-2.5">
-              <Ring pct={summary ? summary.attendance_pct : null} size={40} stroke={4}>
-                <CalendarCheck size={16} color="#0f766e" />
-              </Ring>
-              <View className="flex-1">
-                <Text className="text-xs font-semibold text-teal-900" numberOfLines={1}>{t.home.attendance}</Text>
-                <Text className="text-[11px] text-teal-700" numberOfLines={1}>{t.thisMonth}</Text>
-              </View>
-            </View>
-            <Text className="text-3xl font-extrabold tracking-tight text-teal-900">
-              {summary ? (summary.attendance_pct === null ? '—' : `${Math.round(summary.attendance_pct)}%`) : '…'}
-            </Text>
-          </Pressable>
+      {/* Keyed by child, so switching child fades the whole page over instead of jumping. */}
+      <FadeInView key={student.id} className="gap-6">
+        {glance > 0 && (
+          <View className="flex-row gap-2" testID="home-glance">
+            {has('attendance') && (
+              <Glance label={t.home.attendance} testID="tile-attendance" bg="bg-primary-soft" tone="text-primary" onPress={() => router.push('/attendance')}
+                value={attendancePct === null ? '—' : `${Math.round(attendancePct)}%`} hint={t.home.attendanceSub}>
+                {summary ? <Ring pct={attendancePct} size={18} stroke={3} /> : <Skeleton className="size-[18px] rounded-full" />}
+              </Glance>
+            )}
+            {has('fee-management') && (
+              <Glance label={t.home.feesDue} testID="tile-fees" onPress={() => router.push('/fees')}
+                value={fees ? inr(fees.total_outstanding) : '—'} tone={fees && fees.overdue_count > 0 ? 'text-danger' : 'text-success'}
+                bg={fees && fees.overdue_count > 0 ? 'bg-danger-soft' : 'bg-success-soft'}
+                hint={fees && fees.total_outstanding === 0 ? t.home.feesClear : t.home.tapToPay} />
+            )}
+            {has('exam-marks') && (
+              <Glance label={t.home.nextExam} testID="tile-next-exam" bg="bg-accent-soft" tone="text-accent" onPress={() => router.push('/exams')}
+                value={nextExam ? daysUntil(nextExam.exam_date, t) : '—'} hint={nextExam ? nextExam.exam_name : t.home.noUpcoming} />
+            )}
+          </View>
         )}
 
-        {has('fee-management') && (
-          <Pressable className={`flex-1 gap-2 rounded-2xl border p-4 active:opacity-90 ${feeTone}`} testID="tile-fees"
-            accessibilityRole="button" onPress={() => router.push('/fees')}>
-            <View className="flex-row items-center gap-2.5">
-              <View className="size-10 items-center justify-center rounded-full bg-white">
-                <Wallet size={18} color={feeFg[2]} />
-              </View>
-              <View className="flex-1">
-                <Text className={`text-xs font-semibold ${feeFg[0]}`} numberOfLines={1}>{t.home.feesDue}</Text>
-                <Text className={`text-[11px] ${feeFg[1]}`} numberOfLines={1}>{fees === null ? ' ' : fees.total_outstanding > 0 ? t.home.tapToPay : t.allClear}</Text>
-              </View>
-            </View>
-            <Text className={`text-3xl font-extrabold tracking-tight ${feeFg[0]}`} numberOfLines={1} adjustsFontSizeToFit>{fees ? inr(fees.total_outstanding) : '—'}</Text>
-          </Pressable>
-        )}
-      </View>
-
-      <QuickLinks />
-
-      {(contact?.class_teacher || contact?.school) && (
-        <Section title={t.home.contactTitle} icon={Headset}>
-          <Panel className="overflow-hidden">
-            {contact.class_teacher && <Contact id="class-teacher" name={contact.class_teacher.name} role={t.home.classTeacher} phone={contact.class_teacher.phone}
-              lead={<Avatar name={contact.class_teacher.name} className="size-11 bg-violet-100" textClassName="text-sm text-violet-800" />} />}
-            {contact.class_teacher && contact.school && <Divider />}
-            {contact.school && <Contact id="administration" name={contact.school.name} role={t.home.schoolAdmin} phone={contact.school.phone}
-              lead={<IconBadge icon={School} tint="blue" size={44} round />} />}
-            {contact.school?.address && <Text className="-mt-1.5 pb-3.5 pl-[72px] pr-4 text-xs text-muted-foreground">{contact.school.address}</Text>}
-          </Panel>
-        </Section>
-      )}
-
-      {has('exam-marks') && (
-        <Section title={t.home.examsTitle} icon={GraduationCap} action={{ label: t.seeAll, testID: 'see-all-exams', onPress: () => router.push('/exams') }}>
-          {summary === null ? (student.class_id === 0 ? <ClassLoading /> : <Loading />) : (
-            <View className="gap-2">
-              {latest && (
-                <Pressable testID="latest-result" onPress={() => router.push({ pathname: '/exam/[id]', params: { id: String(latest.id) } })}>
-                  <Panel className="flex-row items-center gap-3 p-3.5">
-                    {(() => {
-                      const p = latest.total_obtained !== null && latest.total_max ? Math.round((latest.total_obtained / latest.total_max) * 100) : null
-                      return (
-                        <Ring pct={p} size={54} stroke={6}>
-                          <Text className="text-xs font-bold text-foreground">{p === null ? '—' : `${p}%`}</Text>
-                        </Ring>
-                      )
-                    })()}
-                    <View className="flex-1">
-                      <Text className="text-[11px] text-muted-foreground">{t.home.latestResult}</Text>
-                      <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{latest.exam_name}</Text>
-                      <Text className="text-[11px] text-muted-foreground">{latest.parent_acknowledged ? t.acknowledged : t.home.tapToViewMarkSheet}</Text>
+        {tasks.length > 0 && (
+          <Section title={t.home.needsAttention}>
+            <Panel className="overflow-hidden">
+              {tasks.map((a, i) => (
+                <Fragment key={a.key}>
+                  {i > 0 && <Divider />}
+                  <Pressable testID={`attention-${a.key}`} onPress={a.onPress} accessibilityRole="button" accessibilityLabel={`${a.title}. ${a.hint}`}
+                    className="min-h-14 flex-row items-center gap-3 px-4 py-3 active:bg-muted">
+                    <View className={`size-2 rounded-full ${DOT[a.dot]}`} />
+                    <View className="flex-1 gap-0.5">
+                      <Text className="text-[15px] leading-5 text-foreground">{a.title}</Text>
+                      <Text className="text-[13px] text-muted-foreground">{a.hint}</Text>
                     </View>
-                    <ChevronRight size={16} color="#9ca3af" />
-                  </Panel>
-                </Pressable>
-              )}
-
-              {summary.upcoming_exams.slice(0, 2).map((e) => (
-                <Panel key={e.id} className="flex-row items-center gap-3 p-3.5">
-                  <DateBadge date={e.exam_date} tint="violet" />
-                  <View className="flex-1">
-                    <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{e.exam_name}</Text>
-                    <Text className="text-[11px] text-muted-foreground">{t.examType[e.exam_type] ?? e.exam_type} · {t.home.subjectsCount(e.total_subjects)}</Text>
-                  </View>
-                  <Chip tone="blue">{day(e.exam_date)}</Chip>
-                </Panel>
+                    <ChevronRight size={18} color={c.subtle} />
+                  </Pressable>
+                </Fragment>
               ))}
-              {!latest && summary.upcoming_exams.length === 0 && <Empty icon={CalendarDays} title={t.home.noExamsYet} />}
-            </View>
-          )}
-        </Section>
-      )}
+            </Panel>
+          </Section>
+        )}
 
-      {news.length > 0 && (
-        <Section title={t.notices.title} icon={Megaphone} action={{ label: t.notices.viewAll(news.length), testID: 'notice-viewall', onPress: () => router.push('/notices') }}>
-          <Panel className="overflow-hidden">
-            {news.slice(0, 4).map((n, i, arr) => (
-              <View key={n.id}>
-                <NoticeRow notice={n} onPress={() => setOpenId(n.id)} />
-                {i < arr.length - 1 && <Divider />}
-              </View>
-            ))}
-          </Panel>
-        </Section>
-      )}
+        <QuickLinks />
 
-      {events.length > 0 && (
-        <Section title={t.home.comingUp} icon={CalendarDays}>
-          <Panel className="overflow-hidden">
-            {events.map((e, i, arr) => (
-              <View key={e.id}>
-                <Row>
-                  <DateBadge date={e.event_date} tint={e.event_type === 'holiday' ? 'green' : e.event_type === 'exam' ? 'rose' : 'blue'} />
-                  <View className="flex-1">
-                    <Text className="text-sm font-semibold text-foreground">{e.title}</Text>
-                    <Text className="text-xs text-muted-foreground">{longDay(e.event_date)}{e.end_date ? ` – ${day(e.end_date)}` : ''}</Text>
+        {has('exam-marks') && (
+          <Section title={t.home.examsTitle} action={{ label: t.seeAll, testID: 'see-all-exams', onPress: () => router.push('/exams') }}>
+            {summary === null ? (student.class_id === 0 ? <ClassLoading /> : <Skeleton className="h-28 w-full rounded-2xl" />) : (
+              latest || upcoming.length ? (
+                <Panel className="overflow-hidden">
+                  {latest && (
+                    <Pressable testID="latest-result" accessibilityRole="button" onPress={() => router.push({ pathname: '/exam/[id]', params: { id: String(latest.id) } })}
+                      className="min-h-14 flex-row items-center gap-3 px-4 py-3 active:bg-muted">
+                      {(() => {
+                        const p = latest.total_obtained !== null && latest.total_max ? Math.round((latest.total_obtained / latest.total_max) * 100) : null
+                        return <Ring pct={p} size={40} stroke={4}><Text className="text-[11px] font-bold text-foreground">{p === null ? '—' : `${p}%`}</Text></Ring>
+                      })()}
+                      <View className="flex-1 gap-0.5">
+                        <Text className="text-[15px] text-foreground" numberOfLines={1}>{latest.exam_name}</Text>
+                        <Text className={`text-[13px] ${latest.parent_acknowledged ? 'text-muted-foreground' : 'font-medium text-warning'}`}>
+                          {t.home.latestResult} · {latest.parent_acknowledged ? t.acknowledged : t.exams.signOffNeeded}
+                        </Text>
+                      </View>
+                      <ChevronRight size={18} color={c.subtle} />
+                    </Pressable>
+                  )}
+                  {upcoming.slice(0, 3).map((e, i) => (
+                    <Fragment key={e.id}>
+                      {(latest || i > 0) && <Divider />}
+                      <View className="min-h-14 flex-row items-center gap-3 px-4 py-2.5">
+                        <DateBadge date={e.exam_date} />
+                        <View className="flex-1 gap-0.5">
+                          <Text className="text-[15px] text-foreground" numberOfLines={1}>{e.exam_name}</Text>
+                          <Text className="text-[13px] text-muted-foreground" numberOfLines={1}>{t.examType[e.exam_type] ?? e.exam_type} · {t.home.subjectsCount(e.total_subjects)}</Text>
+                        </View>
+                        <Text className="text-[13px] font-medium text-accent">{daysUntil(e.exam_date, t)}</Text>
+                      </View>
+                    </Fragment>
+                  ))}
+                </Panel>
+              ) : <Empty icon={GraduationCap} title={t.home.noExamsYet} />
+            )}
+          </Section>
+        )}
+
+        {news.length > 0 && (
+          <Section title={t.notices.title} action={{ label: t.notices.viewAll(news.length), testID: 'notice-viewall', onPress: () => router.push('/notices') }}>
+            <Panel className="overflow-hidden">
+              {news.slice(0, 4).map((n, i, arr) => (
+                <View key={n.id}>
+                  <NoticeRow notice={n} onPress={() => setOpenId(n.id)} />
+                  {i < arr.length - 1 && <Divider />}
+                </View>
+              ))}
+            </Panel>
+          </Section>
+        )}
+
+        {events.length > 0 && (
+          <Section title={t.home.comingUp} action={has('calendar') ? { label: t.screenTitles.calendar, testID: 'see-calendar', onPress: () => router.push('/calendar') } : undefined}>
+            <Panel className="overflow-hidden">
+              {events.map((e, i) => (
+                <Fragment key={e.id}>
+                  {i > 0 && <Divider />}
+                  <View className="min-h-14 flex-row items-center gap-3 px-4 py-2.5">
+                    <DateBadge date={e.event_date} />
+                    <View className="flex-1 gap-0.5">
+                      <Text className="text-[15px] text-foreground" numberOfLines={2}>{e.title}</Text>
+                      <Text className="text-[13px] text-muted-foreground">{longDay(e.event_date)}{e.end_date ? ` – ${day(e.end_date)}` : ''}</Text>
+                    </View>
+                    {e.event_type === 'holiday' && <Text className="text-[13px] font-medium text-success">{t.attendance.holiday}</Text>}
                   </View>
-                </Row>
-                {i < arr.length - 1 && <Divider />}
-              </View>
-            ))}
-          </Panel>
-        </Section>
-      )}
+                </Fragment>
+              ))}
+            </Panel>
+          </Section>
+        )}
+
+        {(contact?.class_teacher || contact?.school) && (
+          <Section title={t.home.contactTitle}>
+            <Panel className="overflow-hidden">
+              {contact.class_teacher && (
+                <Contact id="class-teacher" name={contact.class_teacher.name} role={t.home.classTeacher} phone={contact.class_teacher.phone} />
+              )}
+              {contact.class_teacher && contact.school && <Divider />}
+              {contact.school && (
+                <Contact id="administration" name={contact.school.name} role={t.home.schoolAdmin} phone={contact.school.phone} address={contact.school.address} />
+              )}
+            </Panel>
+          </Section>
+        )}
+      </FadeInView>
 
       {openNotice && <NoticeModal notice={openNotice} onClose={() => setOpenId(null)} />}
     </Screen>
+  )
+}
+
+// One Contact & Support row: who, their role, the address when there is one, and a call button.
+function Contact({ id, name, role, phone, address }: { id: string; name: string; role: string; phone: string | null; address?: string | null }) {
+  const t = useT()
+  const c = useColors()
+  return (
+    <View className="min-h-14 flex-row items-center gap-3 px-4 py-3">
+      <View className="flex-1 gap-0.5">
+        <Text className="text-[15px] text-foreground" numberOfLines={1}>{name}</Text>
+        <Text className="text-[13px] text-muted-foreground">{role}</Text>
+        {address ? <Text className="text-[13px] leading-4 text-muted-foreground">{address}</Text> : null}
+      </View>
+      {phone && (
+        <Pressable onPress={() => void Linking.openURL(telHref(phone)).catch(() => null)} testID={`call-${id}`}
+          accessibilityRole="button" accessibilityLabel={t.home.call(name)} hitSlop={8}
+          className="size-11 items-center justify-center rounded-full bg-primary-soft active:opacity-60">
+          <Phone size={19} color={c.primary} />
+        </Pressable>
+      )}
+    </View>
   )
 }

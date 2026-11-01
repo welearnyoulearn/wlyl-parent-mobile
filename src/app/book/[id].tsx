@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Alert as RNAlert, Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { WebView } from 'react-native-webview'
 import * as ScreenOrientation from 'expo-screen-orientation'
 import { BookOpen, RotateCw, Trash2 } from 'lucide-react-native'
 import { downloadBook, deleteBook, isDownloaded, readerUri, libraryDirUri } from '@/lib/books'
-import { Screen, Alert, Button, COLORS, SafeAreaView, Loading } from '@/components/ui'
+import { Screen, ErrorState, SafeAreaView, Loading, Bar, ConfirmDialog, IconTile, useColors, Text } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 // Error markers translated at render time (the download effect must not re-run on a language switch).
@@ -24,6 +24,8 @@ export default function BookScreen() {
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [landscape, setLandscape] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const c = useColors()
 
   // The app is portrait-only; the reader alone can turn sideways for landscape books.
   useEffect(() => {
@@ -51,28 +53,36 @@ export default function BookScreen() {
     return () => abort.abort()
   }, [id, url, attempt])
 
-  function confirmDelete() {
-    RNAlert.alert(t.book.removeTitle, t.book.removeMessage, [
-      { text: t.cancel, style: 'cancel' },
-      { text: t.book.remove, style: 'destructive', onPress: () => { deleteBook(id); router.back() } },
-    ])
-  }
 
   const header = (
     <Stack.Screen options={{
       title: title ?? t.book.titleFallback,
       headerRight: uri ? () => (
-        <View className="flex-row items-center gap-6">
-          <Pressable onPress={() => setLandscape(l => !l)} hitSlop={12} testID="book-rotate" accessibilityRole="button"
-            accessibilityLabel={landscape ? t.book.readPortrait : t.book.readLandscape}>
-            <RotateCw size={20} color={COLORS.primary} />
+        <View className="flex-row items-center gap-1">
+          <Pressable onPress={() => setLandscape(l => !l)} hitSlop={6} testID="book-rotate" accessibilityRole="button"
+            accessibilityLabel={landscape ? t.book.readPortrait : t.book.readLandscape}
+            className="size-11 items-center justify-center rounded-full active:bg-white/15">
+            <RotateCw size={20} color={c.onBrand} />
           </Pressable>
-          <Pressable onPress={confirmDelete} hitSlop={12} testID="book-delete" accessibilityRole="button" accessibilityLabel={t.book.removeDownload}>
-            <Trash2 size={20} color={COLORS.red} />
+          <Pressable onPress={() => setConfirming(true)} hitSlop={6} testID="book-delete" accessibilityRole="button" accessibilityLabel={t.book.removeDownload}
+            className="size-11 items-center justify-center rounded-full active:bg-white/15">
+            <Trash2 size={20} color={c.onBrand} />
           </Pressable>
         </View>
       ) : undefined,
     }} />
+  )
+
+  const dialog = (
+    <ConfirmDialog
+      visible={confirming}
+      title={t.book.removeTitle}
+      message={t.book.removeMessage}
+      confirmLabel={t.book.remove}
+      onConfirm={() => { setConfirming(false); deleteBook(id); router.back() }}
+      onCancel={() => setConfirming(false)}
+      testID="book-delete-confirm"
+    />
   )
 
   if (error) {
@@ -80,10 +90,8 @@ export default function BookScreen() {
       <>
         {header}
         <Screen>
-          <Alert>{t.book.downloadErrorPrefix(error === NO_LINK ? t.book.noLink : error === FAILED ? t.book.downloadFailed : error)}</Alert>
-          <View className="mt-4">
-            <Button label={t.tryAgain} onPress={() => setAttempt(a => a + 1)} testID="book-retry" />
-          </View>
+          <ErrorState message={t.book.downloadErrorPrefix(error === NO_LINK ? t.book.noLink : error === FAILED ? t.book.downloadFailed : error)}
+            onRetry={error === NO_LINK ? undefined : () => setAttempt(a => a + 1)} />
         </Screen>
       </>
     )
@@ -95,15 +103,12 @@ export default function BookScreen() {
       <>
         {header}
         <View className="flex-1 items-center justify-center gap-4 bg-background px-10" testID="book-downloading">
-          <View className="h-14 w-14 items-center justify-center rounded-2xl bg-teal-50">
-            <BookOpen size={26} color="#0f766e" />
-          </View>
+          <IconTile icon={BookOpen} tone="violet" size="lg" />
           <Text className="text-center text-base font-semibold text-foreground">{title ?? t.book.titleFallback}</Text>
-          <View className="h-2 w-full overflow-hidden rounded-full bg-muted"
-            accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: pct ?? undefined }}>
-            <View className="h-full rounded-full bg-primary" style={{ width: `${pct ?? 100}%`, opacity: pct === null ? 0.4 : 1 }} />
+          <View className="w-full max-w-sm" style={{ opacity: pct === null ? 0.5 : 1 }}>
+            <Bar pct={pct ?? 100} label={t.book.titleFallback} />
           </View>
-          <Text className="text-sm text-muted-foreground">
+          <Text className="text-center text-sm text-muted-foreground">
             {t.book.downloadingLine(pct)}
           </Text>
         </View>
@@ -114,8 +119,9 @@ export default function BookScreen() {
   return (
     <>
       {header}
+      {dialog}
       {/* Keep the page slider out of the system gesture strip (swipes there switch apps). */}
-      <SafeAreaView edges={['bottom', 'left', 'right']} className="flex-1 bg-[#e5e7eb]">
+      <SafeAreaView edges={['bottom', 'left', 'right']} className="flex-1 bg-muted">
       <WebView
         testID="book-reader"
         source={{ uri }}
@@ -129,8 +135,8 @@ export default function BookScreen() {
         setSupportMultipleWindows={false}
         webviewDebuggingEnabled={__DEV__}
         startInLoadingState
-        renderLoading={() => <View className="absolute inset-0 bg-[#e5e7eb]"><Loading label={t.book.openingBook} /></View>}
-        style={{ flex: 1, backgroundColor: '#e5e7eb' }}
+        renderLoading={() => <View className="absolute inset-0 bg-muted"><Loading label={t.book.openingBook} /></View>}
+        style={{ flex: 1, backgroundColor: c.muted }}
       />
       </SafeAreaView>
     </>

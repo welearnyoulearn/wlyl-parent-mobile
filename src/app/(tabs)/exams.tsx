@@ -1,23 +1,23 @@
 import { ClassLoading } from '@/components/class-loading'
 import { useEffect, useMemo, useState } from 'react'
-import { Text, View, Pressable, ScrollView } from 'react-native'
+import { View, Pressable, ScrollView } from 'react-native'
 import { Link, useLocalSearchParams } from 'expo-router'
 import { CalendarDays, ChevronRight, GraduationCap, Inbox } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { day, hhmm, longDay, type CalendarExam, type MarkSheet } from '@/lib/api'
 import { useApi } from '@/lib/use-api'
-import { Screen, Loading, Panel, Empty, Chip, Alert, Ring, Section, Row, Divider } from '@/components/ui'
+import { Screen, Loading, Panel, Empty, Chip, Alert, Ring, Section, Row, Divider, ErrorState, ScreenSkeleton, Segmented, Text, useColors } from '@/components/ui'
 import { MonthCalendar, monthRange, shiftMonth, todayISO } from '@/components/month-calendar'
 import { useT, type Strings } from '@/lib/i18n'
 
 // Exam-type colours from the web calendar (guide Appendix B).
 const EXAM_TONE: Record<string, { bg: string; fg: string; dot: string }> = {
-  unit_test: { bg: 'bg-red-50', fg: 'text-red-700', dot: 'bg-red-500' },
-  mid_term: { bg: 'bg-orange-50', fg: 'text-orange-700', dot: 'bg-orange-500' },
-  final_exam: { bg: 'bg-purple-50', fg: 'text-purple-700', dot: 'bg-purple-500' },
-  practical: { bg: 'bg-blue-50', fg: 'text-blue-700', dot: 'bg-blue-500' },
+  unit_test: { bg: 'bg-danger-soft', fg: 'text-danger', dot: 'bg-danger-graphic' },
+  mid_term: { bg: 'bg-warning-soft', fg: 'text-warning', dot: 'bg-warning-graphic' },
+  final_exam: { bg: 'bg-accent-soft', fg: 'text-accent', dot: 'bg-accent' },
+  practical: { bg: 'bg-info-soft', fg: 'text-info', dot: 'bg-info-graphic' },
 }
-const OTHER_TONE = { bg: 'bg-muted', fg: 'text-muted-foreground', dot: 'bg-gray-400' }
+const OTHER_TONE = { bg: 'bg-muted', fg: 'text-muted-foreground', dot: 'bg-subtle-foreground' }
 
 function ExamTypeChip({ type }: { type: string }) {
   const t = useT()
@@ -90,6 +90,7 @@ function ExamCalendar({ schoolId, studentId, nearby }: { schoolId: number; stude
   const [selected, setSelected] = useState<string | null>(null)
   const [now, setNow] = useState(() => new Date())
   const t = useT()
+  const c = useColors()
   const { from, to } = monthRange(month)
   const { data, error, loading } = useApi<CalendarExam[]>(
     `/api/exams/calendar?school_id=${schoolId}&student_id=${studentId}&from=${from}&to=${to}`
@@ -131,12 +132,12 @@ function ExamCalendar({ schoolId, studentId, nearby }: { schoolId: number; stude
   return (
     <View className="gap-5" testID="exam-calendar">
       {todays.length > 0 && (
-        <View className="gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-4" testID="todays-exams" accessibilityRole="summary">
-          <Text className="text-xs font-semibold uppercase text-rose-700">{t.exams.todaysExams}</Text>
+        <View className="gap-2 rounded-2xl border border-danger-graphic bg-danger-soft p-4" testID="todays-exams" accessibilityRole="summary">
+          <Text className="text-xs font-semibold uppercase text-danger">{t.exams.todaysExams}</Text>
           {todays.map(e => (
             <View key={e.id}>
-              <Text className="text-sm font-bold text-rose-800">{e.exam_name} · {countdown(e, today, nowMin, t)}</Text>
-              {metaLine(e, t) ? <Text className="text-xs text-rose-700">{metaLine(e, t)}</Text> : null}
+              <Text className="text-sm font-bold text-danger">{e.exam_name} · {countdown(e, today, nowMin, t)}</Text>
+              {metaLine(e, t) ? <Text className="text-xs text-danger">{metaLine(e, t)}</Text> : null}
             </View>
           ))}
         </View>
@@ -156,7 +157,7 @@ function ExamCalendar({ schoolId, studentId, nearby }: { schoolId: number; stude
                   accessibilityRole="button"
                   accessibilityLabel={`${e.exam_name}, ${longDay(e.exam_date)}`}
                   onPress={() => jumpTo(e.exam_date)}
-                  className={`w-44 gap-1 rounded-2xl border p-3 ${days === 0 ? 'border-rose-200 bg-rose-50' : days <= 3 ? 'border-orange-200 bg-orange-50' : 'border-border bg-card'}`}
+                  className={`w-44 gap-1 rounded-2xl border p-3 ${days === 0 ? 'border-danger-graphic bg-danger-soft' : days <= 3 ? 'border-warning-border bg-warning-soft' : 'border-border bg-card'}`}
                 >
                   <View className="flex-row items-center justify-between">
                     <Text className="text-xs font-semibold text-muted-foreground">{day(e.exam_date)}</Text>
@@ -242,7 +243,7 @@ function ExamCalendar({ schoolId, studentId, nearby }: { schoolId: number; stude
                 </View>
               ) : (
                 <View className="flex-row items-center gap-2">
-                  <Inbox size={16} color="#9ca3af" />
+                  <Inbox size={16} color={c.subtle} />
                   <Text className="text-sm text-muted-foreground">{t.exams.noExamsOn(longDay(selected))}</Text>
                 </View>
               )
@@ -280,6 +281,7 @@ function ExamCalendar({ schoolId, studentId, nearby }: { schoolId: number; stude
 export default function ExamsScreen() {
   const { student } = useSession()
   const t = useT()
+  const c = useColors()
   // Notifications open a tab directly: /exams?tab=upcoming|results. A later param wins over a tab picked by hand.
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>()
   const [picked, setPicked] = useState<{ tab: string; param?: string } | null>(null)
@@ -296,8 +298,8 @@ export default function ExamsScreen() {
 
   if (student && student.class_id === 0) return <Screen><ClassLoading /></Screen>
 
-  if (error) return <Screen><Alert>{error}</Alert></Screen>
-  if (loading || !student) return <Screen><Loading /></Screen>
+  if (error && !nearbyApi.data && !sheetsApi.data) return <Screen refreshing={refreshing} onRefresh={onRefresh}><ErrorState message={error} onRetry={onRefresh} busy={refreshing} /></Screen>
+  if (loading || !student) return <Screen><ScreenSkeleton /></Screen>
 
   const nearby = (nearbyApi.data ?? []).filter((e): e is DatedExam => e.exam_date !== null)
   const sheets = sheetsApi.data
@@ -308,34 +310,12 @@ export default function ExamsScreen() {
 
   return (
     <View testID="exams-screen" className="flex-1 bg-background">
-      <View className="flex-row border-b border-border bg-card">
-        <Pressable
-          testID="exams-tab-upcoming"
-          accessibilityRole="tab"
-          accessibilityState={{ selected: activeTab === 'upcoming' }}
-          onPress={() => setTab('upcoming')}
-          className={`flex-1 items-center justify-center p-3 border-b-2 ${activeTab === 'upcoming' ? 'border-primary' : 'border-transparent'}`}
-        >
-          <Text className={`text-sm font-semibold ${activeTab === 'upcoming' ? 'text-foreground' : 'text-muted-foreground'}`}>
-            {t.exams.tabUpcoming}
-          </Text>
-        </Pressable>
-        <Pressable
-          testID="exams-tab-results"
-          accessibilityRole="tab"
-          accessibilityState={{ selected: activeTab === 'results' }}
-          onPress={() => setTab('results')}
-          className={`flex-1 flex-row items-center justify-center p-3 border-b-2 gap-1 ${activeTab === 'results' ? 'border-primary' : 'border-transparent'}`}
-        >
-          <Text className={`text-sm font-semibold ${activeTab === 'results' ? 'text-foreground' : 'text-muted-foreground'}`}>
-            {t.exams.tabResults}
-          </Text>
-          {pending > 0 && (
-            <View className="rounded-full bg-amber-400 px-1.5 py-0.5">
-              <Text className="text-[10px] font-bold text-amber-950">{pending}</Text>
-            </View>
-          )}
-        </Pressable>
+      {/* Stays put while the list scrolls. */}
+      <View className="w-full max-w-2xl self-center px-5 pb-1 pt-2">
+        <Segmented value={activeTab} onChange={setTab} options={[
+          { value: 'upcoming', label: t.exams.tabUpcoming, testID: 'exams-tab-upcoming' },
+          { value: 'results', label: t.exams.tabResults, testID: 'exams-tab-results', badge: pending || undefined },
+        ]} />
       </View>
 
       <Screen refreshing={refreshing} onRefresh={onRefresh}>
@@ -366,7 +346,7 @@ export default function ExamsScreen() {
                         {r.parent_acknowledged ? <Chip tone="green">{t.acknowledged}</Chip> : <Chip tone="amber">{t.exams.signOffNeeded}</Chip>}
                       </View>
                     </View>
-                    <ChevronRight size={16} color="#9ca3af" />
+                    <ChevronRight size={16} color={c.subtle} />
                   </Panel>
                 </Pressable>
               </Link>

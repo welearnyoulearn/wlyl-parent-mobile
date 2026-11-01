@@ -33,7 +33,8 @@ const responses = {
 function Primitive({ children, title, hint }) {
   return React.createElement('div', null, title, hint, children)
 }
-const primitives = new Proxy({}, { get: () => Primitive })
+// Hooks (useColors, ...) return an empty object; everything else renders as a plain element.
+const primitives = new Proxy({}, { get: (_, name) => String(name).startsWith('use') ? () => ({}) : Primitive })
 function compile(relative, overrides = {}) {
   const filename = path.join(root, relative)
   const source = process.env.SCREEN_TEST_REF
