@@ -48,7 +48,7 @@ const en = {
   },
 
   // Stack screen titles, shared with quick-links labels
-  screenTitles: { calendar: 'Calendar', syllabus: 'Syllabus', library: 'Library', notifications: 'Notifications', profile: 'Profile', notices: 'School notices', dailyReport: 'Daily report', quiz: 'Daily quiz', rewards: 'Rewards', doubts: 'Doubts' },
+  screenTitles: { calendar: 'Calendar', syllabus: 'Syllabus', library: 'Library', notifications: 'Notifications', profile: 'Profile', notices: 'School notices', dailyReport: 'Daily report', quiz: 'Daily quiz', rewards: 'Rewards', doubts: 'Doubts', settings: 'Settings' },
 
   // Home: src/app/(tabs)/index.tsx
   home: {
@@ -498,6 +498,16 @@ const en = {
     themeSystem: 'Auto',
     themeLight: 'Light',
     themeDark: 'Dark',
+    themeSystemHint: 'Matches phone',
+    themeLightHint: 'Bright',
+    themeDarkHint: 'Easy at night',
+    settings: 'Settings',
+    settingsHint: 'Account, theme, language and sign out',
+    features: 'Features',
+    preferences: 'Preferences',
+    about: 'About',
+    version: 'App version',
+    signOutHint: 'You can sign in again anytime',
   },
 
   // Class loading: src/components/class-loading.tsx
@@ -706,7 +716,7 @@ const te: typeof en = {
     signOut: 'సైన్ అవుట్',
   },
 
-  screenTitles: { calendar: 'క్యాలెండర్', syllabus: 'పాఠ్యక్రమం', library: 'లైబ్రరీ', notifications: 'నోటిఫికేషన్లు', profile: 'ప్రొఫైల్', notices: 'పాఠశాల నోటీసులు', dailyReport: 'రోజువారీ నివేదిక', quiz: 'రోజువారీ క్విజ్', rewards: 'రివార్డులు', doubts: 'సందేహాలు' },
+  screenTitles: { calendar: 'క్యాలెండర్', syllabus: 'పాఠ్యక్రమం', library: 'లైబ్రరీ', notifications: 'నోటిఫికేషన్లు', profile: 'ప్రొఫైల్', notices: 'పాఠశాల నోటీసులు', dailyReport: 'రోజువారీ నివేదిక', quiz: 'రోజువారీ క్విజ్', rewards: 'రివార్డులు', doubts: 'సందేహాలు', settings: 'సెట్టింగ్‌లు' },
 
   home: {
     feesOverdue: (n, amt) => `${n} రుసుము${n > 1 ? 'లు' : ''} ఆలస్యం · ${amt} బాకీ`,
@@ -1134,6 +1144,16 @@ const te: typeof en = {
     themeSystem: 'ఆటో',
     themeLight: 'లైట్',
     themeDark: 'డార్క్',
+    themeSystemHint: 'ఫోన్ లాగే',
+    themeLightHint: 'ప్రకాశవంతం',
+    themeDarkHint: 'రాత్రికి సౌకర్యం',
+    settings: 'సెట్టింగ్‌లు',
+    settingsHint: 'ఖాతా, థీమ్, భాష మరియు సైన్ అవుట్',
+    features: 'ఫీచర్లు',
+    preferences: 'ప్రాధాన్యతలు',
+    about: 'గురించి',
+    version: 'యాప్ వెర్షన్',
+    signOutHint: 'ఎప్పుడైనా మళ్లీ సైన్ ఇన్ చేయవచ్చు',
   },
 
   classLoading: { loading: 'మీ పిల్లల తరగతి లోడ్ అవుతున్నది' },
