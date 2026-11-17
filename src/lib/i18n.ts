@@ -508,6 +508,12 @@ const en = {
     about: 'About',
     version: 'App version',
     signOutHint: 'You can sign in again anytime',
+    // One short line under each More tile, saying what it opens.
+    desc: {
+      'pay-online': 'Pay & receipts', 'daily-report': "Today's progress", calendar: 'Holidays & events',
+      syllabus: 'What is taught', library: 'Read books', notices: 'News from school',
+      profile: 'Your details', notifications: 'Recent alerts', settings: 'Theme, language',
+    } as Record<string, string>,
   },
 
   // Class loading: src/components/class-loading.tsx
@@ -1154,6 +1160,11 @@ const te: typeof en = {
     about: 'గురించి',
     version: 'యాప్ వెర్షన్',
     signOutHint: 'ఎప్పుడైనా మళ్లీ సైన్ ఇన్ చేయవచ్చు',
+    desc: {
+      'pay-online': 'చెల్లింపులు, రసీదులు', 'daily-report': 'నేటి ప్రగతి', calendar: 'సెలవులు, కార్యక్రమాలు',
+      syllabus: 'ఏమి బోధిస్తున్నారు', library: 'పుస్తకాలు చదవండి', notices: 'పాఠశాల వార్తలు',
+      profile: 'మీ వివరాలు', notifications: 'తాజా హెచ్చరికలు', settings: 'థీమ్, భాష',
+    },
   },
 
   classLoading: { loading: 'మీ పిల్లల తరగతి లోడ్ అవుతున్నది' },
