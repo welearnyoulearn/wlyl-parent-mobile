@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
 import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context'
-import { useCSSVariable, withUniwind } from 'uniwind'
+import { useCSSVariable, useUniwind, withUniwind } from 'uniwind'
 import { AlertCircle, AlertTriangle, CheckCircle2, ChevronRight, Eye, EyeOff, Info, WifiOff, X, type LucideIcon } from 'lucide-react-native'
 import { initials } from '@/lib/api'
 import { useT, type Strings } from '@/lib/i18n'
@@ -155,8 +155,13 @@ export function Screen({ children, refreshing = false, onRefresh, testID }: {
   children: ReactNode; refreshing?: boolean; onRefresh?: () => void; testID?: string
 }) {
   const c = useColors()
+  // Rebuild the page when light/dark changes. On Android some rows kept the old theme's
+  // text colour (light text on a now-white card) after switching; a fresh mount
+  // guarantees every view picks up the new theme. Screen data lives in the parent, so nothing refetches.
+  const { theme } = useUniwind()
   return (
     <ScrollView
+      key={theme}
       testID={testID}
       className="flex-1 bg-background"
       contentContainerClassName="w-full max-w-2xl self-center gap-6 px-4 pb-10 pt-2"
