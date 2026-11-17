@@ -17,12 +17,15 @@ test('Notices show the school translation for the app language, else the origina
   assert.deepEqual(notices.localised(n, 'te'), { title: 'తెలుగు', content: 'Body' })
   assert.deepEqual(notices.localised(n, 'en'), { title: 'Notice 1', content: 'Body' })
 })
-test('Only unseen urgent, action-needed or greeting notices pop up', () => {
-  assert.equal(notices.needsPopup(notice(1, { seen: false, priority: 'urgent' })), true)
-  assert.equal(notices.needsPopup(notice(2, { seen: false, requires_ack: true })), true)
-  assert.equal(notices.needsPopup(notice(3, { seen: false, template_key: 'diwali' })), true)
-  assert.equal(notices.needsPopup(notice(4, { seen: false, template_key: 'ptm' })), false)
-  assert.equal(notices.needsPopup(notice(5, { seen: true, priority: 'urgent' })), false)
+test('Every new notice from the last 14 days pops up, at most 3 (web #482)', () => {
+  const now = Date.parse('2026-11-17T10:00:00Z')
+  const at = days => new Date(now - days * 86_400_000).toISOString()
+  assert.equal(notices.needsPopup(notice(1, { seen: false, created_at: at(1) }), now), true)
+  assert.equal(notices.needsPopup(notice(2, { seen: false, created_at: at(30), published_at: at(2) }), now), true)
+  assert.equal(notices.needsPopup(notice(3, { seen: false, created_at: at(15) }), now), false)
+  assert.equal(notices.needsPopup(notice(4, { seen: true, created_at: at(0) }), now), false)
+  const list = [1, 2, 3, 4, 5].map(id => notice(id, { seen: id === 2, created_at: at(id) }))
+  assert.deepEqual(notices.pickPopupNotices(list, now).map(n => n.id), [1, 3, 4])
 })
 test('Filters and search narrow the list', () => {
   const list = [notice(1, { seen: false }), notice(2, { pinned: true }), notice(3, { requires_ack: true }), notice(4, { requires_ack: true, acked: true, title: 'Sports Day' })]

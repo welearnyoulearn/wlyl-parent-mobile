@@ -149,15 +149,16 @@ test('Home shows the contact card with call buttons, and hides it without contac
   assert.match(html, /ABC School.*School administration.*Main Road, Guntur/)
   assert.doesNotMatch(render('src/app/(tabs)/index.tsx'), /Contact &amp; Support/)
 })
-test('Home lists the latest 4 notices with badges and pops up an unseen urgent one', () => {
-  const list = [notice(1, { seen: false, priority: 'urgent' }), notice(2, { requires_ack: true }), notice(3), notice(4), notice(5)]
+test('Home lists the latest 4 notices with badges and pops up a new one (last 14 days)', () => {
+  const recent = new Date(Date.now() - 86_400_000).toISOString()
+  const list = [notice(1, { seen: false, priority: 'urgent', created_at: recent, published_at: recent }), notice(2, { requires_ack: true }), notice(3), notice(4), notice(5)]
   const html = render('src/app/(tabs)/index.tsx', { ...responses, '/api/announcements': list })
   assert.match(html, /School notices/)
   assert.match(html, /Notice 4/)
   assert.doesNotMatch(html, /Notice 5/)
   assert.match(html, /NEW/)
   assert.match(html, /Action needed/)
-  assert.match(html, /Posted by Principal · 1 Oct 2026/)
+  assert.match(html, /Posted by Principal · /)
 })
 
 const bill = { id: 7, category_name: 'Tuition', frequency: 'monthly', period_label: 'Oct', amount_due: '5000', amount_paid: '2000', waiver_amount: '0', balance: '3000', due_date: '2026-10-10', status: 'pending', source_academic_year: '2024-25' }

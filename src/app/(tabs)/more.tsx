@@ -6,9 +6,10 @@ import {
   type LucideIcon,
 } from 'lucide-react-native'
 import { CHILD_LINKS, SCHOOL_LINKS } from '@/components/quick-links'
+import { useNotices } from '@/components/notices'
 
 import { useSession } from '@/stores/session'
-import { Screen, Section, Avatar, PressableScale, Text, useColors } from '@/components/ui'
+import { Screen, Section, Avatar, CountBadge, PressableScale, Text, useColors } from '@/components/ui'
 import { useT } from '@/lib/i18n'
 
 // Each feature gets its own bright gradient, like an app icon on a phone's home screen,
@@ -26,7 +27,7 @@ const LOOK: Record<string, { icon: LucideIcon; from: string; to: string }> = {
   settings: { icon: Settings2, from: '#2dd4bf', to: '#0d7d76' },
 }
 
-type GridItem = { id: string; label: string; route: Href; feature?: string }
+type GridItem = { id: string; label: string; route: Href; feature?: string; badge?: number }
 
 const ICON_BOX = 60
 
@@ -56,11 +57,17 @@ function AppIcon({ id }: { id: string }) {
 
 // One feature: the app icon, its name, and a short line saying what's inside.
 function FeatureTile({ item, hint }: { item: GridItem; hint?: string }) {
+  const t = useT()
+  const label = [item.label, hint, item.badge ? t.notices.isNew : null].filter(Boolean).join(', ')
   return (
     <PressableScale containerClassName="w-1/3 p-1.5" onPress={() => router.push(item.route)} testID={`more-${item.id}-link`}
-      accessibilityRole="button" accessibilityLabel={hint ? `${item.label}, ${hint}` : item.label}
+      accessibilityRole="button" accessibilityLabel={item.badge ? `${label} (${item.badge})` : label}
       className="min-h-[148px] items-center gap-2 rounded-3xl border border-border bg-card px-1.5 pb-3 pt-4 active:bg-muted">
-      <AppIcon id={item.id} />
+      <View>
+        <AppIcon id={item.id} />
+        {/* Unread count, as on the web's Announcements tab. */}
+        {item.badge ? <CountBadge count={item.badge} className="absolute -right-2 -top-2 border-2 border-card" /> : null}
+      </View>
       <View className="items-center gap-0.5">
         <Text numberOfLines={1} adjustsFontSizeToFit className="text-center text-[13px] font-bold text-foreground">{item.label}</Text>
         {hint ? <Text numberOfLines={2} className="text-center text-[11px] leading-[14px] text-muted-foreground">{hint}</Text> : null}
@@ -87,11 +94,14 @@ export default function MoreScreen() {
   const me = useSession(s => s.me)
   const t = useT()
   const c = useColors()
+  // Same request as Home, so it comes from the cache; drives the unread badge on School notices.
+  const notices = useNotices(student ? `/api/announcements?school_id=${student.school_id}` : null)
+  const unread = notices.items?.filter(n => !n.seen).length ?? 0
 
   const childItems: GridItem[] = CHILD_LINKS.map(l => ({ ...l, label: l.label(t) }))
   const schoolItems: GridItem[] = [
     ...SCHOOL_LINKS.map(l => ({ ...l, label: l.label(t) })),
-    { id: 'notices', label: t.screenTitles.notices, route: '/notices' },
+    { id: 'notices', label: t.screenTitles.notices, route: '/notices', badge: unread },
   ]
   const accountItems: GridItem[] = [
     { id: 'profile', label: t.screenTitles.profile, route: '/profile' },

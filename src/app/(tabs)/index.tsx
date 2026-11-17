@@ -6,7 +6,7 @@ import { ChevronRight, GraduationCap, Phone } from 'lucide-react-native'
 import { useSession } from '@/stores/session'
 import { useApi } from '@/lib/use-api'
 import { day, inr, longDay, telHref, type DailyReport, type SchoolCalendar, type SchoolContacts, type Fees, type Summary } from '@/lib/api'
-import { localised, needsPopup } from '@/lib/notices'
+import { localised, pickPopupNotices } from '@/lib/notices'
 import { NoticeModal, NoticeRow, useNotices } from '@/components/notices'
 import { QuickLinks } from '@/components/quick-links'
 import { Screen, Panel, Section, Divider, Alert, Empty, Ring, Skeleton, ScreenSkeleton, FadeInView, DateBadge, Text, useColors } from '@/components/ui'
@@ -62,10 +62,14 @@ export default function HomePage() {
   // only follow the quiz; the child takes it in the student portal.
   const { data: report } = useApi<DailyReport>(student && has('daily-quiz') ? `/api/parent/daily-report?student_id=${student.id}` : null)
   const [openId, setOpenId] = useState<number | null>(null)
-  // Unseen urgent / action-needed / greeting notices open by themselves, one at a time
-  // (opening marks it seen, so closing it brings up the next).
-  const popupId = focused ? notices.items?.find(needsPopup)?.id : undefined
-  if (popupId !== undefined && openId === null) setOpenId(popupId)
+  // New notices pop up once, one after another, as on the web (#482): up to 3 from the last 14 days,
+  // picked once when the list first loads. Opening one marks it seen, so it never pops up again.
+  const [popQueue, setPopQueue] = useState<number[] | null>(null)
+  if (focused && popQueue === null && notices.items) setPopQueue(pickPopupNotices(notices.items).map(n => n.id))
+  if (focused && openId === null && popQueue && popQueue.length > 0) {
+    setOpenId(popQueue[0])
+    setPopQueue(popQueue.slice(1))
+  }
 
   const refreshing = r1 || r2 || r4 || r5 || r6
   const error = er1 || er2 || er4 || er5
