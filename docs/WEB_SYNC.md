@@ -4,6 +4,20 @@ The web team builds parent features first in `welearnyoulearn/prototype` (branch
 This file records how far the mobile app has been checked against it, so each sync
 only has to look at what changed since.
 
+## Automatic issues
+
+`docs/web-sync/notify-parent-mobile.yml` is a GitHub workflow for the **prototype** repo. On every
+merge to `dev` that touches the paths below, it opens an issue here labelled `web-sync`, with the
+commits, the changed files, and whether it is a UI change (build it in mobile) or API only
+(already live, since both apps share one backend). To turn it on:
+
+1. Create a fine-grained GitHub token: resource owner `welearnyoulearn`, repository
+   `wlyl-parent-mobile` only, permission **Issues: Read and write**.
+2. In the prototype repo: Settings → Secrets and variables → Actions → new secret
+   `PARENT_MOBILE_TOKEN` with that token.
+3. Copy the workflow to `.github/workflows/notify-parent-mobile.yml` in the prototype repo and
+   merge it into `dev`.
+
 ## Last synced
 
 | Field | Value |

@@ -1,0 +1,102 @@
+# Copy this file into the prototype repo as .github/workflows/notify-parent-mobile.yml
+#
+# When a merge to `dev` touches anything parents use, it opens an issue in
+# welearnyoulearn/wlyl-parent-mobile listing the commits and files, so the mobile team
+# can bring the change to the app. The web and the app share one backend, so the issue
+# says whether the change is UI (needs mobile work) or API only (usually live already).
+#
+# Needs one repository secret in the prototype repo: PARENT_MOBILE_TOKEN
+# (a fine-grained token with "Issues: Read and write" on wlyl-parent-mobile only).
+
+name: Notify parent mobile app
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'app/parent/**'
+      - 'app/api/parent/**'
+      - 'app/api/announcements/**'
+      - 'components/announcements/**'
+      - 'components/portal/**'
+      - 'lib/announcementPopup.ts'
+      - 'lib/features.ts'
+
+permissions:
+  contents: read
+
+jobs:
+  open-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Open an issue in the parent mobile repo
+        env:
+          GH_TOKEN: ${{ secrets.PARENT_MOBILE_TOKEN }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          MOBILE_REPO: welearnyoulearn/wlyl-parent-mobile
+        run: |
+          set -euo pipefail
+          PATHS=(app/parent app/api/parent app/api/announcements components/announcements components/portal lib/announcementPopup.ts lib/features.ts)
+
+          # A brand-new branch has no "before"; fall back to the last commit only.
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            BEFORE="$AFTER~1"
+          fi
+
+          FILES=$(git diff --name-only "$BEFORE" "$AFTER" -- "${PATHS[@]}")
+          [ -z "$FILES" ] && { echo "No parent-related files changed."; exit 0; }
+
+          COMMITS=$(git log --no-merges --format='- %h %s (%an)' "$BEFORE..$AFTER" -- "${PATHS[@]}")
+          FIRST_SUBJECT=$(git log --no-merges --format='%s' -1 "$BEFORE..$AFTER" -- "${PATHS[@]}")
+          COUNT=$(echo "$COMMITS" | grep -c . || true)
+          TITLE="Web sync: $FIRST_SUBJECT"
+          [ "$COUNT" -gt 1 ] && TITLE="$TITLE (+$((COUNT - 1)) more)"
+
+          # UI = anything outside the API folders; API = server routes the app calls.
+          UI_FILES=$(echo "$FILES" | grep -v '^app/api/' || true)
+          API_FILES=$(echo "$FILES" | grep '^app/api/' || true)
+          if [ -n "$UI_FILES" ]; then
+            KIND="UI change: needs to be built in the mobile app"
+          else
+            KIND="API only: already live for the app (same backend). Check whether any response fields changed."
+          fi
+
+          {
+            echo "The web team merged parent-related changes into \`dev\`."
+            echo
+            echo "**Type:** $KIND"
+            echo
+            echo "**Compare:** $REPO_URL/compare/${BEFORE:0:7}...${AFTER:0:7}"
+            echo
+            echo "### Commits"
+            echo "$COMMITS"
+            if [ -n "$UI_FILES" ]; then
+              echo
+              echo "### Screens and components changed"
+              echo "$UI_FILES" | sed 's/^/- `/; s/$/`/'
+            fi
+            if [ -n "$API_FILES" ]; then
+              echo
+              echo "### API routes changed"
+              echo "$API_FILES" | sed 's/^/- `/; s/$/`/'
+            fi
+            echo
+            echo "### To do in mobile"
+            echo "- [ ] Decide if parents on mobile need this"
+            echo "- [ ] Build it in the app (or note why not)"
+            echo "- [ ] Update \`docs/WEB_SYNC.md\` with the new last-synced commit"
+          } > body.md
+
+          gh label create web-sync --repo "$MOBILE_REPO" --color 0d7d76 \
+            --description "Change from the web (prototype dev) to bring to mobile" 2>/dev/null || true
+
+          gh issue create --repo "$MOBILE_REPO" \
+            --title "$TITLE" \
+            --label web-sync \
+            --body-file body.md
