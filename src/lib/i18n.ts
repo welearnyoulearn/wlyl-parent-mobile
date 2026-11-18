@@ -516,6 +516,14 @@ const en = {
     } as Record<string, string>,
   },
 
+  // Launch animation: src/components/launch-screen.tsx. One line per icon, shown in turn.
+  launch: {
+    tagline: "Your child's school, in your pocket",
+    tips: ['Pay fees in a tap', 'See attendance every day', 'Results the moment they are out', 'Never miss a school notice'],
+    brand: 'WLYL',
+    brandLine: 'We Learn, You Learn',
+  },
+
   // Class loading: src/components/class-loading.tsx
   classLoading: { loading: "Loading your child's class" },
 
@@ -1165,6 +1173,13 @@ const te: typeof en = {
       syllabus: 'ఏమి బోధిస్తున్నారు', library: 'పుస్తకాలు చదవండి', notices: 'పాఠశాల వార్తలు',
       profile: 'మీ వివరాలు', notifications: 'తాజా హెచ్చరికలు', settings: 'థీమ్, భాష',
     },
+  },
+
+  launch: {
+    tagline: 'మీ పిల్లల పాఠశాల, మీ జేబులోనే',
+    tips: ['ఒక్క ట్యాప్‌తో ఫీజు చెల్లించండి', 'ప్రతిరోజూ హాజరు చూడండి', 'ఫలితాలు వచ్చిన వెంటనే చూడండి', 'పాఠశాల నోటీసులను మిస్ కాకండి'],
+    brand: 'WLYL',
+    brandLine: 'మేము నేర్చుకుంటాం, మీరు నేర్చుకుంటారు',
   },
 
   classLoading: { loading: 'మీ పిల్లల తరగతి లోడ్ అవుతున్నది' },

@@ -12,6 +12,7 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans'
 import { FONTS, useColors } from '@/components/ui'
 import { PlanLocked } from '@/components/plan-locked'
+import { LaunchOverlay } from '@/components/launch-screen'
 import { useSession } from '@/stores/session'
 import { useT } from '@/lib/i18n'
 
@@ -24,12 +25,16 @@ if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) SplashS
 // (the mark sheet) became the initial route.
 export const unstable_settings = { initialRouteName: '(tabs)' }
 
-// Never hold the splash longer than this, even on a very slow network:
-// the signed-in shell has its own branded loading screen.
+// Never hold the native splash longer than this, even if fonts are slow:
+// the launch animation and the signed-in shell have their own loading states.
 const SPLASH_MAX_MS = 2500
 
+// The native splash is a still picture, so it lifts as soon as the saved theme and fonts are ready and
+// the animated launch screen (same rose) takes over while the account loads. `ready` says the account
+// has loaded or failed, so the animation knows it may finish.
 function useLaunch(fontsReady: boolean) {
   const [hydrated, setHydrated] = useState(() => useSession.persist.hasHydrated())
+  const [timedOut, setTimedOut] = useState(false)
   const theme = useSession(s => s.theme)
   const settled = useSession(s => !s.loading || s.unauthorized || !!s.error)
 
@@ -37,19 +42,20 @@ function useLaunch(fontsReady: boolean) {
   // The saved theme applies before the splash lifts, so a dark-mode parent never sees a light flash.
   useEffect(() => { if (hydrated) Uniwind.setTheme(theme ?? 'system') }, [hydrated, theme])
   useEffect(() => {
-    if (hydrated && settled && fontsReady) SplashScreen.hide()
-  }, [hydrated, settled, fontsReady])
-  useEffect(() => {
-    const timer = setTimeout(() => SplashScreen.hide(), SPLASH_MAX_MS)
+    const timer = setTimeout(() => setTimedOut(true), SPLASH_MAX_MS)
     return () => clearTimeout(timer)
   }, [])
+  const revealed = timedOut || (hydrated && fontsReady)
+  // Lift the native splash only after the launch screen has been committed beneath it.
+  useEffect(() => { if (revealed) SplashScreen.hide() }, [revealed])
+  return { revealed, ready: hydrated && fontsReady && settled }
 }
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold,
   })
-  useLaunch(fontsLoaded || !!fontError)
+  const { revealed, ready } = useLaunch(fontsLoaded || !!fontError)
   const c = useColors()
   const t = useT()
   const { theme } = useUniwind()
@@ -80,6 +86,7 @@ export default function RootLayout() {
         <Stack.Screen name="book/[id]" options={{ headerLargeTitle: false }} />
       </Stack>
       <PlanLocked />
+      {revealed && <LaunchOverlay ready={ready} />}
     </SafeAreaProvider>
   )
 }

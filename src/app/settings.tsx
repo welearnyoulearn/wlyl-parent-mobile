@@ -11,8 +11,8 @@ import { useT } from '@/lib/i18n'
 
 // Fixed preview colours: each card shows what that theme looks like, whatever theme is on now.
 const PREVIEW = {
-  light: { bg: '#f4f6f9', card: '#ffffff', line: '#0e1726', soft: '#d5dae1', brand: '#0d7d76' },
-  dark: { bg: '#0a0f15', card: '#1a232d', line: '#edf2f7', soft: '#334150', brand: '#3fc4b6' },
+  light: { bg: '#f4f6f9', card: '#ffffff', line: '#0e1726', soft: '#d5dae1', brand: '#b5365a' },
+  dark: { bg: '#0a0f15', card: '#1a232d', line: '#edf2f7', soft: '#334150', brand: '#5e1c33' },
 }
 
 function MiniPhone({ mode }: { mode: 'light' | 'dark' }) {

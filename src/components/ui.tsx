@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode, type Ref } from 'react'
 import {
-  ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text as RNText, TextInput, View,
+  ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text as RNText, TextInput, View,
   type PressableProps, type TextInputProps, type TextProps,
 } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
@@ -71,7 +71,7 @@ export const haptic = {
 // JS name → CSS token and its light-theme value (used until the stylesheet answers).
 const PALETTE = {
   primary: ['--color-primary', '#0d7d76'], primaryForeground: ['--color-primary-foreground', '#ffffff'],
-  primarySoft: ['--color-primary-soft', '#e3f3f1'], brand: ['--color-brand', '#0d7d76'], brandDeep: ['--color-brand-deep', '#08524d'],
+  primarySoft: ['--color-primary-soft', '#e3f3f1'], brand: ['--color-brand', '#b5365a'], brandDeep: ['--color-brand-deep', '#8f2847'], sun: ['--color-sun', '#f5a623'],
   onBrand: ['--color-on-brand', '#ffffff'], ink: ['--color-ink', '#13233a'], inkDeep: ['--color-ink-deep', '#0a1424'],
   onInk: ['--color-on-ink', '#f4f7fb'], accent: ['--color-accent', '#6544d6'], background: ['--color-background', '#f4f6f9'],
   card: ['--color-card', '#ffffff'], foreground: ['--color-foreground', '#0e1726'], muted: ['--color-muted', '#eceff3'],
@@ -131,17 +131,17 @@ export function friendlyError(message: string, t: Strings) {
 
 // ---------------------------------------------------------------- brand
 
-// The app icon's bold white W on teal, drawn in code so it stays sharp at any size.
+// The WLYL Parent mark (open book over an infinity loop), drawn from the app icon's artwork.
+// White and yellow, so it sits on the rose brand surfaces.
+const BRAND_MARK = require('../../assets/images/brand-mark.png')
 export function BrandMark({ size = 56 }: { size?: number }) {
   return (
-    <View style={{ width: size, height: size, borderRadius: size * 0.3 }}
-      className="items-center justify-center border border-white/25 bg-white/15" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Text style={{ fontSize: size * 0.54, lineHeight: size * 0.68 }} className="font-extrabold tracking-tighter text-on-brand">W</Text>
-    </View>
+    <Image source={BRAND_MARK} style={{ width: size, height: size }} resizeMode="contain"
+      accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
   )
 }
 
-// The brand surface behind the sign-in screens and the launch screen: one flat colour.
+// The brand surface behind the sign-in screens and the app header: one flat rose.
 // 'ink' is the deep blue kept for money. No gradient, no decoration.
 export function BrandBackdrop({ tone = 'brand' }: { tone?: 'brand' | 'ink' }) {
   return <View className={`absolute inset-0 ${tone === 'ink' ? 'bg-ink' : 'bg-brand'}`} style={{ pointerEvents: 'none' }} />

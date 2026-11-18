@@ -5,11 +5,12 @@
    Screens use only these semantic names (bg-card, text-success, bg-warning-soft ...),
    never raw palette classes, so light and dark both come from this file.
    @theme registers the names for Tailwind; the @variant blocks give each theme its values.
-   Identity: a calm, airy neutral canvas; the school teal as the one brand colour;
+   Identity: a calm, airy neutral canvas; WLYL rose (#B5365A) on brand surfaces (header, sign-in, launch),
+   teal for actions and selected states, a warm yellow for small highlights;
    deep "ink" for money and emphasis; violet for exams; warm, readable status colours. */
 @theme {
-  --color-brand: #0d7d76;
-  --color-brand-deep: #08524d;
+  --color-brand: #b5365a;
+  --color-brand-deep: #8f2847;
   --color-on-brand: #ffffff;
   --color-ink: #13233a;
   --color-ink-deep: #0a1424;
@@ -19,6 +20,8 @@
   --color-primary-soft: #e3f3f1;
   --color-accent: #6544d6;
   --color-accent-soft: #efeafd;
+  --color-sun: #f5a623;
+  --color-sun-soft: #fff3d6;
 
   --color-background: #f4f6f9;
   --color-card: #ffffff;
@@ -50,8 +53,8 @@
 @layer theme {
   :root {
     @variant light {
-      --color-brand: #0d7d76;
-      --color-brand-deep: #08524d;
+      --color-brand: #b5365a;
+      --color-brand-deep: #8f2847;
       --color-on-brand: #ffffff;
       --color-ink: #13233a;
       --color-ink-deep: #0a1424;
@@ -61,6 +64,8 @@
       --color-primary-soft: #e3f3f1;
       --color-accent: #6544d6;
       --color-accent-soft: #efeafd;
+      --color-sun: #f5a623;
+      --color-sun-soft: #fff3d6;
 
       --color-background: #f4f6f9;
       --color-card: #ffffff;
@@ -91,9 +96,9 @@
 
     /* Deep blue-ink night, never pure black; text and graphics lifted for contrast. */
     @variant dark {
-      --color-brand: #0f5550;
-      --color-brand-deep: #082a28;
-      --color-on-brand: #effaf8;
+      --color-brand: #5e1c33;
+      --color-brand-deep: #3d1122;
+      --color-on-brand: #fff4f7;
       --color-ink: #1c2a3d;
       --color-ink-deep: #111b29;
       --color-on-ink: #f1f5fa;
@@ -102,6 +107,8 @@
       --color-primary-soft: #102f2c;
       --color-accent: #ab95ff;
       --color-accent-soft: #241f40;
+      --color-sun: #f7b84b;
+      --color-sun-soft: #33270b;
 
       --color-background: #0a0f15;
       --color-card: #131a22;
