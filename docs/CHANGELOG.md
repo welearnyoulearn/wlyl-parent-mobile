@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+> Release 1.0.8 is the first build with the new icon, launch animation and rose/teal/yellow colours. 1.0.7 (internal testing) was built before those commits.
+
 ### Added
 - New launch experience: after the native splash, the app plays a short animated welcome on the brand rose. The WLYL Parent logo springs in and floats; four icons (pay fees, attendance, results, school notices) pop up in turn with a one-line benefit each, in English or Telugu; a yellow bar fills as the account loads; "WLYL · We Learn, You Learn" signs off. It lasts at least 2.8 s (`LAUNCH_MIN_MS` in `src/components/launch-screen.tsx`) and at most 8 s, then fades out. Reduced-motion phones get a still, 0.6 s version.
 - Daily Report (#450, web parity): pick a day (up to 30 back), then see attendance, Daily Quiz done or not, doubts still open, the last 7 quiz days and topics taught (`GET /api/parent/daily-report`).
