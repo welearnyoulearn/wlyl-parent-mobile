@@ -2,12 +2,16 @@
 
 ## [Unreleased]
 
+> Release 1.0.8 is the first build with the new icon, launch animation and rose/teal/yellow colours. 1.0.7 (internal testing) was built before those commits.
+
 ### Added
+- New launch experience: after the native splash, the app plays a short animated welcome on the brand rose. The WLYL Parent logo springs in and floats; four icons (pay fees, attendance, results, school notices) pop up in turn with a one-line benefit each, in English or Telugu; a yellow bar fills as the account loads; "WLYL · We Learn, You Learn" signs off. It lasts at least 2.8 s (`LAUNCH_MIN_MS` in `src/components/launch-screen.tsx`) and at most 8 s, then fades out. Reduced-motion phones get a still, 0.6 s version.
 - Daily Report (#450, web parity): pick a day (up to 30 back), then see attendance, Daily Quiz done or not, doubts still open, the last 7 quiz days and topics taught (`GET /api/parent/daily-report`).
 - Home shows the child's day as on the web (Daily Quiz done or not, doubts not clarified), opening the Daily Report; Daily report is a shortcut where the school has `daily-quiz` on. Parents follow the quiz only: there is no quiz-taking, Rewards or Doubts screen, matching the web parent portal on `dev`. Quiz and doubt notifications open the Daily Report for that child.
 - Forgot password shows where the link went (masked email) or why it couldn't be sent: not registered, no email on file, several matches, too many tries (#451).
 
 ### Changed
+- New app icon and brand colours: rose `#B5365A` on brand surfaces (header band, sign-in screens, launch screen, splash), teal for actions and selected states, yellow `#F5A623` for small highlights (unread dot, active-tab marker, launch progress). Danger red is unchanged so errors never look like the brand. The launcher icon, Android adaptive and themed icons, splash logo, favicon and `store/icon-512.png` use the new artwork; the sign-in logo is the new mark. The child colour set swaps rose for teal so a child's card never disappears on the rose header.
 - New design across the app: Plus Jakarta Sans, light/dark themes on semantic tokens (`src/global.css`), a teal header with a child switcher, flat surfaces without gradients or shadows, colour used for meaning (tinted icon tiles per feature, tinted Home glance tiles, status colours), animated rings and bars, haptics, skeleton loading and retry states, and an Appearance setting (Auto / Light / Dark) in More. All #2–#13 features are kept.
 - Sign-out asks for confirmation.
 - Sign-in screens share one frame (sign in, forgot password, first-login password, birthday) with a gentle entrance and a "Step 1 of 2" marker through first login. Sign-in remembers the last account on this phone, so a returning parent only types the password ("Not you?" switches). After a reset link is sent, the screen lists the three next steps and offers Resend and "Use a different email or phone".

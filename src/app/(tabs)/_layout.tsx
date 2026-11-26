@@ -30,6 +30,7 @@ function TabButton({ label, Icon, focused, testID, onPress, onLongPress }: {
   return (
     <Pressable testID={testID} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={label}
       onPress={onPress} onLongPress={onLongPress} className="min-h-[52px] flex-1 items-center justify-center gap-0.5 active:opacity-60">
+      {focused && <View className="absolute top-0 h-[3px] w-8 rounded-full bg-sun" />}
       <Animated.View style={iconStyle}>
         <Icon size={24} color={focused ? c.primary : c.mutedForeground} strokeWidth={focused ? 2.2 : 1.8} />
       </Animated.View>
@@ -118,7 +119,7 @@ export default function TabsLayout() {
   if (unauthorized) return null
   if (me && !me.password_changed) return <Redirect href="/change-password" />
   if (!me) {
-    // Startup: same teal and W as the native splash, so the hand-off is seamless.
+    // Startup: the same rose as the native splash and launch animation, so the hand-off is seamless.
     return loading ? (
       <View className="flex-1 items-center justify-center gap-6" testID="launch-screen">
         <BrandBackdrop />

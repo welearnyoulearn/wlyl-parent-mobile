@@ -61,7 +61,7 @@ function ChildSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-// Header on every tab: the school's teal band, so the app has one strong colour at the top. It leads with the child, because every number
+// Header on every tab: the WLYL rose band, so the app has one strong colour at the top. It leads with the child, because every number
 // in the app is about one child: on Home the child's name is the title; on other tabs the
 // tab is the title and the child sits under it. Either one opens the switcher when there
 // are several children. The bell is the only other control.
@@ -90,7 +90,7 @@ export function TabHeader({ title, home = false }: { title: string; home?: boole
 
   return (
     <View style={{ paddingTop: insets.top + 6 }} className="bg-brand pb-2">
-      {/* Light status bar over the teal, only while this tab is on screen. */}
+      {/* Light status bar over the rose, only while this tab is on screen. */}
       {focused && <StatusBar style="light" />}
       <View className="w-full max-w-2xl flex-row items-center gap-3 self-center px-4 pb-2 pt-1">
         <Pressable onPress={openSwitcher} disabled={!many} testID="child-switcher" className="flex-1 active:opacity-60"
@@ -124,7 +124,7 @@ export function TabHeader({ title, home = false }: { title: string; home?: boole
           accessibilityLabel={unread ? t.header.unread(unread) : t.header.notifications} hitSlop={8}
           className="size-11 items-center justify-center rounded-full bg-white/15 active:bg-white/25">
           <Bell size={22} color={c.onBrand} strokeWidth={2} />
-          {unread > 0 && <View className="absolute right-2 top-2 size-3 rounded-full border-2 border-brand bg-danger-graphic" />}
+          {unread > 0 && <View className="absolute right-2 top-2 size-3 rounded-full border-2 border-brand bg-sun" />}
         </Pressable>
       </View>
 

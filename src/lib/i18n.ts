@@ -508,6 +508,20 @@ const en = {
     about: 'About',
     version: 'App version',
     signOutHint: 'You can sign in again anytime',
+    // One short line under each More tile, saying what it opens.
+    desc: {
+      'pay-online': 'Pay & receipts', 'daily-report': "Today's progress", calendar: 'Holidays & events',
+      syllabus: 'What is taught', library: 'Read books', notices: 'News from school',
+      profile: 'Your details', notifications: 'Recent alerts', settings: 'Theme, language',
+    } as Record<string, string>,
+  },
+
+  // Launch animation: src/components/launch-screen.tsx. One line per icon, shown in turn.
+  launch: {
+    tagline: "Your child's school, in your pocket",
+    tips: ['Pay fees in a tap', 'See attendance every day', 'Results the moment they are out', 'Never miss a school notice'],
+    brand: 'WLYL',
+    brandLine: 'We Learn, You Learn',
   },
 
   // Class loading: src/components/class-loading.tsx
@@ -1154,6 +1168,18 @@ const te: typeof en = {
     about: 'గురించి',
     version: 'యాప్ వెర్షన్',
     signOutHint: 'ఎప్పుడైనా మళ్లీ సైన్ ఇన్ చేయవచ్చు',
+    desc: {
+      'pay-online': 'చెల్లింపులు, రసీదులు', 'daily-report': 'నేటి ప్రగతి', calendar: 'సెలవులు, కార్యక్రమాలు',
+      syllabus: 'ఏమి బోధిస్తున్నారు', library: 'పుస్తకాలు చదవండి', notices: 'పాఠశాల వార్తలు',
+      profile: 'మీ వివరాలు', notifications: 'తాజా హెచ్చరికలు', settings: 'థీమ్, భాష',
+    },
+  },
+
+  launch: {
+    tagline: 'మీ పిల్లల పాఠశాల, మీ జేబులోనే',
+    tips: ['ఒక్క ట్యాప్‌తో ఫీజు చెల్లించండి', 'ప్రతిరోజూ హాజరు చూడండి', 'ఫలితాలు వచ్చిన వెంటనే చూడండి', 'పాఠశాల నోటీసులను మిస్ కాకండి'],
+    brand: 'WLYL',
+    brandLine: 'మేము నేర్చుకుంటాం, మీరు నేర్చుకుంటారు',
   },
 
   classLoading: { loading: 'మీ పిల్లల తరగతి లోడ్ అవుతున్నది' },

@@ -46,8 +46,18 @@ export function localised(n: Announcement, lang: Lang | undefined) {
 
 export const needsAck = (n: Announcement) => n.requires_ack && !n.acked
 
-// Unseen greeting cards, urgent notices and notices waiting for "I have read this" open by themselves.
-export const needsPopup = (n: Announcement) => !n.seen && (n.priority === 'urgent' || needsAck(n) || !!template(n)?.greeting)
+// Same rule as the web (prototype lib/announcementPopup.ts, #482): every new notice pops up once.
+// A parent who was away a long time is not buried: only notices from the last 14 days pop up,
+// at most 3 at a time. The rest wait in School notices, marked unread.
+export const POPUP_MAX_AGE_DAYS = 14
+export const POPUP_MAX_COUNT = 3
+
+export const needsPopup = (n: Announcement, now: number = Date.now()) =>
+  !n.seen && new Date(n.published_at ?? n.created_at).getTime() >= now - POPUP_MAX_AGE_DAYS * 86_400_000
+
+// `list` is in display order (pinned, urgent first, then newest), as the server sends it.
+export const pickPopupNotices = (list: Announcement[], now: number = Date.now()) =>
+  list.filter(n => needsPopup(n, now)).slice(0, POPUP_MAX_COUNT)
 
 export function filterNotices(list: Announcement[], filter: NoticeFilter, query: string, lang: Lang | undefined) {
   const q = query.trim().toLowerCase()
