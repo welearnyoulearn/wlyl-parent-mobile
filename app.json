@@ -19,7 +19,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.welearnyoulearn.parent",
+      "package": "com.welearnyoulearn.wlyl",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
